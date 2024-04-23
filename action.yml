@@ -10,6 +10,22 @@ inputs:
     description: The GitHub token used to create an authenticated client
     default: ${{ github.token }}
     required: false
+  enterprise:
+    description: The GitHub enterprise slug
+    required: false
+  organization:
+    description: The organization slug
+    required: false
+  team:
+    description: The team slug
+    required: false
+  report:
+    description: Wither to generate a report
+    required: false
+    default: true
+outputs:
+  result:
+    description: The copilot usage as a JSON string
 
 runs:
   using: "node20"
