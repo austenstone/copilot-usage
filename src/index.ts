@@ -121,32 +121,26 @@ const createJobSummary = async (data: CopilotUsageResponse) => {
     ]);
   });
 
+  const languageUsage = data.reduce((acc, item) => {
+    item.breakdown.forEach((breakdownItem) => {
+      if (acc[breakdownItem.language]) {
+        acc[breakdownItem.language] += breakdownItem.suggestions_count;
+      } else {
+        acc[breakdownItem.language] = breakdownItem.suggestions_count;
+      }
+    });
+    return acc;
+  }, {});
+  
+  console.log(languageUsage);
+
   await summary
     .addHeading('Copilot Usage Results')
     .addTable(tableData)
     .addRaw(`\n\`\`\`mermaid
 pie showData
-title Label Usage
-    "activity-call" : 8147
-    "stale" : 6111
-    "region-apac" : 2286
-    "region-amer" : 2036
-    "out-of-office" : 1799
-    "region-emea" : 1661
-    "activity-onsite" : 1658
-    "activity-security-questionnaire" : 1654
-    "activity-question" : 1184
-    "corporate-se-apac" : 937
-    "activity-demo" : 774
-    "pooled" : 562
-    "Foreign Language :earth_asia: (Japanese)" : 479
-    "GHAS" : 450
-    "corporate-se-amer" : 414
-    "region-east" : 346
-    "Industry: Financial Services (FSI)" : 277
-    "project" : 271
-    "Industry: Technology" : 268
-    "other" : 4912
+title Language Usage
+    ${Object.entries(languageUsage).map(([language, count]) => `"${language}" : ${count}`).join('\n')}
 \`\`\``
     )
     .write();
