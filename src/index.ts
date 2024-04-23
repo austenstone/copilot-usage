@@ -32,6 +32,7 @@ const run = async (): Promise<void> => {
   const input = getInputs();
   const octokit = getOctokit(input.token);
 
+
   let req;
   if (input.enterprise) {
     info(`Fetching Copilot usage for enterprise ${input.enterprise}`);
@@ -51,6 +52,7 @@ const run = async (): Promise<void> => {
     });
   }
   
+  req = octokit.paginate(req);
   const data: CopilotUsageResponse = (await req).data;
 
   console.log(data);
