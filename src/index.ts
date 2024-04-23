@@ -143,12 +143,24 @@ title Language Usage
 \`\`\`\n`;
 
   const xyChartAcceptanceRate = `\n\`\`\`mermaid
+---
+config:
+    themeVariables:
+        xyChart:
+            backgroundColor: "transparent"
+---
 xychart-beta
-  title "Sales Revenue"
-  x-axis [jan, feb, mar, apr, may, jun, jul, aug, sep, oct, nov, dec]
+  title "Accepts & Acceptance Rate"
+  x-axis [${
+    data.map((item) => `"${item.day}"`).join(', ')
+  }]
   y-axis "Revenue (in $)" 4000 --> 11000
-  bar [5000, 6000, 7500, 8200, 9500, 10500, 11000, 10200, 9200, 8500, 7000, 6000]
-  line [5000, 6000, 7500, 8200, 9500, 10500, 11000, 10200, 9200, 8500, 7000, 6000]
+  bar [${
+    data.map((item) => item.total_acceptances_count).join(', ')
+  }]
+  line [${
+    data.map((item) => (item.total_acceptances_count / item.total_suggestions_count) * 100).join(', ')
+  }]
 \`\`\`\n`;
 
   await summary
