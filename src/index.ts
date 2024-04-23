@@ -113,7 +113,7 @@ const createJobSummary = async (data: CopilotUsageResponse) => {
         acc[breakdownItem.language].active_users += breakdownItem.active_users;
       } else {
         acc[breakdownItem.language] = {
-          language: breakdownItem.language,
+          language: breakdownItem.language.replace(/-/g, '&#8209;'),
           editor: breakdownItem.editor,
           suggestions_count: breakdownItem.suggestions_count,
           acceptances_count: breakdownItem.acceptances_count,
@@ -133,8 +133,11 @@ const createJobSummary = async (data: CopilotUsageResponse) => {
   await summary
     .addHeading('Copilot Usage Results')
     .addRaw(getXyChartAcceptanceRate(data))
+    .addRaw(getXyChartDailyActiveUsers(data))
+    .addHeading('Language Usage')
     .addRaw(getPieChartLanguageUsage(sortedLanguageUsage))
     .addTable(getTableLanguageData(sortedLanguageUsage))
+    .addHeading('Daily Usage')
     .addTable(getTableData(data))
     .write();
 }
@@ -217,6 +220,7 @@ config:
         height: 500
         xAxis:
             showTick: false
+            labelPadding: 20
     themeVariables:
         xyChart:
             backgroundColor: "transparent"
@@ -229,6 +233,31 @@ xychart-beta
   bar [${data.map((item) => item.total_acceptances_count).join(', ')
     }]
   line [${data.map((item) => (item.total_acceptances_count / item.total_suggestions_count) * maxAcceptances).join(', ')
+    }]
+\`\`\`\n`;
+}
+
+const getXyChartDailyActiveUsers = (data: CopilotUsageResponse) => {
+  const maxActiveUsers = Math.max(...data.map((item) => item.total_active_users)) + 10;
+  return `\n\`\`\`mermaid
+---
+config:
+    xyChart:
+        width: ${data.length * 50}
+        height: 500
+        xAxis:
+            showTick: false
+            labelPadding: 20
+    themeVariables:
+        xyChart:
+            backgroundColor: "transparent"
+---
+xychart-beta
+  title "Daily Active Users"
+  x-axis [${data.map((item) => `"${item.day.replace(/-/g, '/').substring(5)}"`).join(', ')
+    }]
+  y-axis "Active Users" 0 --> ${maxActiveUsers}
+  line [${data.map((item) => item.total_active_users).join(', ')
     }]
 \`\`\`\n`;
 }
