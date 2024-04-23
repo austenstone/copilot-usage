@@ -75,7 +75,7 @@ const createJobSummary = async (data: CopilotUsageResponse) => {
   
   data.forEach(item => {
     tableData.push([
-      {data: item.day, header: false},
+      {data: item.day.replace(/-/g, '&#8209;'), header: false},
       {data: item.total_suggestions_count.toString(), header: false},
       {data: item.total_acceptances_count.toString(), header: false},
       {data: item.total_lines_suggested.toString(), header: false},
@@ -89,7 +89,6 @@ const createJobSummary = async (data: CopilotUsageResponse) => {
   
   await summary
     .addHeading('Copilot Usage Results')
-    .addCodeBlock(JSON.stringify(data, null, 2), "json")
     .addTable(tableData)
     .addLink('View more details!', 'https://github.com')
     .write();
