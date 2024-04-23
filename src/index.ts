@@ -1,4 +1,4 @@
-import { getBooleanInput, getInput, info } from "@actions/core";
+import { getBooleanInput, getInput, info, summary } from "@actions/core";
 import { getOctokit } from "@actions/github";
 import { CopilotUsageResponse } from './types'
 
@@ -54,6 +54,45 @@ const run = async (): Promise<void> => {
   const data: CopilotUsageResponse = (await req).data;
 
   console.log(data);
+
+  createJobSummary(data);
 };
+
+const createJobSummary = async (data: CopilotUsageResponse) => {
+  let tableData = [
+    [
+      {data: 'Day', header: true},
+      {data: 'Total Suggestions', header: true},
+      {data: 'Total Acceptances', header: true},
+      {data: 'Total Lines Suggested', header: true},
+      {data: 'Total Lines Accepted', header: true},
+      {data: 'Total Active Users', header: true},
+      {data: 'Total Chat Acceptances', header: true},
+      {data: 'Total Chat Turns', header: true},
+      {data: 'Total Active Chat Users', header: true}
+    ]
+  ];
+  
+  data.forEach(item => {
+    tableData.push([
+      {data: item.day, header: false},
+      {data: item.total_suggestions_count.toString(), header: false},
+      {data: item.total_acceptances_count.toString(), header: false},
+      {data: item.total_lines_suggested.toString(), header: false},
+      {data: item.total_lines_accepted.toString(), header: false},
+      {data: item.total_active_users.toString(), header: false},
+      {data: item.total_chat_acceptances.toString(), header: false},
+      {data: item.total_chat_turns.toString(), header: false},
+      {data: item.total_active_chat_users.toString(), header: false}
+    ]);
+  });
+  
+  await summary
+    .addHeading('Copilot Usage Results')
+    .addCodeBlock(JSON.stringify(data, null, 2), "json")
+    .addTable(tableData)
+    .addLink('View more details!', 'https://github.com')
+    .write();
+}
 
 run();
