@@ -130,9 +130,7 @@ const createJobSummary = async (data: CopilotUsageResponse) => {
       }
     });
     return acc;
-  }, {});
-  
-  console.log(languageUsage);
+  }, {})
 
   await summary
     .addHeading('Copilot Usage Results')
@@ -140,7 +138,7 @@ const createJobSummary = async (data: CopilotUsageResponse) => {
     .addRaw(`\n\`\`\`mermaid
 pie showData
 title Language Usage
-    ${Object.entries(languageUsage).map(([language, count]) => `"${language}" : ${count}`).join('\n')}
+    ${Object.entries(languageUsage).slice(0, 20).map(([language, count]) => `"${language}" : ${count}`).join('\n')}
 \`\`\``
     )
     .write();
