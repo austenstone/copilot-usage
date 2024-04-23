@@ -12,4 +12,4 @@ jobs:
       - uses: ./
         with:
           enterprise: octodemo
-          token: ${{ secrets.TOKEN }}
+          github-token: ${{ secrets.TOKEN }}
