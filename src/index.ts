@@ -43,7 +43,7 @@ const run = async (): Promise<void> => {
   const input = getInputs();
   const octokit = getOctokit(input.token);
 
-  let params;
+  let params = {} as any;
   if (input.days) {
     params.since = new Date(new Date().setDate(new Date().getDate() - input.days)).toISOString().split('T')[0];
   } else if (params.since || params.until) {
