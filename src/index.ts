@@ -132,15 +132,30 @@ const createJobSummary = async (data: CopilotUsageResponse) => {
     return acc;
   }, {})
 
-  await summary
-    .addHeading('Copilot Usage Results')
-    .addTable(tableData)
-    .addRaw(`\n\`\`\`mermaid
+  const pieChartLanguageUsage = `\n\`\`\`mermaid
 pie showData
 title Language Usage
-    ${Object.entries(languageUsage).slice(0, 20).map(([language, count]) => `"${language}" : ${count}`).join('\n')}
-\`\`\``
-    )
+    ${Object.entries(languageUsage as Record<string, number>)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 20)
+      .map(([language, count]) => `"${language}" : ${count}`)
+      .join('\n')}
+\`\`\``;
+
+  const xyChartAcceptanceRate = `\n\`\`\`mermaid
+xychart-beta
+  title "Sales Revenue"
+  x-axis [jan, feb, mar, apr, may, jun, jul, aug, sep, oct, nov, dec]
+  y-axis "Revenue (in $)" 4000 --> 11000
+  bar [5000, 6000, 7500, 8200, 9500, 10500, 11000, 10200, 9200, 8500, 7000, 6000]
+  line [5000, 6000, 7500, 8200, 9500, 10500, 11000, 10200, 9200, 8500, 7000, 6000]
+\`\`\``;
+
+  await summary
+    .addHeading('Copilot Usage Results')
+    .addRaw(pieChartLanguageUsage)
+    .addRaw(xyChartAcceptanceRate)
+    .addTable(tableData)
     .write();
 }
 
