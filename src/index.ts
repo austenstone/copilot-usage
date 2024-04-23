@@ -219,7 +219,6 @@ config:
         width: ${data.length * 50}
         height: 500
         xAxis:
-            showTick: false
             labelPadding: 20
     themeVariables:
         xyChart:
@@ -246,7 +245,6 @@ config:
         width: ${data.length * 50}
         height: 500
         xAxis:
-            showTick: false
             labelPadding: 20
     themeVariables:
         xyChart:
