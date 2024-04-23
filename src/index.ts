@@ -156,7 +156,7 @@ config:
 xychart-beta
   title "Accepts & Acceptance Rate"
   x-axis [${
-    data.map((item) => `"${item.day.split('-').slice(1, 2).join('/')}"`).join(', ')
+    data.map((item) => `"${item.day.replace(/-/g, '/').substring(5)}"`).join(', ')
   }]
   y-axis "Acceptances" 0 --> ${maxAcceptances}
   bar [${
@@ -169,8 +169,8 @@ xychart-beta
 
   await summary
     .addHeading('Copilot Usage Results')
-    .addRaw(pieChartLanguageUsage)
     .addRaw(xyChartAcceptanceRate)
+    .addRaw(pieChartLanguageUsage)
     .addTable(tableData)
     .write();
 }
