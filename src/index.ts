@@ -53,7 +53,8 @@ const run = async (): Promise<void> => {
   }
   
   req = octokit.paginate(req);
-  const data: CopilotUsageResponse = (await req).data;
+  console.log('req', req)
+  const data: CopilotUsageResponse = await req;
 
   console.log(data);
 
