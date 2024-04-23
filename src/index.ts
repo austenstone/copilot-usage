@@ -142,6 +142,7 @@ title Language Usage
       .join('\n')}
 \`\`\`\n`;
 
+  const maxAcceptances = Math.max(...data.map((item) => item.total_acceptances_count)) + 10;
   const xyChartAcceptanceRate = `\n\`\`\`mermaid
 ---
 config:
@@ -154,12 +155,12 @@ xychart-beta
   x-axis [${
     data.map((item) => `"${item.day}"`).join(', ')
   }]
-  y-axis "Acceptances" 0 --> ${Math.max(...data.map((item) => item.total_acceptances_count)) + 10}
+  y-axis "Acceptances" 0 --> ${maxAcceptances}
   bar [${
     data.map((item) => item.total_acceptances_count).join(', ')
   }]
   line [${
-    data.map((item) => (item.total_acceptances_count / item.total_suggestions_count) * 100).join(', ')
+    data.map((item) => (item.total_acceptances_count / item.total_suggestions_count) * maxAcceptances).join(', ')
   }]
 \`\`\`\n`;
 
