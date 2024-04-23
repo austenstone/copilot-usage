@@ -146,6 +146,9 @@ title Language Usage
   const xyChartAcceptanceRate = `\n\`\`\`mermaid
 ---
 config:
+    xyChart:
+        xAxis:
+            labelPadding: 20
     themeVariables:
         xyChart:
             backgroundColor: "transparent"
@@ -153,7 +156,7 @@ config:
 xychart-beta
   title "Accepts & Acceptance Rate"
   x-axis [${
-    data.map((item, i) => i % 7 ? `"${item.day}"` : `""`).join(', ')
+    data.map((item) => `"${item.day}"`).join(', ')
   }]
   y-axis "Acceptances" 0 --> ${maxAcceptances}
   bar [${
