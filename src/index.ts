@@ -147,10 +147,8 @@ title Language Usage
 ---
 config:
     xyChart:
-        width: 900
+        width: ${data.length * 50}
         height: 500
-        xAxis:
-            showLabel: false
     themeVariables:
         xyChart:
             backgroundColor: "transparent"
@@ -158,7 +156,7 @@ config:
 xychart-beta
   title "Accepts & Acceptance Rate"
   x-axis [${
-    data.map((item) => `"${item.day}"`).join(', ')
+    data.map((item) => `"${item.day.split('-').slice(1, 2).join('/')}"`).join(', ')
   }]
   y-axis "Acceptances" 0 --> ${maxAcceptances}
   bar [${
