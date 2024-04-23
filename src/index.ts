@@ -137,10 +137,10 @@ const createJobSummary = async (data: CopilotUsageResponse) => {
 
   await summary
     .addHeading(`Copilot Usage Results for ${data[0].day} to ${data[data.length - 1].day}`)
-    .addHeading(`Suggestions: ${totalSuggestionsCount}`)
-    .addHeading(`Acceptances: ${totalAcceptanceCount}`)
+    .addHeading(`Suggestions: ${totalSuggestionsCount.toLocaleString()}`)
+    .addHeading(`Acceptances: ${totalAcceptanceCount.toLocaleString()}`)
     .addHeading(`Acceptance Rate: ${totalAcceptanceRate}%`)
-    .addHeading(`Lines of Code Accepted: ${totalLinesOfCodeAccepted}`)
+    .addHeading(`Lines of Code Accepted: ${totalLinesOfCodeAccepted.toLocaleString()}`)
     .addRaw(getXyChartAcceptanceRate(data))
     .addRaw(getXyChartDailyActiveUsers(data))
     .addHeading('Language Usage')
