@@ -124,7 +124,7 @@ const createJobSummary = async (data: CopilotUsageResponse) => {
   await summary
     .addHeading('Copilot Usage Results')
     .addTable(tableData)
-    .addRaw(`\`\`\`mermaid
+    .addRaw(`\n\`\`\`mermaid
 pie showData
 title Label Usage
     "activity-call" : 8147
