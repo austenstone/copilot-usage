@@ -1,7 +1,7 @@
 {
-  "name": "action-typescript",
+  "name": "copilot-usage",
   "version": "1.0.0",
-  "description": "GitHub Actions TypeScript template",
+  "description": "A GitHub Action to get copilot usage",
   "private": true,
   "scripts": {
     "build": "webpack",

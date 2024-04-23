@@ -1,9 +1,9 @@
-# Action
+# Copilot Usage Action
 
-This repository serves as a [template](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template) for TypeScript [Actions](https://docs.github.com/en/actions).
+Get Copilot usage data as a job summary.
 
 ## Usage
-Create a workflow (eg: `.github/workflows/seat-count.yml`). See [Creating a Workflow file](https://help.github.com/en/articles/configuring-a-workflow#creating-a-workflow-file).
+Create a workflow (eg: `.github/workflows/copilot-usage.yml`). See [Creating a Workflow file](https://help.github.com/en/articles/configuring-a-workflow#creating-a-workflow-file).
 
 
 ### PAT(Personal Access Token)
@@ -27,22 +27,36 @@ jobs:
     name: Run Action
     runs-on: ubuntu-latest
     steps:
-      - uses: austenstone/action-typescript@main
+      - uses: austenstone/copilot-usage@main
+        with:
+          enterprise: github
+          job-summary: true
+          csv: true
+          github-token: ${{ secrets.TOKEN }}
 ```
 
 ## ➡️ Inputs
 Various inputs are defined in [`action.yml`](action.yml):
 
 | Name | Description | Default |
-| --- | - | - |
-| github&#x2011;token | Token to use to authorize. | ${{&nbsp;github.token&nbsp;}} |
+| --- | --- | --- |
+| github-token | The GitHub token used to create an authenticated client | ${{ github.token }} |
+| enterprise | The GitHub enterprise slug | |
+| organization | The organization slug | ${{ github.repository_owner }} |
+| team | The team slug | |
+| days | The number of days to show usage metrics for | |
+| since | Show usage metrics since this date. This is a timestamp in ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ). Maximum value is 28 days ago | |
+| until | Show usage metrics until this date. This is a timestamp in ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ). Maximum value is 28 days ago | |
+| job-summary | Whether to generate a report | true |
+| csv | Whether to generate a CSV as a workflow artifact | false |
 
-<!-- 
+
+
 ## ⬅️ Outputs
 | Name | Description |
 | --- | - |
-| output | The output. |
--->
+| result | The copilot usage as a JSON string |
+
 
 ## Further help
 To get more help on the Actions see [documentation](https://docs.github.com/en/actions).

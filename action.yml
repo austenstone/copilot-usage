@@ -1,8 +1,8 @@
-name: TypeScript Action
+name: Copilot Usage Action
 author: Austen Stone
-description: A TypeScript Action
+description: Get reports on GitHub Copilot Usage
 branding:
-  icon: "plus"
+  icon: "bar-chart-2"
   color: "blue"
 
 inputs:
