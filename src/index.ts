@@ -142,6 +142,7 @@ title Language Usage
       .join('\n')}
 \`\`\`\n`;
 
+  const lastWeek = data.slice(-7);
   const xyChartAcceptanceRate = `\n\`\`\`mermaid
 ---
 config:
@@ -152,14 +153,14 @@ config:
 xychart-beta
   title "Accepts & Acceptance Rate"
   x-axis [${
-    data.map((item) => `"${item.day}"`).join(', ')
+    lastWeek.map((item) => `"${item.day}"`).join(', ')
   }]
-  y-axis "Revenue (in $)" 4000 --> 11000
+  y-axis "Acceptances" 0 --> ${Math.max(...lastWeek.map((item) => item.total_acceptances_count)) + 10}
   bar [${
-    data.map((item) => item.total_acceptances_count).join(', ')
+    lastWeek.map((item) => item.total_acceptances_count).join(', ')
   }]
   line [${
-    data.map((item) => (item.total_acceptances_count / item.total_suggestions_count) * 100).join(', ')
+    lastWeek.map((item) => (item.total_acceptances_count / item.total_suggestions_count) * 100).join(', ')
   }]
 \`\`\`\n`;
 
