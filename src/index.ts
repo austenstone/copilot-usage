@@ -33,27 +33,27 @@ const run = async (): Promise<void> => {
   const octokit = getOctokit(input.token);
 
 
-  let req;
+  let req: Promise<any>;
   if (input.enterprise) {
     info(`Fetching Copilot usage for enterprise ${input.enterprise}`);
-    req = octokit.request("GET /enterprises/{enterprise}/copilot/usage", {
+    req = octokit.paginate("GET /enterprises/{enterprise}/copilot/usage", {
       enterprise: input.enterprise,
     });
   } else if (input.organization) {
     info(`Fetching Copilot usage for organization ${input.organization}`);
-    req = octokit.request("GET /orgs/{org}/copilot/usage", {
+    req = octokit.paginate("GET /orgs/{org}/copilot/usage", {
       org: input.organization,
     });
   } else if (input.team) {
     info(`Fetching Copilot usage for team ${input.team}`);
-    req = octokit.request("GET /orgs/{org}/team/{team_slug}/copilot/usage", {
+    req = octokit.paginate("GET /orgs/{org}/team/{team_slug}/copilot/usage", {
       org: input.organization,
       team_id: input.team,
     });
+  } else {
+    throw new Error("organization, enterprise or team is required");
   }
   
-  req = octokit.paginate(req);
-  console.log('req', req)
   const data: CopilotUsageResponse = await req;
 
   console.log(data);
