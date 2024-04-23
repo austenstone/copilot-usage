@@ -140,7 +140,7 @@ title Language Usage
       .slice(0, 20)
       .map(([language, count]) => `"${language}" : ${count}`)
       .join('\n')}
-\`\`\``;
+\`\`\`\n`;
 
   const xyChartAcceptanceRate = `\n\`\`\`mermaid
 xychart-beta
@@ -149,7 +149,7 @@ xychart-beta
   y-axis "Revenue (in $)" 4000 --> 11000
   bar [5000, 6000, 7500, 8200, 9500, 10500, 11000, 10200, 9200, 8500, 7000, 6000]
   line [5000, 6000, 7500, 8200, 9500, 10500, 11000, 10200, 9200, 8500, 7000, 6000]
-\`\`\``;
+\`\`\`\n`;
 
   await summary
     .addHeading('Copilot Usage Results')
