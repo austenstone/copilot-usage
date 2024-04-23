@@ -154,7 +154,7 @@ title Label Usage
 
 const createCSV = (data: CopilotUsageResponse): string => {
   let csv = 'Day,Total Suggestions,Total Acceptances,Total Lines Suggested,Total Lines Accepted,Total Active Users,Total Chat Acceptances,Total Chat Turns,Total Active Chat Users\n';
-  Object.entries(data).forEach(([key, value]) => {
+  Object.entries(data).forEach(([_, value]) => {
     csv += `${value.day},${value.total_suggestions_count},${value.total_acceptances_count},${value.total_lines_suggested},${value.total_lines_accepted},${value.total_active_users},${value.total_chat_acceptances},${value.total_chat_turns},${value.total_active_chat_users}\n`;
   });
   return csv;
