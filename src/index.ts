@@ -51,7 +51,7 @@ const run = async (): Promise<void> => {
     });
   }
   
-  const data: CopilotUsageResponse = await req;
+  const data: CopilotUsageResponse = (await req).data;
 
   console.log(data);
 };
