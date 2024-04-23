@@ -92,7 +92,50 @@ const run = async (): Promise<void> => {
   setOutput('result', JSON.stringify(data));
 };
 
+interface LanguageUsageBreakdown {
+  [key: string]: {
+    suggestions_count: number;
+    acceptances_count: number;
+    lines_suggested: number;
+    lines_accepted: number;
+    active_users: number;
+  };
+};
+
 const createJobSummary = async (data: CopilotUsageResponse) => {
+  const languageUsage: LanguageUsageBreakdown = data.reduce((acc, item) => {
+    item.breakdown.forEach((breakdownItem) => {
+      if (acc[breakdownItem.language]) {
+        acc[breakdownItem.language].suggestions_count += breakdownItem.suggestions_count;
+        acc[breakdownItem.language].acceptances_count += breakdownItem.acceptances_count;
+        acc[breakdownItem.language].lines_suggested += breakdownItem.lines_suggested;
+        acc[breakdownItem.language].lines_accepted += breakdownItem.lines_accepted;
+        acc[breakdownItem.language].active_users += breakdownItem.active_users;
+      } else {
+        acc[breakdownItem.language] = {
+          language: breakdownItem.language,
+          editor: breakdownItem.editor,
+          suggestions_count: breakdownItem.suggestions_count,
+          acceptances_count: breakdownItem.acceptances_count,
+          lines_suggested: breakdownItem.lines_suggested,
+          lines_accepted: breakdownItem.lines_accepted,
+          active_users: breakdownItem.active_users,
+        };
+      }
+    });
+    return acc;
+  }, {});
+
+  await summary
+    .addHeading('Copilot Usage Results')
+    .addRaw(getXyChartAcceptanceRate(data))
+    .addRaw(getPieChartLanguageUsage(languageUsage))
+    .addTable(getTableLanguageData(languageUsage))
+    .addTable(getTableData(data))
+    .write();
+}
+
+const getTableData = (data: CopilotUsageResponse) => {
   let tableData = [
     [
       { data: 'Day', header: true },
@@ -106,7 +149,6 @@ const createJobSummary = async (data: CopilotUsageResponse) => {
       { data: 'Total Active Chat Users', header: true }
     ]
   ];
-
   data.forEach(item => {
     tableData.push([
       { data: item.day.replace(/-/g, '&#8209;'), header: false },
@@ -120,59 +162,71 @@ const createJobSummary = async (data: CopilotUsageResponse) => {
       { data: item.total_active_chat_users.toString(), header: false }
     ]);
   });
+  return tableData;
+}
 
-  const languageUsage = data.reduce((acc, item) => {
-    item.breakdown.forEach((breakdownItem) => {
-      if (acc[breakdownItem.language]) {
-        acc[breakdownItem.language] += breakdownItem.suggestions_count;
-      } else {
-        acc[breakdownItem.language] = breakdownItem.suggestions_count;
-      }
-    });
-    return acc;
-  }, {})
+const getTableLanguageData = (languageUsage: LanguageUsageBreakdown) => {
+  let tableData = [
+    [
+      { data: 'Language', header: true },
+      { data: 'Suggestions', header: true },
+      { data: 'Acceptances', header: true },
+      { data: 'Acceptance Rate', header: true },
+      { data: 'Lines Suggested', header: true },
+      { data: 'Lines Accepted', header: true },
+      { data: 'Active Users', header: true }
+    ]
+  ];
+  Object.entries(languageUsage).forEach(([language, data]) => {
+    tableData.push([
+      { data: language, header: false },
+      { data: data.suggestions_count.toString(), header: false },
+      { data: data.acceptances_count.toString(), header: false },
+      { data: ((data.acceptances_count / data.suggestions_count) * 100).toFixed(2) + '%', header: false },
+      { data: data.lines_suggested.toString(), header: false },
+      { data: data.lines_accepted.toString(), header: false },
+      { data: data.active_users.toString(), header: false }
+    ]);
+  });
+  return tableData;
+}
 
-  const pieChartLanguageUsage = `\n\`\`\`mermaid
+const getPieChartLanguageUsage = (languageUsage: LanguageUsageBreakdown) => {
+  return `\n\`\`\`mermaid
 pie showData
 title Language Usage
-    ${Object.entries(languageUsage as Record<string, number>)
-      .sort((a, b) => b[1] - a[1])
+    ${Object.entries(languageUsage)
+      .sort((a, b) => b[1].suggestions_count - a[1].suggestions_count)
       .slice(0, 20)
-      .map(([language, count]) => `"${language}" : ${count}`)
+      .map(([language, obj]) => `"${language}" : ${obj.suggestions_count}`)
       .join('\n')}
 \`\`\`\n`;
+}
 
+const getXyChartAcceptanceRate = (data: CopilotUsageResponse) => {
   const maxAcceptances = Math.max(...data.map((item) => item.total_acceptances_count)) + 10;
-  const xyChartAcceptanceRate = `\n\`\`\`mermaid
+  return `\n\`\`\`mermaid
 ---
 config:
     xyChart:
         width: ${data.length * 50}
         height: 500
+        xAxis:
+            showTick: false
     themeVariables:
         xyChart:
             backgroundColor: "transparent"
 ---
 xychart-beta
   title "Accepts & Acceptance Rate"
-  x-axis [${
-    data.map((item) => `"${item.day.replace(/-/g, '/').substring(5)}"`).join(', ')
-  }]
+  x-axis [${data.map((item) => `"${item.day.replace(/-/g, '/').substring(5)}"`).join(', ')
+    }]
   y-axis "Acceptances" 0 --> ${maxAcceptances}
-  bar [${
-    data.map((item) => item.total_acceptances_count).join(', ')
-  }]
-  line [${
-    data.map((item) => (item.total_acceptances_count / item.total_suggestions_count) * maxAcceptances).join(', ')
-  }]
+  bar [${data.map((item) => item.total_acceptances_count).join(', ')
+    }]
+  line [${data.map((item) => (item.total_acceptances_count / item.total_suggestions_count) * maxAcceptances).join(', ')
+    }]
 \`\`\`\n`;
-
-  await summary
-    .addHeading('Copilot Usage Results')
-    .addRaw(xyChartAcceptanceRate)
-    .addRaw(pieChartLanguageUsage)
-    .addTable(tableData)
-    .write();
 }
 
 const createCSV = (data: CopilotUsageResponse): string => {
