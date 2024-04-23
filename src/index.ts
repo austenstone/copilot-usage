@@ -147,8 +147,10 @@ title Language Usage
 ---
 config:
     xyChart:
+        width: 900
+        height: 500
         xAxis:
-            labelPadding: 100
+            showLabel: false
     themeVariables:
         xyChart:
             backgroundColor: "transparent"
