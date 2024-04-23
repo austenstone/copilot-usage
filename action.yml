@@ -15,14 +15,28 @@ inputs:
     required: false
   organization:
     description: The organization slug
+    default: ${{ github.repository_owner }}
     required: false
   team:
     description: The team slug
     required: false
-  report:
+  days:
+    description: The number of days to show usage metrics for.
+    required: false
+  since:
+    description: Show usage metrics since this date. This is a timestamp in ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ). Maximum value is 28 days ago.
+    required: false
+  until:
+    description: Show usage metrics until this date. This is a timestamp in ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ). Maximum value is 28 days ago.
+    required: false
+  job-summary:
     description: Wither to generate a report
     required: false
     default: true
+  csv:
+    description: Wither to generate a CSV as a workflow artifact
+    required: false
+    default: false
 outputs:
   result:
     description: The copilot usage as a JSON string

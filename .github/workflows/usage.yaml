@@ -13,3 +13,5 @@ jobs:
         with:
           enterprise: octodemo
           github-token: ${{ secrets.TOKEN }}
+          report: true
+          csv: true
