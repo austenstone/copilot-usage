@@ -125,12 +125,16 @@ const createJobSummary = async (data: CopilotUsageResponse) => {
     });
     return acc;
   }, {});
+  const sortedLanguageUsage = Object.fromEntries(
+    Object.entries(languageUsage)
+      .sort((a, b) => b[1].acceptances_count - a[1].acceptances_count)
+  );
 
   await summary
     .addHeading('Copilot Usage Results')
     .addRaw(getXyChartAcceptanceRate(data))
-    .addRaw(getPieChartLanguageUsage(languageUsage))
-    .addTable(getTableLanguageData(languageUsage))
+    .addRaw(getPieChartLanguageUsage(sortedLanguageUsage))
+    .addTable(getTableLanguageData(sortedLanguageUsage))
     .addTable(getTableData(data))
     .write();
 }
