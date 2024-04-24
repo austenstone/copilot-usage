@@ -50,6 +50,7 @@ test('test run csv', async () => {
   const csv = readFileSync(fileName).toString();
   expect(csv).toContain('day,total_suggestions_count,total_acceptances_count,total_lines_suggested,total_lines_accepted,total_active_users,total_chat_acceptances,total_chat_turns,total_active_chat_users,breakdown');
   expect(csv.split('\n').length).toEqual(numDays);
+  unlinkSync(fileName);
 });
 
 test('test run job summary', async () => {
