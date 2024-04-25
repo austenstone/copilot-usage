@@ -16,14 +16,15 @@ jobs:
           github-token: ${{ secrets.TOKEN }}
       - uses: austenstone/job-summary-to-pdf@main
         with:
-          pdf-name: ${{ env.pdf-name }}
+          pdf-file-name: ${{ env.pdf-name }}
       - uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.gmail.com
           server_port: 465
           username: ${{ secrets.EMAIL }}
           password: ${{ secrets.PASSWORD }}
+          from: ${{ secrets.EMAIL }}
+          to: ${{ secrets.EMAIL }} # Recipient email
           subject: "Copilot Usage Report"
           body: "Attached is the Copilot Usage Report!"
-          to: ${{ secrets.EMAIL }} # Recipient email
           attachments: ${{ env.pdf-name }}
