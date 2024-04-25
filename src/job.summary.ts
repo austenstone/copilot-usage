@@ -165,15 +165,15 @@ const getTableData = (data: CopilotUsageResponse) => {
     }
     tableData.push([
       { data: dateFormat(item.day), header: false },
-      { data: item.total_suggestions_count?.toString(), header: false },
-      { data: item.total_acceptances_count?.toString(), header: false },
+      { data: item.total_suggestions_count?.toLocaleString(), header: false },
+      { data: item.total_acceptances_count?.toLocaleString(), header: false },
       { data: `${total_acceptance_rate.toFixed(2)}%`, header: false },
-      { data: item.total_lines_suggested?.toString(), header: false },
-      { data: item.total_lines_accepted?.toString(), header: false },
-      { data: item.total_active_users?.toString(), header: false },
-      { data: item.total_chat_acceptances?.toString(), header: false },
-      { data: item.total_chat_turns?.toString(), header: false },
-      { data: item.total_active_chat_users?.toString(), header: false }
+      { data: item.total_lines_suggested?.toLocaleString(), header: false },
+      { data: item.total_lines_accepted?.toLocaleString(), header: false },
+      { data: item.total_active_users?.toLocaleString(), header: false },
+      { data: item.total_chat_acceptances?.toLocaleString(), header: false },
+      { data: item.total_chat_turns?.toLocaleString(), header: false },
+      { data: item.total_active_chat_users?.toLocaleString(), header: false }
     ]);
   });
   return tableData;
@@ -204,12 +204,12 @@ const getTableLanguageData = (languageUsage: CustomUsageBreakdown) => {
   Object.entries(languageUsage).forEach(([language, data]) => {
     tableData.push([
       { data: language, header: false },
-      { data: data.suggestions_count.toString(), header: false },
-      { data: data.acceptances_count.toString(), header: false },
+      { data: data.suggestions_count.toLocaleString(), header: false },
+      { data: data.acceptances_count.toLocaleString(), header: false },
       { data: `${((data.acceptances_count / data.suggestions_count) * 100).toFixed(2)}%`, header: false },
-      { data: data.lines_suggested.toString(), header: false },
-      { data: data.lines_accepted.toString(), header: false },
-      { data: data.active_users.toString(), header: false }
+      { data: data.lines_suggested.toLocaleString(), header: false },
+      { data: data.lines_accepted.toLocaleString(), header: false },
+      { data: data.active_users.toLocaleString(), header: false }
     ]);
   });
   return tableData;
@@ -230,12 +230,12 @@ const getTableEditorData = (editorUsage: CustomUsageBreakdown) => {
   Object.entries(editorUsage).forEach(([editor, data]) => {
     tableData.push([
       { data: editor, header: false },
-      { data: data.suggestions_count.toString(), header: false },
-      { data: data.acceptances_count.toString(), header: false },
+      { data: data.suggestions_count.toLocaleString(), header: false },
+      { data: data.acceptances_count.toLocaleString(), header: false },
       { data: `${((data.acceptances_count / data.suggestions_count) * 100).toFixed(2)}%`, header: false },
-      { data: data.lines_suggested.toString(), header: false },
-      { data: data.lines_accepted.toString(), header: false },
-      { data: data.active_users.toString(), header: false }
+      { data: data.lines_suggested.toLocaleString(), header: false },
+      { data: data.lines_accepted.toLocaleString(), header: false },
+      { data: data.active_users.toLocaleString(), header: false }
     ]);
   });
   return tableData;
