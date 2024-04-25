@@ -182,12 +182,12 @@ export const createJobSummarySeatAssignments = async (data: jobSummarySeatAssign
     tableData.push([
       { data: `<img src="${seat.assignee?.avatar_url}" width="33" />`, header: false },
       { data: String(seat.assignee?.login), header: false },
+      { data: String(seat.assigning_team?.name), header: false },
       { data: seat.last_activity_at ? dateFormat(seat.last_activity_at) : 'No Activity', header: false },
       { data: seat.last_activity_editor ? String(seat.last_activity_editor) : 'Unknown', header: false },
       { data: dateFormat(seat.created_at), header: false },
       { data: dateFormat(seat.updated_at), header: false },
-      { data: dateFormat(seat.pending_cancellation_date), header: false },
-      { data: String(seat.assigning_team?.name), header: false }
+      { data: dateFormat(seat.pending_cancellation_date), header: false }
     ]);
   });
   return summary
