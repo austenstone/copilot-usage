@@ -104,7 +104,7 @@ const run = async (): Promise<void> => {
   info(`Fetched Copilot usage data for ${data.length} days (${data[0].day} to ${data[data.length - 1].day})`);
 
   if (input.jobSummary) {
-    const summary = await createJobSummaryUsage(data);
+    await createJobSummaryUsage(data);
 
     if (input.organization && !input.team) {
       info(`Fetching Copilot details for organization ${input.organization}`);
@@ -125,9 +125,9 @@ const run = async (): Promise<void> => {
     }
     
     if (input.organization) {
-      summary
-        .addLink(`Manage Access for ${input.organization}`, `https://github.com/organizations/${input.organization}/settings/copilot/seat_management`)
-        .write()
+      // summary
+      //   .addLink(`Manage Access for ${input.organization}`, `https://github.com/organizations/${input.organization}/settings/copilot/seat_management`)
+      //   .write()
     }
   }
 
