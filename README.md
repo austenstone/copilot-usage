@@ -47,13 +47,10 @@ Various inputs are defined in [`action.yml`](action.yml):
 | job-summary | Whether to generate a report | true |
 | csv | Whether to generate a CSV as a workflow artifact | false |
 
-
-
 ## ⬅️ Outputs
 | Name | Description |
 | --- | - |
 | result | The copilot usage as a JSON string |
-
 
 ## Further help
 To get more help on the Actions see [documentation](https://docs.github.com/en/actions).
