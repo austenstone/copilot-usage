@@ -16,7 +16,7 @@ jobs:
           github-token: ${{ secrets.TOKEN }}
       - uses: austenstone/job-summary-to-pdf@main
         with:
-          pdf-file-name: ${{ env.pdf-name }}
+          name: ${{ env.pdf-name }}
       - uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.gmail.com
