@@ -1,6 +1,6 @@
 # Copilot Usage Action
 
-Get Copilot usage data as a job summary.
+Get Copilot usage data as a job summary, CSV, and/or JSON.
 
 Powered by the [REST API endpoints for GitHub Copilot usage metrics](https://docs.github.com/en/rest/copilot/copilot-usage).
 

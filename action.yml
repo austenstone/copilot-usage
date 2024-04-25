@@ -34,9 +34,19 @@ inputs:
     required: false
     default: true
   csv:
-    description: Wither to generate a CSV as a workflow artifact
+    description: Wither to generate CSV as a workflow artifact
     required: false
-    default: true
+    default: false
+  csv-options:
+    description: Options for the CSV generation
+    required: false
+  xml:
+    description: Wither to generate XML as a workflow artifact
+    required: false
+    default: false
+  xml-options:
+    description: Options for the XML generation
+    required: false
 outputs:
   result:
     description: The copilot usage as a JSON string

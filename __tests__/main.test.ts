@@ -11,6 +11,7 @@ const input: any = {
   'github-token': process.env.GITHUB_TOKEN,
   'job-summary': 'false',
   'csv': 'false',
+  'xml': 'false',
   'ACTIONS_RUNTIME_TOKEN': 'token',
 }
 
@@ -23,35 +24,21 @@ beforeEach(() => {
   process.env['GITHUB_REPOSITORY'] = `austenstone/${path.basename(process.cwd())}`;
 });
 
-// test('test run with github organization', async () => {
-//   addInput('organization', organization);
-//   await run();
-// });
+test('test run with github organization', async () => {
+  addInput('organization', organization);
+  await run();
+});
 
-// test('test run with github team', async () => {
-//   addInput('organization', organization);
-//   addInput('team', 'corporate-solutions-eng');
-//   await run();
-// });
+test('test run with github team', async () => {
+  addInput('organization', organization);
+  addInput('team', 'corporate-solutions-eng');
+  await run();
+});
 
-// test('test run with github enterprise', async () => {
-//   addInput('enterprise', organization); // same name as organization
-//   await run();
-// });
-
-// test('test run csv', async () => {
-//   const fileName = "copilot-usage.csv";
-//   const numDays = 20;
-//   addInput('organization', organization);
-//   addInput('csv', 'true');
-//   addInput('days', numDays.toString());
-//   await run();
-//   expect(existsSync(fileName)).toBe(true);
-//   const csv = readFileSync(fileName).toString();
-//   expect(csv).toContain('day,total_suggestions_count,total_acceptances_count,total_lines_suggested,total_lines_accepted,total_active_users,total_chat_acceptances,total_chat_turns,total_active_chat_users,breakdown');
-//   expect(csv.split('\n').length).toEqual(numDays);
-//   unlinkSync(fileName);
-// });
+test('test run with github enterprise', async () => {
+  addInput('enterprise', organization); // same name as organization
+  await run();
+});
 
 test('test run job summary', async () => {
   const fileName = 'copilot-usage.md';
@@ -63,4 +50,26 @@ test('test run job summary', async () => {
   expect(existsSync(fileName)).toBe(true);
   expect(readFileSync(fileName).toString()).toContain('Copilot Usage Results');
   unlinkSync(fileName);
+});
+
+test('test run csv', async () => {
+  const fileName = "copilot-usage.csv";
+  const numDays = 20;
+  addInput('organization', organization);
+  addInput('csv', 'true');
+  addInput('days', numDays.toString());
+  await run();
+  expect(existsSync(fileName)).toBe(true);
+  const csv = readFileSync(fileName).toString();
+  expect(csv).toContain('day,total_suggestions_count,total_acceptances_count,total_lines_suggested,total_lines_accepted,total_active_users,total_chat_acceptances,total_chat_turns,total_active_chat_users,breakdown');
+  expect(csv.split('\n').length).toEqual(numDays);
+  unlinkSync(fileName);
+});
+
+test('test run with xml', async () => {
+  addInput('organization', organization);
+  addInput('xml', 'true');
+  await run();
+  expect(existsSync('copilot-usage.xml')).toBe(true);
+  unlinkSync('copilot-usage.xml');
 });

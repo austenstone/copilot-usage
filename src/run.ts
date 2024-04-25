@@ -7,6 +7,7 @@ import { createJobSummary } from "./job.summary";
 import { createCSV } from "./csv";
 import { Json2CsvOptions } from "json-2-csv";
 import { debug } from "console";
+import { createXML } from "./xml";
 
 interface Input {
   token: string;
@@ -19,6 +20,13 @@ interface Input {
   jobSummary: boolean;
   csv: boolean;
   csvOptions: Json2CsvOptions;
+  xml: boolean;
+  xmlOptions: {
+    header: boolean;
+    indent: string;
+    attributeExplicitTrue: boolean;
+    selfCloseTags: boolean;
+  };
 }
 
 const getInputs = (): Input => {
@@ -33,6 +41,11 @@ const getInputs = (): Input => {
   result.until = getInput("until");
   result.csv = getBooleanInput("csv");
   result.csvOptions = getInput("csv-options") ? JSON.parse(getInput("csv-options")) : undefined;
+  result.xml = getBooleanInput("xml");
+  result.xmlOptions = getInput("xml-options") ? JSON.parse(getInput("xml-options")) : {
+    header: true,
+    indent: "  ",
+  };
   if (!result.token || result.token === "") {
     throw new Error("github-token is required");
   }
@@ -95,11 +108,20 @@ const run = async (): Promise<void> => {
   }
 
   if (input.csv) {
-    const csv = await createCSV(data);
+    const csv = await createCSV(data, input.csvOptions);
     writeFileSync('copilot-usage.csv', csv);
     const artifact = new DefaultArtifactClient()
     if (process.env.GITHUB_ACTIONS) {
       await artifact.uploadArtifact('copilot-usage', ['copilot-usage.csv'], '.');
+    }
+  }
+
+  if (input.xml) {
+    const xml = await createXML(data, input.xmlOptions);
+    writeFileSync('copilot-usage.xml', xml);
+    const artifact = new DefaultArtifactClient()
+    if (process.env.GITHUB_ACTIONS) {
+      await artifact.uploadArtifact('copilot-usage', ['copilot-usage.xml'], '.');
     }
   }
 
