@@ -39,10 +39,10 @@ export const createJobSummary = async (data: CopilotUsageResponse) => {
       .sort((a, b) => b[1].acceptances_count - a[1].acceptances_count)
   );
   
-  const totalAcceptanceCount = data.reduce((acc, item) => acc + item.total_acceptances_count, 0);
-  const totalSuggestionsCount = data.reduce((acc, item) => acc + item.total_suggestions_count, 0);
+  const totalAcceptanceCount = data.reduce((acc, item) => acc + item?.total_acceptances_count || 0, 0);
+  const totalSuggestionsCount = data.reduce((acc, item) => acc + item?.total_suggestions_count || 0, 0);
   const totalAcceptanceRate = (totalAcceptanceCount / totalSuggestionsCount * 100).toFixed(2);
-  const totalLinesOfCodeAccepted = data.reduce((acc, item) => acc + item.total_lines_accepted, 0);
+  const totalLinesOfCodeAccepted = data.reduce((acc, item) => acc + item?.total_lines_accepted || 0, 0);
 
   await summary
     .addHeading(`Copilot Usage Results for ${data[0].day} to ${data[data.length - 1].day}`)
