@@ -7,8 +7,6 @@ on:
 jobs:
   run:
     runs-on: ubuntu-latest
-    env:
-      pdf-name: "report.pdf"
     steps:
       - uses: austenstone/copilot-usage@main
         with:
@@ -17,7 +15,7 @@ jobs:
       - uses: austenstone/job-summary-to-pdf@main
         id: pdf
         with:
-          name: ${{ env.pdf-name }}
+          name: copilot-usage
       - uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.gmail.com
