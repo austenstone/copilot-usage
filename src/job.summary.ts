@@ -79,21 +79,27 @@ const getTableData = (data: CopilotUsageResponse) => {
   const tableData = [
     [
       { data: 'Day', header: true },
-      { data: 'Total Suggestions', header: true },
-      { data: 'Total Acceptances', header: true },
-      { data: 'Total Lines Suggested', header: true },
-      { data: 'Total Lines Accepted', header: true },
-      { data: 'Total Active Users', header: true },
-      { data: 'Total Chat Acceptances', header: true },
-      { data: 'Total Chat Turns', header: true },
-      { data: 'Total Active Chat Users', header: true }
+      { data: 'Suggestions', header: true },
+      { data: 'Acceptances', header: true },
+      { data: 'Acceptance Rate', header: true },
+      { data: 'Lines Suggested', header: true },
+      { data: 'Lines Accepted', header: true },
+      { data: 'Active Users', header: true },
+      { data: 'Chat Acceptances', header: true },
+      { data: 'Chat Turns', header: true },
+      { data: 'Active Chat Users', header: true }
     ]
   ];
   data.forEach(item => {
+    let total_acceptance_rate = 0;
+    if (item.total_acceptances_count && item.total_suggestions_count) {
+      total_acceptance_rate = item.total_acceptances_count / item.total_suggestions_count * 100;
+    }
     tableData.push([
       { data: item.day.replace(/-/g, '&#8209;'), header: false },
       { data: item.total_suggestions_count?.toString(), header: false },
       { data: item.total_acceptances_count?.toString(), header: false },
+      { data: total_acceptance_rate.toString(), header: false },
       { data: item.total_lines_suggested?.toString(), header: false },
       { data: item.total_lines_accepted?.toString(), header: false },
       { data: item.total_active_users?.toString(), header: false },
