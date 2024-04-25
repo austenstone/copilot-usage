@@ -58,7 +58,7 @@ jobs:
     steps:
       - uses: austenstone/copilot-usage@main
         with:
-          organization: 'octodemo'
+          organization: ${{ github.repository_owner }}
           github-token: ${{ secrets.TOKEN }}
       - uses: austenstone/job-summary-to-pdf@main
         id: pdf
