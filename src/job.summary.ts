@@ -149,7 +149,7 @@ const getXyChartAcceptanceRate = (data: CopilotUsageResponse) => {
 ---
 config:
     xyChart:
-        width: ${data.length * 50}
+        width: ${data.length * 45}
         height: 500
         xAxis:
             labelPadding: 20
@@ -175,7 +175,7 @@ const getXyChartDailyActiveUsers = (data: CopilotUsageResponse) => {
 ---
 config:
     xyChart:
-        width: ${data.length * 50}
+        width: ${data.length * 45}
         height: 500
         xAxis:
             labelPadding: 20
