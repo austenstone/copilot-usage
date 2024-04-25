@@ -19,3 +19,4 @@ jobs:
       - run: npm test
         env:
           GITHUB_TOKEN: ${{ secrets.TOKEN }}
+          GITHUB_ORG: ${{ secrets.ORG }}

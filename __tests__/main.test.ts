@@ -15,7 +15,7 @@ const input: any = {
   'ACTIONS_RUNTIME_TOKEN': 'token',
 }
 
-const organization = 'octodemo';
+const organization = process.env.GITHUB_ORG;
 beforeEach(() => {
   Object.keys(process.env).forEach(key => {
     if (key.startsWith('INPUT_')) delete process.env[key];
