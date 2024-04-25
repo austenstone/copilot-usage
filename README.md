@@ -104,6 +104,8 @@ Various inputs are defined in [`action.yml`](action.yml):
 | Name | Description |
 | --- | - |
 | result | The copilot usage as a JSON string |
+| since | The date since which the usage metrics are shown |
+| until | The date until which the usage metrics are shown |
 
 ## Example Job Summary
 

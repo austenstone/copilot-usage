@@ -104,7 +104,10 @@ const run = async (): Promise<void> => {
   info(`Fetched Copilot usage data for ${data.length} days (${data[0].day} to ${data[data.length - 1].day})`);
 
   if (input.jobSummary) {
-    await createJobSummary(data);
+    const summary = await createJobSummary(data);
+    if (input.organization) {
+      summary.addLink(`Manage Access for ${input.organization}`, `https://github.com/organizations/${input.organization}/settings/copilot/seat_management`);
+    }
   }
 
   if (input.csv) {
@@ -126,6 +129,9 @@ const run = async (): Promise<void> => {
   }
 
   setOutput("result", JSON.stringify(data));
+  setOutput("since", data[0].day);
+  setOutput("until", data[data.length - 1].day);
+  setOutput("days", data.length.toString());
 };
 
 export default run;

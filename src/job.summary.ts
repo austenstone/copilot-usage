@@ -60,6 +60,10 @@ export const createJobSummary = async (data: CopilotUsageResponse) => {
     });
     return acc;
   }, {});
+  const sortedEditorUsage = Object.fromEntries(
+    Object.entries(editorUsage)
+      .sort((a, b) => b[1].acceptances_count - a[1].acceptances_count)
+  );
 
   const dayOfWeekUsage: CustomUsageBreakdown = data.reduce((acc, item) => {
     const dayOfWeek = new Date(item.day).toLocaleString('en-US', { weekday: 'long' });
@@ -109,22 +113,34 @@ export const createJobSummary = async (data: CopilotUsageResponse) => {
     }
     return acc;
   }, 0);
+  
+  const mostActiveDay = data.reduce((acc, item) => {
+    return (acc.total_active_users > item.total_active_users) ? acc : item;
+  });
+  const highestAcceptanceRateDay = data.reduce((acc, item) => {
+    return ((acc.total_acceptances_count / acc.total_suggestions_count) > (item.total_acceptances_count / item.total_suggestions_count)) ? acc : item;
+  });
 
-  await summary
+  return summary
     .addHeading(`Copilot Usage Results for ${data[0].day} to ${data[data.length - 1].day}`)
-    .addHeading(`Suggestions: ${totalSuggestionsCount.toLocaleString()}`)
-    .addHeading(`Acceptances: ${totalAcceptanceCount.toLocaleString()}`)
-    .addHeading(`Acceptance Rate: ${totalAcceptanceRate}%`)
-    .addHeading(`Lines of Code Accepted: ${totalLinesOfCodeAccepted.toLocaleString()}`)
+    .addHeading(`Suggestions: ${totalSuggestionsCount.toLocaleString()}`, 2)
+    .addHeading(`Acceptances: ${totalAcceptanceCount.toLocaleString()}`, 2)
+    .addHeading(`Acceptance Rate: ${totalAcceptanceRate}%`, 2)
+    .addHeading(`Lines of Code Accepted: ${totalLinesOfCodeAccepted.toLocaleString()}`, 2)
+    .addSeparator()
     .addRaw(getXyChartAcceptanceRate(data))
     .addRaw(getXyChartDailyActiveUsers(data))
     .addHeading('Language Usage')
     .addRaw(getPieChartLanguageUsage(sortedLanguageUsage))
     .addTable(getTableLanguageData(sortedLanguageUsage))
+    .addSeparator()
     .addHeading('Editor Usage')
-    .addRaw(getPieChartEditorUsage(editorUsage))
-    .addTable(getTableEditorData(editorUsage))
+    .addRaw(getPieChartEditorUsage(sortedEditorUsage))
+    .addTable(getTableEditorData(sortedEditorUsage))
+    .addSeparator()
     .addHeading('Daily Usage')
+    .addHeading(`The most active day was ${mostActiveDay.day} with ${mostActiveDay.total_active_users} active users.`, 2)
+    .addHeading(`The day with the highest acceptance rate was ${highestAcceptanceRateDay.day} with an acceptance rate of ${(highestAcceptanceRateDay.total_acceptances_count / highestAcceptanceRateDay.total_suggestions_count * 100).toFixed(2)}%.`, 2)
     .addRaw(getPieChartWeekdayUsage(sortedDayOfWeekUsage))
     .addTable(getTableData(data))
     .write();
@@ -169,7 +185,7 @@ const getTableData = (data: CopilotUsageResponse) => {
 const getPieChartWeekdayUsage = (data: CustomUsageBreakdown) => {
   return `\n\`\`\`mermaid
 pie showData
-title Day of Week Usage
+title Suggestions by Day of the Week
 ${Object.entries(data)
       .sort((a, b) => b[1].suggestions_count - a[1].suggestions_count)
       .slice(0, 20)

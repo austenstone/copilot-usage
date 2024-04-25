@@ -50,7 +50,10 @@ inputs:
 outputs:
   result:
     description: The copilot usage as a JSON string
-
+  since:
+    description: The date since which the usage metrics are shown
+  until:
+    description: The date until which the usage metrics are shown
 runs:
   using: "node20"
   main: "dist/index.js"
