@@ -1,4 +1,4 @@
-import { getBooleanInput, getInput, info, setOutput, summary } from "@actions/core";
+import { getBooleanInput, getInput, info, setOutput } from "@actions/core";
 import { getOctokit } from "@actions/github";
 import { CopilotUsageResponse } from "./types";
 import { DefaultArtifactClient } from "@actions/artifact";

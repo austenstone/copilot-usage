@@ -6,6 +6,7 @@ on:
 
 jobs:
   run:
+    name: Copilot Usage
     runs-on: ubuntu-latest
     steps:
       - uses: austenstone/copilot-usage@main
