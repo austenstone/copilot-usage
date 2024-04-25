@@ -76,6 +76,8 @@ jobs:
 > [!TIP]
 > Try using other messaging systems such as [slack](https://github.com/marketplace/actions/slack-send), [teams](https://github.com/marketplace/actions/microsoft-teams-notification), [discord](https://github.com/marketplace/actions/discord-message-notify), etc.
 
+![image](https://github.com/austenstone/copilot-usage/assets/22425467/94c9c913-3924-495a-9d7f-6b79185de219)
+
 ## ➡️ Inputs
 Various inputs are defined in [`action.yml`](action.yml):
 
