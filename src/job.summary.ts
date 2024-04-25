@@ -184,8 +184,6 @@ const getPieChartWeekdayUsage = (data: CustomUsageBreakdown) => {
 pie showData
 title Suggestions by Day of the Week
 ${Object.entries(data)
-      .sort((a, b) => b[1].suggestions_count - a[1].suggestions_count)
-      .slice(0, 20)
       .map(([language, obj]) => `"${language}" : ${obj.suggestions_count}`)
       .join('\n')}
 \`\`\`\n`;
@@ -261,7 +259,6 @@ pie showData
 title Editor Usage
     ${Object.entries(editorUsage)
       .sort((a, b) => b[1].suggestions_count - a[1].suggestions_count)
-      .slice(0, 20)
       .map(([editor, obj]) => `"${editor}" : ${obj.suggestions_count}`)
       .join('\n')}
 \`\`\`\n`;
