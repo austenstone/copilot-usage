@@ -105,7 +105,7 @@ const run = async (): Promise<void> => {
 
   if (input.jobSummary) {
     await createJobSummary(data);
-    console.log(jobSummaryFilePath());
+    console.log(`filePath: `, await jobSummaryFilePath());
   }
 
   if (input.csv) {
