@@ -13,4 +13,4 @@ jobs:
         with:
           organization: 'octodemo'
           github-token: ${{ secrets.TOKEN }}
-      - run: cat $GITHUB_STEP_SUMMARY
+      - run: env
