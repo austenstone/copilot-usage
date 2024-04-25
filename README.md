@@ -16,8 +16,10 @@ Add this PAT as a secret so we can use it as input `github-token`, see [Creating
 
 #### Example
 ```yml
-name: TypeScript Action Workflow
+name: Copilot Usage
 on:
+  schedule:
+    - cron: '0 0 * * *'
   workflow_dispatch:
 
 jobs:
@@ -27,9 +29,6 @@ jobs:
     steps:
       - uses: austenstone/copilot-usage@main
         with:
-          enterprise: github
-          job-summary: true
-          csv: true
           github-token: ${{ secrets.TOKEN }}
 ```
 

@@ -36,7 +36,7 @@ inputs:
   csv:
     description: Wither to generate a CSV as a workflow artifact
     required: false
-    default: false
+    default: true
 outputs:
   result:
     description: The copilot usage as a JSON string
