@@ -14,11 +14,11 @@ You will need to [create a PAT(Personal Access Token)](https://github.com/settin
 
 Add this PAT as a secret so we can use it as input `github-token`, see [Creating encrypted secrets for a repository](https://docs.github.com/en/enterprise-cloud@latest/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository). 
 
+#### Example
 
 > [!IMPORTANT]  
 > You need to set the secret `TOKEN` in your repository settings.
 
-#### Example
 ```yml
 name: Copilot Usage
 on:
