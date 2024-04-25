@@ -1,9 +1,9 @@
-import { getBooleanInput, getInput, info, setOutput } from "@actions/core";
+import { getBooleanInput, getInput, info, setOutput, summary } from "@actions/core";
 import { getOctokit } from "@actions/github";
 import { CopilotUsageResponse } from "./types";
 import { DefaultArtifactClient } from "@actions/artifact";
 import { writeFileSync } from "fs";
-import { createJobSummarySeatAssignments, createJobSummarySeatInfo, createJobSummaryUsage } from "./job.summary";
+import { createJobSummaryFooter, createJobSummarySeatAssignments, createJobSummarySeatInfo, createJobSummaryUsage } from "./job.summary";
 import { createCSV } from "./csv";
 import { Json2CsvOptions } from "json-2-csv";
 import { debug } from "console";
@@ -112,7 +112,7 @@ const run = async (): Promise<void> => {
         org: input.organization
       });
       if (orgSeatInfo?.data) {
-        createJobSummarySeatInfo(orgSeatInfo.data);
+        await createJobSummarySeatInfo(orgSeatInfo.data);
       }
 
       info(`Fetching Copilot seat assignments for organization ${input.organization}`);
@@ -120,14 +120,12 @@ const run = async (): Promise<void> => {
         org: input.organization
       });
       if (orgSeatAssignments?.data.seats) {
-        createJobSummarySeatAssignments(orgSeatAssignments.data);
+        await createJobSummarySeatAssignments(orgSeatAssignments.data);
       }
     }
     
     if (input.organization) {
-      // summary
-      //   .addLink(`Manage Access for ${input.organization}`, `https://github.com/organizations/${input.organization}/settings/copilot/seat_management`)
-      //   .write()
+      await createJobSummaryFooter(input.organization);
     }
   }
 

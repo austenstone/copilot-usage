@@ -196,6 +196,12 @@ export const createJobSummarySeatAssignments = async (data: jobSummarySeatAssign
     .write()
 }
 
+export const createJobSummaryFooter = async (organization: string) => {
+  summary
+  .addLink(`Manage Access for ${organization}`, `https://github.com/organizations/${organization}/settings/copilot/seat_management`)
+  .write();
+}
+
 const getTableData = (data: CopilotUsageResponse) => {
   const tableData = [
     [
