@@ -32,6 +32,39 @@ jobs:
           github-token: ${{ secrets.TOKEN }}
 ```
 
+#### Example sending email PDF report
+```yml
+name: Email Copilot Report
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: austenstone/copilot-usage@main
+        with:
+          organization: 'octodemo'
+          github-token: ${{ secrets.TOKEN }}
+      - uses: austenstone/job-summary-to-pdf@main
+        id: pdf
+        with:
+          name: copilot-usage
+      - uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: ${{ secrets.EMAIL }}
+          password: ${{ secrets.PASSWORD }}
+          from: ${{ secrets.EMAIL }}
+          to: ${{ secrets.EMAIL }} # Recipient email
+          subject: "Copilot Usage Report"
+          body: "Attached is the Copilot Usage Report!"
+          attachments: ${{ steps.pdf.outputs.pdf-file }}
+```
+
 ## ➡️ Inputs
 Various inputs are defined in [`action.yml`](action.yml):
 
