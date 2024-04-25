@@ -318,6 +318,6 @@ xychart-beta
 }
 
 
-const dateFormat = (date: string, format: Intl.DateTimeFormatOptions = { month: '2-digit', day: '2-digit', year: 'numeric' }): string => {
+const dateFormat = (date: string, format: Intl.DateTimeFormatOptions = { month: 'numeric', day: 'numeric', year: 'numeric' }): string => {
   return new Date(date).toLocaleDateString('en-US', format);
 }
