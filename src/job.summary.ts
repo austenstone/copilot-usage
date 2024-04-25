@@ -75,16 +75,17 @@ const getTableData = (data: CopilotUsageResponse) => {
     ]
   ];
   data.forEach(item => {
+    console.log(item);
     tableData.push([
       { data: item.day.replace(/-/g, '&#8209;'), header: false },
-      { data: item.total_suggestions_count.toString(), header: false },
-      { data: item.total_acceptances_count.toString(), header: false },
-      { data: item.total_lines_suggested.toString(), header: false },
-      { data: item.total_lines_accepted.toString(), header: false },
-      { data: item.total_active_users.toString(), header: false },
-      { data: item.total_chat_acceptances.toString(), header: false },
-      { data: item.total_chat_turns.toString(), header: false },
-      { data: item.total_active_chat_users.toString(), header: false }
+      { data: item.total_suggestions_count?.toString(), header: false },
+      { data: item.total_acceptances_count?.toString(), header: false },
+      { data: item.total_lines_suggested?.toString(), header: false },
+      { data: item.total_lines_accepted?.toString(), header: false },
+      { data: item.total_active_users?.toString(), header: false },
+      { data: item.total_chat_acceptances?.toString(), header: false },
+      { data: item.total_chat_turns?.toString(), header: false },
+      { data: item.total_active_chat_users?.toString(), header: false }
     ]);
   });
   return tableData;

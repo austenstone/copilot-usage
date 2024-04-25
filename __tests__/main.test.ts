@@ -1,5 +1,4 @@
 import * as process from 'process';
-// import * as cp from 'child_process';
 import * as path from 'path';
 import { test } from '@jest/globals';
 
@@ -15,6 +14,7 @@ const input: any = {
   'ACTIONS_RUNTIME_TOKEN': 'token',
 }
 
+const organization = 'octodemo';
 beforeEach(() => {
   Object.keys(process.env).forEach(key => {
     if (key.startsWith('INPUT_')) delete process.env[key];
@@ -24,25 +24,25 @@ beforeEach(() => {
 });
 
 test('test run with github organization', async () => {
-  addInput('organization', 'octodemo');
+  addInput('organization', organization);
   await run();
 });
 
 test('test run with github team', async () => {
-  addInput('organization', 'octodemo');
-  addInput('team', '12312');
+  addInput('organization', organization);
+  addInput('team', 'corporate-solutions-eng');
   await run();
 });
 
 test('test run with github enterprise', async () => {
-  addInput('enterprise', 'octodemo');
+  addInput('enterprise', organization); // same name as organization
   await run();
 });
 
 test('test run csv', async () => {
   const fileName = 'copilot-usage.csv';
   const numDays = 20;
-  addInput('organization', 'octodemo');
+  addInput('organization', organization);
   addInput('csv', 'true');
   addInput('days', numDays.toString());
   await run();
@@ -57,7 +57,7 @@ test('test run job summary', async () => {
   const fileName = 'copilot-usage.md';
   writeFileSync(fileName, '');
   process.env['GITHUB_STEP_SUMMARY'] = fileName;
-  addInput('organization', 'octodemo');
+  addInput('organization', organization);
   addInput('job-summary', 'true');
   await run();
   expect(existsSync(fileName)).toBe(true);
