@@ -123,10 +123,10 @@ export const createJobSummary = async (data: CopilotUsageResponse) => {
 
   return summary
     .addHeading(`Copilot Usage Results for ${data[0].day} to ${data[data.length - 1].day}`)
-    .addHeading(`Suggestions: ${totalSuggestionsCount.toLocaleString()}`, 2)
-    .addHeading(`Acceptances: ${totalAcceptanceCount.toLocaleString()}`, 2)
-    .addHeading(`Acceptance Rate: ${totalAcceptanceRate}%`, 2)
-    .addHeading(`Lines of Code Accepted: ${totalLinesOfCodeAccepted.toLocaleString()}`, 2)
+    .addHeading(`Suggestions: ${totalSuggestionsCount.toLocaleString()}`, 3)
+    .addHeading(`Acceptances: ${totalAcceptanceCount.toLocaleString()}`, 3)
+    .addHeading(`Acceptance Rate: ${totalAcceptanceRate}%`, 3)
+    .addHeading(`Lines of Code Accepted: ${totalLinesOfCodeAccepted.toLocaleString()}`, 3)
     .addSeparator()
     .addRaw(getXyChartAcceptanceRate(data))
     .addRaw(getXyChartDailyActiveUsers(data))
@@ -139,8 +139,8 @@ export const createJobSummary = async (data: CopilotUsageResponse) => {
     .addTable(getTableEditorData(sortedEditorUsage))
     .addSeparator()
     .addHeading('Daily Usage')
-    .addHeading(`The most active day was ${mostActiveDay.day} with ${mostActiveDay.total_active_users} active users.`, 2)
-    .addHeading(`The day with the highest acceptance rate was ${highestAcceptanceRateDay.day} with an acceptance rate of ${(highestAcceptanceRateDay.total_acceptances_count / highestAcceptanceRateDay.total_suggestions_count * 100).toFixed(2)}%.`, 2)
+    .addHeading(`The most active day was ${mostActiveDay.day} with ${mostActiveDay.total_active_users} active users.`, 3)
+    .addHeading(`The day with the highest acceptance rate was ${highestAcceptanceRateDay.day} with an acceptance rate of ${(highestAcceptanceRateDay.total_acceptances_count / highestAcceptanceRateDay.total_suggestions_count * 100).toFixed(2)}%.`, 3)
     .addRaw(getPieChartWeekdayUsage(sortedDayOfWeekUsage))
     .addTable(getTableData(data))
     .write();
