@@ -15,6 +15,7 @@ jobs:
           organization: 'octodemo'
           github-token: ${{ secrets.TOKEN }}
       - uses: austenstone/job-summary-to-pdf@main
+        id: pdf
         with:
           name: ${{ env.pdf-name }}
       - uses: dawidd6/action-send-mail@v3
@@ -27,4 +28,4 @@ jobs:
           to: ${{ secrets.EMAIL }} # Recipient email
           subject: "Copilot Usage Report"
           body: "Attached is the Copilot Usage Report!"
-          attachments: ${{ env.pdf-name }}
+          attachments: ${{ steps.pdf.outputs.pdf-file }}
