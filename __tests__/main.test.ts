@@ -48,7 +48,7 @@ test('test run job summary', async () => {
   addInput('job-summary', 'true');
   await run();
   expect(existsSync(fileName)).toBe(true);
-  expect(readFileSync(fileName).toString()).toContain('Copilot Usage Results');
+  expect(readFileSync(fileName).toString()).toContain('Copilot Usage');
   unlinkSync(fileName);
 });
 

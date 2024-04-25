@@ -122,7 +122,7 @@ export const createJobSummary = async (data: CopilotUsageResponse) => {
   });
 
   return summary
-    .addHeading(`Copilot Usage Results for ${dateFormat(data[0].day)} - ${dateFormat(data[data.length - 1].day)}`)
+    .addHeading(`Copilot Usage<br>(${dateFormat(data[0].day)} - ${dateFormat(data[data.length - 1].day)})`)
     .addHeading(`Suggestions: ${totalSuggestionsCount.toLocaleString()}`, 3)
     .addHeading(`Acceptances: ${totalAcceptanceCount.toLocaleString()}`, 3)
     .addHeading(`Acceptance Rate: ${totalAcceptanceRate}%`, 3)
