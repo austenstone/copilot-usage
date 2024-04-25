@@ -106,7 +106,9 @@ const run = async (): Promise<void> => {
   if (input.jobSummary) {
     const summary = await createJobSummary(data);
     if (input.organization) {
-      summary.addLink(`Manage Access for ${input.organization}`, `https://github.com/organizations/${input.organization}/settings/copilot/seat_management`);
+      summary
+        .addLink(`Manage Access for ${input.organization}`, `https://github.com/organizations/${input.organization}/settings/copilot/seat_management`)
+        .write()
     }
   }
 

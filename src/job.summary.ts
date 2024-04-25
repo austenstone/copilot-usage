@@ -113,7 +113,7 @@ export const createJobSummary = async (data: CopilotUsageResponse) => {
     }
     return acc;
   }, 0);
-  
+
   const mostActiveDay = data.reduce((acc, item) => {
     return (acc.total_active_users > item.total_active_users) ? acc : item;
   });
