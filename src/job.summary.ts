@@ -1,17 +1,7 @@
 import { summary } from "@actions/core";
 import { CopilotUsageResponse } from "./types";
 
-interface LanguageUsageBreakdown {
-  [key: string]: {
-    suggestions_count: number;
-    acceptances_count: number;
-    lines_suggested: number;
-    lines_accepted: number;
-    active_users: number;
-  };
-}
-
-interface EditorUsageBreakdown {
+interface CustomUsageBreakdown {
   [key: string]: {
     suggestions_count: number;
     acceptances_count: number;
@@ -22,7 +12,7 @@ interface EditorUsageBreakdown {
 }
 
 export const createJobSummary = async (data: CopilotUsageResponse) => {
-  const languageUsage: LanguageUsageBreakdown = data.reduce((acc, item) => {
+  const languageUsage: CustomUsageBreakdown = data.reduce((acc, item) => {
     item.breakdown.forEach((breakdownItem) => {
       if (acc[breakdownItem.language]) {
         acc[breakdownItem.language].suggestions_count += breakdownItem.suggestions_count;
@@ -49,7 +39,7 @@ export const createJobSummary = async (data: CopilotUsageResponse) => {
       .sort((a, b) => b[1].acceptances_count - a[1].acceptances_count)
   );
 
-  const editorUsage: EditorUsageBreakdown = data.reduce((acc, item) => {
+  const editorUsage: CustomUsageBreakdown = data.reduce((acc, item) => {
     item.breakdown.forEach((breakdownItem) => {
       if (acc[breakdownItem.editor]) {
         acc[breakdownItem.editor].suggestions_count += breakdownItem.suggestions_count;
@@ -68,6 +58,27 @@ export const createJobSummary = async (data: CopilotUsageResponse) => {
         };
       }
     });
+    return acc;
+  }, {});
+
+  const dayOfWeekUsage: CustomUsageBreakdown = data.reduce((acc, item) => {
+    const dayOfWeek = new Date(item.day).getDay();
+    if (acc[dayOfWeek]) {
+      acc[dayOfWeek].suggestions_count += item.total_suggestions_count;
+      acc[dayOfWeek].acceptances_count += item.total_acceptances_count;
+      acc[dayOfWeek].lines_suggested += item.total_lines_suggested;
+      acc[dayOfWeek].lines_accepted += item.total_lines_accepted;
+      acc[dayOfWeek].active_users += item.total_active_users;
+    } else {
+      acc[dayOfWeek] = {
+        dayOfWeek,
+        suggestions_count: item.total_suggestions_count,
+        acceptances_count: item.total_acceptances_count,
+        lines_suggested: item.total_lines_suggested,
+        lines_accepted: item.total_lines_accepted,
+        active_users: item.total_active_users,
+      };
+    }
     return acc;
   }, {});
   
@@ -106,6 +117,7 @@ export const createJobSummary = async (data: CopilotUsageResponse) => {
     .addRaw(getPieChartEditorUsage(editorUsage))
     .addTable(getTableEditorData(editorUsage))
     .addHeading('Daily Usage')
+    .addRaw(getPieChartWeekdayUsage(dayOfWeekUsage))
     .addTable(getTableData(data))
     .write();
 }
@@ -146,7 +158,19 @@ const getTableData = (data: CopilotUsageResponse) => {
   return tableData;
 }
 
-const getTableLanguageData = (languageUsage: LanguageUsageBreakdown) => {
+const getPieChartWeekdayUsage = (data: CustomUsageBreakdown) => {
+  return `\n\`\`\`mermaid
+pie showData
+title Day of Week Usage
+${Object.entries(data)
+  .sort((a, b) => b[1].suggestions_count - a[1].suggestions_count)
+  .slice(0, 20)
+  .map(([language, obj]) => `"${language}" : ${obj.suggestions_count}`)
+  .join('\n')}
+\`\`\`\n`;
+}
+
+const getTableLanguageData = (languageUsage: CustomUsageBreakdown) => {
   const tableData = [
     [
       { data: 'Language', header: true },
@@ -172,7 +196,7 @@ const getTableLanguageData = (languageUsage: LanguageUsageBreakdown) => {
   return tableData;
 }
 
-const getTableEditorData = (editorUsage: EditorUsageBreakdown) => {
+const getTableEditorData = (editorUsage: CustomUsageBreakdown) => {
   const tableData = [
     [
       { data: 'Editor', header: true },
@@ -198,7 +222,7 @@ const getTableEditorData = (editorUsage: EditorUsageBreakdown) => {
   return tableData;
 }
 
-const getPieChartLanguageUsage = (languageUsage: LanguageUsageBreakdown) => {
+const getPieChartLanguageUsage = (languageUsage: CustomUsageBreakdown) => {
   return `\n\`\`\`mermaid
 pie showData
 title Language Usage
@@ -210,7 +234,7 @@ title Language Usage
 \`\`\`\n`;
 }
 
-const getPieChartEditorUsage = (editorUsage: EditorUsageBreakdown) => {
+const getPieChartEditorUsage = (editorUsage: CustomUsageBreakdown) => {
   return `\n\`\`\`mermaid
 pie showData
 title Editor Usage
