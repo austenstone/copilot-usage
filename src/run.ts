@@ -3,7 +3,7 @@ import { getOctokit } from "@actions/github";
 import { CopilotUsageResponse } from "./types";
 import { DefaultArtifactClient } from "@actions/artifact";
 import { writeFileSync } from "fs";
-import { createJobSummary, jobSummaryFilePath } from "./job.summary";
+import { createJobSummary } from "./job.summary";
 import { createCSV } from "./csv";
 import { Json2CsvOptions } from "json-2-csv";
 import { debug } from "console";
@@ -105,7 +105,6 @@ const run = async (): Promise<void> => {
 
   if (input.jobSummary) {
     await createJobSummary(data);
-    console.log(`filePath: `, await jobSummaryFilePath());
   }
 
   if (input.csv) {

@@ -13,4 +13,4 @@ jobs:
         with:
           organization: 'octodemo'
           github-token: ${{ secrets.TOKEN }}
-      - run: env
+      - uses: austenstone/job-summary-to-pdf@main
