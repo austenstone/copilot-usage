@@ -9,7 +9,7 @@ interface LanguageUsageBreakdown {
     lines_accepted: number;
     active_users: number;
   };
-};
+}
 
 export const createJobSummary = async (data: CopilotUsageResponse) => {
   const languageUsage: LanguageUsageBreakdown = data.reduce((acc, item) => {
@@ -61,7 +61,7 @@ export const createJobSummary = async (data: CopilotUsageResponse) => {
 }
 
 const getTableData = (data: CopilotUsageResponse) => {
-  let tableData = [
+  const tableData = [
     [
       { data: 'Day', header: true },
       { data: 'Total Suggestions', header: true },
@@ -92,7 +92,7 @@ const getTableData = (data: CopilotUsageResponse) => {
 }
 
 const getTableLanguageData = (languageUsage: LanguageUsageBreakdown) => {
-  let tableData = [
+  const tableData = [
     [
       { data: 'Language', header: true },
       { data: 'Suggestions', header: true },

@@ -40,7 +40,7 @@ test('test run with github enterprise', async () => {
 });
 
 test('test run csv', async () => {
-  const fileName = 'copilot-usage.csv';
+  const fileName = "copilot-usage.csv";
   const numDays = 20;
   addInput('organization', organization);
   addInput('csv', 'true');

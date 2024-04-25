@@ -102,7 +102,7 @@ const run = async (): Promise<void> => {
     }
   }
 
-  setOutput('result', JSON.stringify(data));
+  setOutput("result", JSON.stringify(data));
 };
 
 export default run;
