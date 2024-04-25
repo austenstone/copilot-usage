@@ -99,7 +99,7 @@ const getTableData = (data: CopilotUsageResponse) => {
       { data: item.day.replace(/-/g, '&#8209;'), header: false },
       { data: item.total_suggestions_count?.toString(), header: false },
       { data: item.total_acceptances_count?.toString(), header: false },
-      { data: total_acceptance_rate.toString(), header: false },
+      { data: `${total_acceptance_rate.toFixed(2)}%`, header: false },
       { data: item.total_lines_suggested?.toString(), header: false },
       { data: item.total_lines_accepted?.toString(), header: false },
       { data: item.total_active_users?.toString(), header: false },
@@ -128,7 +128,7 @@ const getTableLanguageData = (languageUsage: LanguageUsageBreakdown) => {
       { data: language, header: false },
       { data: data.suggestions_count.toString(), header: false },
       { data: data.acceptances_count.toString(), header: false },
-      { data: ((data.acceptances_count / data.suggestions_count) * 100).toFixed(2) + '%', header: false },
+      { data: `${((data.acceptances_count / data.suggestions_count) * 100).toFixed(2)}%`, header: false },
       { data: data.lines_suggested.toString(), header: false },
       { data: data.lines_accepted.toString(), header: false },
       { data: data.active_users.toString(), header: false }
