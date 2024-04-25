@@ -11,6 +11,16 @@ interface LanguageUsageBreakdown {
   };
 }
 
+interface EditorUsageBreakdown {
+  [key: string]: {
+    suggestions_count: number;
+    acceptances_count: number;
+    lines_suggested: number;
+    lines_accepted: number;
+    active_users: number;
+  };
+}
+
 export const createJobSummary = async (data: CopilotUsageResponse) => {
   const languageUsage: LanguageUsageBreakdown = data.reduce((acc, item) => {
     item.breakdown.forEach((breakdownItem) => {
@@ -38,6 +48,28 @@ export const createJobSummary = async (data: CopilotUsageResponse) => {
     Object.entries(languageUsage)
       .sort((a, b) => b[1].acceptances_count - a[1].acceptances_count)
   );
+
+  const editorUsage: EditorUsageBreakdown = data.reduce((acc, item) => {
+    item.breakdown.forEach((breakdownItem) => {
+      if (acc[breakdownItem.editor]) {
+        acc[breakdownItem.editor].suggestions_count += breakdownItem.suggestions_count;
+        acc[breakdownItem.editor].acceptances_count += breakdownItem.acceptances_count;
+        acc[breakdownItem.editor].lines_suggested += breakdownItem.lines_suggested;
+        acc[breakdownItem.editor].lines_accepted += breakdownItem.lines_accepted;
+        acc[breakdownItem.editor].active_users += breakdownItem.active_users;
+      } else {
+        acc[breakdownItem.editor] = {
+          editor: breakdownItem.editor,
+          suggestions_count: breakdownItem.suggestions_count,
+          acceptances_count: breakdownItem.acceptances_count,
+          lines_suggested: breakdownItem.lines_suggested,
+          lines_accepted: breakdownItem.lines_accepted,
+          active_users: breakdownItem.active_users,
+        };
+      }
+    });
+    return acc;
+  }, {});
   
   const totalAcceptanceCount = data.reduce((acc, item) => {
     if (typeof item?.total_acceptances_count === 'number' && item?.total_acceptances_count > 0) {
@@ -70,6 +102,9 @@ export const createJobSummary = async (data: CopilotUsageResponse) => {
     .addHeading('Language Usage')
     .addRaw(getPieChartLanguageUsage(sortedLanguageUsage))
     .addTable(getTableLanguageData(sortedLanguageUsage))
+    .addHeading('Editor Usage')
+    .addRaw(getPieChartEditorUsage(editorUsage))
+    .addTable(getTableEditorData(editorUsage))
     .addHeading('Daily Usage')
     .addTable(getTableData(data))
     .write();
@@ -137,6 +172,32 @@ const getTableLanguageData = (languageUsage: LanguageUsageBreakdown) => {
   return tableData;
 }
 
+const getTableEditorData = (editorUsage: EditorUsageBreakdown) => {
+  const tableData = [
+    [
+      { data: 'Editor', header: true },
+      { data: 'Suggestions', header: true },
+      { data: 'Acceptances', header: true },
+      { data: 'Acceptance Rate', header: true },
+      { data: 'Lines Suggested', header: true },
+      { data: 'Lines Accepted', header: true },
+      { data: 'Active Users', header: true }
+    ]
+  ];
+  Object.entries(editorUsage).forEach(([editor, data]) => {
+    tableData.push([
+      { data: editor, header: false },
+      { data: data.suggestions_count.toString(), header: false },
+      { data: data.acceptances_count.toString(), header: false },
+      { data: `${((data.acceptances_count / data.suggestions_count) * 100).toFixed(2)}%`, header: false },
+      { data: data.lines_suggested.toString(), header: false },
+      { data: data.lines_accepted.toString(), header: false },
+      { data: data.active_users.toString(), header: false }
+    ]);
+  });
+  return tableData;
+}
+
 const getPieChartLanguageUsage = (languageUsage: LanguageUsageBreakdown) => {
   return `\n\`\`\`mermaid
 pie showData
@@ -145,6 +206,18 @@ title Language Usage
       .sort((a, b) => b[1].suggestions_count - a[1].suggestions_count)
       .slice(0, 20)
       .map(([language, obj]) => `"${language}" : ${obj.suggestions_count}`)
+      .join('\n')}
+\`\`\`\n`;
+}
+
+const getPieChartEditorUsage = (editorUsage: EditorUsageBreakdown) => {
+  return `\n\`\`\`mermaid
+pie showData
+title Editor Usage
+    ${Object.entries(editorUsage)
+      .sort((a, b) => b[1].suggestions_count - a[1].suggestions_count)
+      .slice(0, 20)
+      .map(([editor, obj]) => `"${editor}" : ${obj.suggestions_count}`)
       .join('\n')}
 \`\`\`\n`;
 }
