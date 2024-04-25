@@ -83,6 +83,7 @@ const run = async (): Promise<void> => {
   const data: CopilotUsageResponse = await req as CopilotUsageResponse;
 
   if (!data) return;
+  info(`Fetched Copilot usage data for ${data.length} days (${data[0].day} to ${data[data.length - 1].day})`);
   debug(JSON.stringify(data, null, 2));
 
   if (input.jobSummary) {
