@@ -1,4 +1,4 @@
-import { getBooleanInput, getInput, info, setOutput } from "@actions/core";
+import { debug, getBooleanInput, getInput, info, setOutput } from "@actions/core";
 import { getOctokit } from "@actions/github";
 import { CopilotUsageResponse } from "./types";
 import { DefaultArtifactClient } from "@actions/artifact";
@@ -83,6 +83,7 @@ const run = async (): Promise<void> => {
   const data: CopilotUsageResponse = await req as CopilotUsageResponse;
 
   if (!data) return;
+  debug(JSON.stringify(data, null, 2));
 
   if (input.jobSummary) {
     await createJobSummary(data);

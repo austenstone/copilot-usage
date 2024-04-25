@@ -1,4 +1,4 @@
-import { debug, summary } from "@actions/core";
+import { summary } from "@actions/core";
 import { CopilotUsageResponse } from "./types";
 
 interface LanguageUsageBreakdown {
@@ -44,7 +44,6 @@ export const createJobSummary = async (data: CopilotUsageResponse) => {
   const totalAcceptanceRate = (totalAcceptanceCount / totalSuggestionsCount * 100).toFixed(2);
   const totalLinesOfCodeAccepted = data.reduce((acc, item) => acc + item.total_lines_accepted, 0);
 
-  debug(JSON.stringify(data, null, 2));
   await summary
     .addHeading(`Copilot Usage Results for ${data[0].day} to ${data[data.length - 1].day}`)
     .addHeading(`Suggestions: ${totalSuggestionsCount.toLocaleString()}`)
