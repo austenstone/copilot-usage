@@ -1,0 +1,29 @@
+name: Email Copilot Report
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *'
+
+    jobs:
+      run:
+        runs-on: ubuntu-latest
+        env:
+          pdf-name: "report.pdf"
+        steps:
+          - uses: austenstone/copilot-usage@main
+            with:
+              organization: 'octodemo'
+              github-token: ${{ secrets.TOKEN }}
+          - uses: austenstone/job-summary-to-pdf@main
+            with:
+              pdf-name: ${{ env.pdf-name }}
+          - uses: dawidd6/action-send-mail@v3
+            with:
+              server_address: smtp.gmail.com
+              server_port: 465
+              username: ${{ secrets.EMAIL }}
+              password: ${{ secrets.PASSWORD }}
+              subject: "Copilot Usage Report"
+              body: "Attached is the Copilot Usage Report!"
+              to: ${{ secrets.EMAIL }} # Recipient email
+              attachments: ${{ env.pdf-name }}
