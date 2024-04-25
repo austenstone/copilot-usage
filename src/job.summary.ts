@@ -1,5 +1,6 @@
 import { summary } from "@actions/core";
 import { CopilotUsageResponse } from "./types";
+import { Endpoints } from "@octokit/types";
 
 interface CustomUsageBreakdown {
   [key: string]: {
@@ -11,7 +12,7 @@ interface CustomUsageBreakdown {
   };
 }
 
-export const createJobSummary = async (data: CopilotUsageResponse) => {
+export const createJobSummaryUsage = async (data: CopilotUsageResponse) => {
   const languageUsage: CustomUsageBreakdown = data.reduce((acc, item) => {
     item.breakdown.forEach((breakdownItem) => {
       if (acc[breakdownItem.language]) {
@@ -141,6 +142,58 @@ export const createJobSummary = async (data: CopilotUsageResponse) => {
     .addRaw(getPieChartWeekdayUsage(sortedDayOfWeekUsage))
     .addTable(getTableData(data))
     .write();
+}
+
+type jobSummarySeatInfoResponse = Endpoints["GET /orgs/{org}/copilot/billing"]["response"]["data"];
+export const createJobSummarySeatInfo = async (data: jobSummarySeatInfoResponse) => {
+  return summary
+    .addHeading('Seat Info')
+    .addHeading(`Seat Management Setting: ${data.seat_management_setting}`, 3)
+    .addHeading(`Public Code Suggestions Enabled: ${data.public_code_suggestions}`, 3)
+    .addHeading(`IDE Chat Enabled: ${data.ide_chat}`, 3)
+    .addHeading(`Platform IDE Enabled: ${data.platform_ide}`, 3)
+    .addHeading(`Platform Chat Enabled: ${data.platform_chat}`, 3)
+    .addHeading(`CLI Enabled: ${data.cli}`, 3)
+    .addHeading(`Total Seats: ${data.seat_breakdown.total}`, 3)
+    .addHeading(`Added this cycle: ${data.seat_breakdown.added_this_cycle}`, 3)
+    .addHeading(`Pending invites: ${data.seat_breakdown.pending_invitation}`, 3)
+    .addHeading(`Pending cancellations: ${data.seat_breakdown.pending_cancellation}`, 3)
+    .addHeading(`Active this cycle: ${data.seat_breakdown.active_this_cycle}`, 3)
+    .addHeading(`Inactive this cycle: ${data.seat_breakdown.inactive_this_cycle}`, 3)
+    .write()
+}
+
+type jobSummarySeatAssignmentsResponse = Endpoints["GET /orgs/{org}/copilot/billing/seats"]["response"]["data"];
+export const createJobSummarySeatAssignments = async (data: jobSummarySeatAssignmentsResponse) => {
+  if (!data.seats) return;
+  const tableData = [
+    [
+      { data: 'Avatar', header: true },
+      { data: 'Login', header: true },
+      { data: 'Team', header: true },
+      { data: 'Last Activity', header: true },
+      { data: 'Last Editor Used', header: true },
+      { data: 'Created At', header: true },
+      { data: 'Updated At', header: true },
+      { data: 'Pending Cancellation Date', header: true }
+    ]
+  ];
+  data.seats.forEach(seat => {
+    tableData.push([
+      { data: `<img src="${seat.assignee?.avatar_url}" width="33" />`, header: false },
+      { data: String(seat.assignee?.login), header: false },
+      { data: seat.last_activity_at ? dateFormat(seat.last_activity_at) : 'No Activity', header: false },
+      { data: seat.last_activity_editor ? String(seat.last_activity_editor) : 'Unknown', header: false },
+      { data: dateFormat(seat.created_at), header: false },
+      { data: dateFormat(seat.updated_at), header: false },
+      { data: dateFormat(seat.pending_cancellation_date), header: false },
+      { data: String(seat.assigning_team?.name), header: false }
+    ]);
+  });
+  return summary
+    .addHeading('Seat Assignments')
+    .addTable(tableData)
+    .write()
 }
 
 const getTableData = (data: CopilotUsageResponse) => {
@@ -315,6 +368,7 @@ xychart-beta
 }
 
 
-const dateFormat = (date: string, format: Intl.DateTimeFormatOptions = { month: 'numeric', day: 'numeric', year: 'numeric' }): string => {
+const dateFormat = (date: string | undefined | null, format: Intl.DateTimeFormatOptions = { month: 'numeric', day: 'numeric', year: 'numeric' }): string => {
+  if (!date) return 'undefined';
   return new Date(date).toLocaleDateString('en-US', format);
 }

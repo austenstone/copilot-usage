@@ -3,7 +3,7 @@ import { getOctokit } from "@actions/github";
 import { CopilotUsageResponse } from "./types";
 import { DefaultArtifactClient } from "@actions/artifact";
 import { writeFileSync } from "fs";
-import { createJobSummary } from "./job.summary";
+import { createJobSummarySeatAssignments, createJobSummarySeatInfo, createJobSummaryUsage } from "./job.summary";
 import { createCSV } from "./csv";
 import { Json2CsvOptions } from "json-2-csv";
 import { debug } from "console";
@@ -104,43 +104,23 @@ const run = async (): Promise<void> => {
   info(`Fetched Copilot usage data for ${data.length} days (${data[0].day} to ${data[data.length - 1].day})`);
 
   if (input.jobSummary) {
-    const summary = await createJobSummary(data);
+    const summary = await createJobSummaryUsage(data);
 
     if (input.organization && !input.team) {
       info(`Fetching Copilot details for organization ${input.organization}`);
       const orgSeatInfo = await octokit.rest.copilot.getCopilotOrganizationDetails({
         org: input.organization
       });
-      summary
-        .addHeading('Seat Info')
-        .addHeading(`Total Seats: ${orgSeatInfo.data.seat_breakdown.total}`, 3)
-        .addHeading(`Added this cycle: ${orgSeatInfo.data.seat_breakdown.added_this_cycle}`, 3)
-        .addHeading(`Pending invites: ${orgSeatInfo.data.seat_breakdown.pending_invitation}`, 3)
-        .addHeading(`Pending cancellations: ${orgSeatInfo.data.seat_breakdown.pending_cancellation}`, 3)
-        .addHeading(`Active this cycle: ${orgSeatInfo.data.seat_breakdown.active_this_cycle}`, 3)
-        .addHeading(`Inactive this cycle: ${orgSeatInfo.data.seat_breakdown.inactive_this_cycle}`, 3)
+      if (orgSeatInfo?.data) {
+        createJobSummarySeatInfo(orgSeatInfo.data);
+      }
 
       info(`Fetching Copilot seat assignments for organization ${input.organization}`);
       const orgSeatAssignments = await octokit.rest.copilot.listCopilotSeats({
         org: input.organization
       });
       if (orgSeatAssignments?.data.seats) {
-        const tableData = [
-          [
-            { data: 'Assignee', header: true },
-            { data: 'Last Activity', header: true },
-          ]
-        ];
-        orgSeatAssignments.data.seats.forEach(seat => {
-          tableData.push([
-            { data: String(seat.assignee?.login), header: false },
-            { data: String(seat.last_activity_at), header: false }
-          ]);
-        });
-        summary
-          .addHeading('Seat Assignments')
-          .addTable(tableData)
-          .write()
+        createJobSummarySeatAssignments(orgSeatAssignments.data);
       }
     }
     
