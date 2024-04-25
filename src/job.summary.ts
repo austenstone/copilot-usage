@@ -81,7 +81,15 @@ export const createJobSummary = async (data: CopilotUsageResponse) => {
     }
     return acc;
   }, {});
-  
+
+  const sortedDayOfWeekUsage = Object.fromEntries(
+    Object.entries(dayOfWeekUsage)
+      .sort((a, b) => {
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        return days.indexOf(a[0]) - days.indexOf(b[0]);
+      })
+  );
+
   const totalAcceptanceCount = data.reduce((acc, item) => {
     if (typeof item?.total_acceptances_count === 'number' && item?.total_acceptances_count > 0) {
       return acc + item.total_acceptances_count;
@@ -117,7 +125,7 @@ export const createJobSummary = async (data: CopilotUsageResponse) => {
     .addRaw(getPieChartEditorUsage(editorUsage))
     .addTable(getTableEditorData(editorUsage))
     .addHeading('Daily Usage')
-    .addRaw(getPieChartWeekdayUsage(dayOfWeekUsage))
+    .addRaw(getPieChartWeekdayUsage(sortedDayOfWeekUsage))
     .addTable(getTableData(data))
     .write();
 }
@@ -163,10 +171,10 @@ const getPieChartWeekdayUsage = (data: CustomUsageBreakdown) => {
 pie showData
 title Day of Week Usage
 ${Object.entries(data)
-  .sort((a, b) => b[1].suggestions_count - a[1].suggestions_count)
-  .slice(0, 20)
-  .map(([language, obj]) => `"${language}" : ${obj.suggestions_count}`)
-  .join('\n')}
+      .sort((a, b) => b[1].suggestions_count - a[1].suggestions_count)
+      .slice(0, 20)
+      .map(([language, obj]) => `"${language}" : ${obj.suggestions_count}`)
+      .join('\n')}
 \`\`\`\n`;
 }
 
