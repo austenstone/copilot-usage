@@ -96,6 +96,9 @@ Various inputs are defined in [`action.yml`](action.yml):
 | until | Show usage metrics until this date. This is a timestamp in ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ). Maximum value is 28 days ago | |
 | job-summary | Whether to generate a report | true |
 | csv | Whether to generate a CSV as a workflow artifact | false |
+| csv-options | The options for the CSV report | |
+| xml | Whether to generate an XML as a workflow artifact | false |
+| xml-options | The options for the XML report | |
 
 ## ⬅️ Outputs
 | Name | Description |
