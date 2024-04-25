@@ -14,6 +14,10 @@ You will need to [create a PAT(Personal Access Token)](https://github.com/settin
 
 Add this PAT as a secret so we can use it as input `github-token`, see [Creating encrypted secrets for a repository](https://docs.github.com/en/enterprise-cloud@latest/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository). 
 
+
+> [!IMPORTANT]  
+> You need to set the secret `TOKEN` in your repository settings.
+
 #### Example
 ```yml
 name: Copilot Usage
@@ -34,7 +38,8 @@ jobs:
 
 #### Example sending email PDF report
 
-You must set secrets for `EMAIL` and `PASSWORD` to send the email. You must use a [App Password](https://support.google.com/accounts/answer/185833?visit_id=638496193361004722-1436339969&p=InvalidSecondFactor&rd=1#app-passwords) for Gmail.
+> [!IMPORTANT]  
+> You must set secrets for `EMAIL` and `PASSWORD` to send the email. You must use an [App Password](https://support.google.com/accounts/answer/185833?visit_id=638496193361004722-1436339969&p=InvalidSecondFactor&rd=1#app-passwords) for Gmail.
 
 ```yml
 name: Email Copilot Report
