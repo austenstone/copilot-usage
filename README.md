@@ -33,6 +33,9 @@ jobs:
 ```
 
 #### Example sending email PDF report
+
+You must set secrets for `EMAIL` and `PASSWORD` to send the email. You must use a [App Password](https://support.google.com/accounts/answer/185833?visit_id=638496193361004722-1436339969&p=InvalidSecondFactor&rd=1#app-passwords) for Gmail.
+
 ```yml
 name: Email Copilot Report
 on:
@@ -64,6 +67,9 @@ jobs:
           body: "Attached is the Copilot Usage Report!"
           attachments: ${{ steps.pdf.outputs.pdf-file }}
 ```
+
+> [!TIP]
+> Try using other messaging systems such as [slack](https://github.com/marketplace/actions/slack-send), [teams](https://github.com/marketplace/actions/microsoft-teams-notification), [discord](https://github.com/marketplace/actions/discord-message-notify), etc.
 
 ## ➡️ Inputs
 Various inputs are defined in [`action.yml`](action.yml):
