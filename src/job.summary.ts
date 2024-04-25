@@ -62,7 +62,7 @@ export const createJobSummary = async (data: CopilotUsageResponse) => {
   }, {});
 
   const dayOfWeekUsage: CustomUsageBreakdown = data.reduce((acc, item) => {
-    const dayOfWeek = new Date(item.day).getDay();
+    const dayOfWeek = new Date(item.day).toLocaleString('en-US', { weekday: 'long' });
     if (acc[dayOfWeek]) {
       acc[dayOfWeek].suggestions_count += item.total_suggestions_count;
       acc[dayOfWeek].acceptances_count += item.total_acceptances_count;
