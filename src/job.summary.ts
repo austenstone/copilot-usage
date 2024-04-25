@@ -66,7 +66,7 @@ export const createJobSummary = async (data: CopilotUsageResponse) => {
   );
 
   const dayOfWeekUsage: CustomUsageBreakdown = data.reduce((acc, item) => {
-    const dayOfWeek = new Date(item.day).toLocaleString('en-US', { weekday: 'long' });
+    const dayOfWeek = dateFormat(item.day, { weekday: 'long' });
     if (acc[dayOfWeek]) {
       acc[dayOfWeek].suggestions_count += item.total_suggestions_count;
       acc[dayOfWeek].acceptances_count += item.total_acceptances_count;
@@ -122,7 +122,7 @@ export const createJobSummary = async (data: CopilotUsageResponse) => {
   });
 
   return summary
-    .addHeading(`Copilot Usage Results for ${data[0].day} to ${data[data.length - 1].day}`)
+    .addHeading(`Copilot Usage Results for ${dateFormat(data[0].day)} - ${dateFormat(data[data.length - 1].day)}`)
     .addHeading(`Suggestions: ${totalSuggestionsCount.toLocaleString()}`, 3)
     .addHeading(`Acceptances: ${totalAcceptanceCount.toLocaleString()}`, 3)
     .addHeading(`Acceptance Rate: ${totalAcceptanceRate}%`, 3)
@@ -136,8 +136,8 @@ export const createJobSummary = async (data: CopilotUsageResponse) => {
     .addRaw(getPieChartEditorUsage(sortedEditorUsage))
     .addTable(getTableEditorData(sortedEditorUsage))
     .addHeading('Daily Usage')
-    .addHeading(`The most active day was ${mostActiveDay.day} with ${mostActiveDay.total_active_users} active users.`, 3)
-    .addHeading(`The day with the highest acceptance rate was ${highestAcceptanceRateDay.day} with an acceptance rate of ${(highestAcceptanceRateDay.total_acceptances_count / highestAcceptanceRateDay.total_suggestions_count * 100).toFixed(2)}%.`, 3)
+    .addHeading(`The most active day was ${dateFormat(mostActiveDay.day)} with ${mostActiveDay.total_active_users} active users.`, 3)
+    .addHeading(`The day with the highest acceptance rate was ${dateFormat(highestAcceptanceRateDay.day)} with an acceptance rate of ${(highestAcceptanceRateDay.total_acceptances_count / highestAcceptanceRateDay.total_suggestions_count * 100).toFixed(2)}%.`, 3)
     .addRaw(getPieChartWeekdayUsage(sortedDayOfWeekUsage))
     .addTable(getTableData(data))
     .write();
@@ -164,7 +164,7 @@ const getTableData = (data: CopilotUsageResponse) => {
       total_acceptance_rate = item.total_acceptances_count / item.total_suggestions_count * 100;
     }
     tableData.push([
-      { data: item.day.replace(/-/g, '&#8209;'), header: false },
+      { data: dateFormat(item.day), header: false },
       { data: item.total_suggestions_count?.toString(), header: false },
       { data: item.total_acceptances_count?.toString(), header: false },
       { data: `${total_acceptance_rate.toFixed(2)}%`, header: false },
@@ -283,7 +283,7 @@ config:
 ---
 xychart-beta
   title "Accepts & Acceptance Rate"
-  x-axis [${data.map((item) => `"${item.day.replace(/-/g, '/').substring(5)}"`).join(', ')
+  x-axis [${data.map((item) => `"${dateFormat(item.day, { month: '2-digit', day: '2-digit' })}"`).join(', ')
     }]
   y-axis "Acceptances" 0 --> ${maxAcceptances}
   bar [${data.map((item) => item.total_acceptances_count).join(', ')
@@ -309,10 +309,15 @@ config:
 ---
 xychart-beta
   title "Daily Active Users"
-  x-axis [${data.map((item) => `"${item.day.replace(/-/g, '/').substring(5)}"`).join(', ')
+  x-axis [${data.map((item) => `"${dateFormat(item.day, { month: '2-digit', day: '2-digit' })}"`).join(', ')
     }]
   y-axis "Active Users" 0 --> ${maxActiveUsers}
   line [${data.map((item) => item.total_active_users).join(', ')
     }]
 \`\`\`\n`;
+}
+
+
+const dateFormat = (date: string, format: Intl.DateTimeFormatOptions = { month: '2-digit', day: '2-digit', year: 'numeric' }): string => {
+  return new Date(date).toLocaleDateString('en-US', format);
 }
