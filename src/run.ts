@@ -1,4 +1,4 @@
-import { debug, getBooleanInput, getInput, info, setOutput } from "@actions/core";
+import { getBooleanInput, getInput, info, } from "@actions/core";
 import { getOctokit } from "@actions/github";
 import { CopilotUsageResponse } from "./types";
 import { DefaultArtifactClient } from "@actions/artifact";
@@ -86,7 +86,7 @@ const run = async (): Promise<void> => {
     info("No Copilot usage data found");
     return;
   }
-  debug(JSON.stringify(data, null, 2));
+  // debug(JSON.stringify(data, null, 2));
   info(`Fetched Copilot usage data for ${data.length} days (${data[0].day} to ${data[data.length - 1].day})`);
 
   if (input.jobSummary) {
@@ -102,7 +102,7 @@ const run = async (): Promise<void> => {
     }
   }
 
-  setOutput("result", JSON.stringify(data));
+  // setOutput("result", JSON.stringify(data));
 };
 
 export default run;
