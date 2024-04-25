@@ -3,7 +3,7 @@ import * as path from 'path';
 import { test } from '@jest/globals';
 
 import run from "../src/run";
-import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
 
 const addInput = (key, value) => process.env[`INPUT_${key.replace(/ /g, '-').toUpperCase()}`] = value || ''
 
@@ -62,5 +62,5 @@ test('test run job summary', async () => {
   await run();
   expect(existsSync(fileName)).toBe(true);
   expect(readFileSync(fileName).toString()).toContain('Copilot Usage Results');
-  // unlinkSync(fileName);
+  unlinkSync(fileName);
 });
