@@ -1,5 +1,6 @@
 import { summary } from "@actions/core";
 import { CopilotUsageResponse } from "./types";
+import { access, constants } from "fs/promises";
 
 interface LanguageUsageBreakdown {
   [key: string]: {
@@ -270,4 +271,24 @@ xychart-beta
   line [${data.map((item) => item.total_active_users).join(', ')
     }]
 \`\`\`\n`;
+}
+
+const SUMMARY_ENV_VAR = 'GITHUB_STEP_SUMMARY'
+export const jobSummaryFilePath = async (): Promise<string> => {
+  const pathFromEnv = process.env[SUMMARY_ENV_VAR]
+  if (!pathFromEnv) {
+    throw new Error(
+      `Unable to find environment variable for $${SUMMARY_ENV_VAR}. Check if your runtime environment supports job summaries.`
+    )
+  }
+
+  try {
+    await access(pathFromEnv, constants.R_OK | constants.W_OK)
+  } catch {
+    throw new Error(
+      `Unable to access summary file: '${pathFromEnv}'. Check if the file has correct read/write permissions.`
+    )
+  }
+
+  return pathFromEnv
 }
