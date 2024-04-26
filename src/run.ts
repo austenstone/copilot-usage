@@ -6,6 +6,7 @@ import { createJobSummaryFooter, createJobSummarySeatAssignments, createJobSumma
 import { createCSV } from "./csv";
 import { Json2CsvOptions } from "json-2-csv";
 import { createXML } from "./xml";
+import { RequestError } from "@octokit/request-error";
 
 type CopilotUsageBreakdown = {
   language: string;
@@ -54,6 +55,15 @@ interface Input {
     attributeExplicitTrue: boolean;
     selfCloseTags: boolean;
   };
+}
+
+const handleError = (error: unknown): void => {
+  if (error instanceof RequestError) {
+    info(`Error fetching Copilot usage data: ${error.message}, did you provide the correct 'github-token' for the enterprise, organization, or team?`);
+  } else {
+    info("Error fetching Copilot usage data");
+  }
+  debug(JSON.stringify(error, null, 2));
 }
 
 const getInputs = (): Input => {
@@ -117,7 +127,13 @@ const run = async (): Promise<void> => {
     throw new Error("organization, enterprise or team is required");
   }
 
-  const data: CopilotUsageResponse = await req as CopilotUsageResponse;
+  let data: CopilotUsageResponse;
+  try {
+    data = await req as CopilotUsageResponse;
+  } catch (error) {
+    handleError(error);
+    throw error;
+  }
 
   if (!data || data.length === 0) {
     info("No Copilot usage data found");
@@ -131,17 +147,29 @@ const run = async (): Promise<void> => {
 
     if (input.organization && !input.team) {
       info(`Fetching Copilot details for organization ${input.organization}`);
-      const orgSeatInfo = await octokit.rest.copilot.getCopilotOrganizationDetails({
-        org: input.organization
-      });
+      let orgSeatInfo;
+      try {
+        orgSeatInfo = await octokit.rest.copilot.getCopilotOrganizationDetails({
+          org: input.organization
+        });
+      } catch (error) {
+        handleError(error);
+        throw error;
+      }
       if (orgSeatInfo?.data) {
         await createJobSummarySeatInfo(orgSeatInfo.data);
       }
 
       info(`Fetching Copilot seat assignments for organization ${input.organization}`);
-      const orgSeatAssignments = await octokit.rest.copilot.listCopilotSeats({
-        org: input.organization
-      });
+      let orgSeatAssignments;
+      try {
+        orgSeatAssignments = await octokit.rest.copilot.listCopilotSeats({
+          org: input.organization
+        });
+      } catch (error) {
+        handleError(error);
+        throw error;
+      }
       if (orgSeatAssignments?.data.seats) {
         await createJobSummarySeatAssignments(orgSeatAssignments.data);
       }

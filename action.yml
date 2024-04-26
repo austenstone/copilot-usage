@@ -24,10 +24,10 @@ inputs:
     description: The number of days to show usage metrics for.
     required: false
   since:
-    description: Show usage metrics since this date. This is a timestamp in ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ). Maximum value is 28 days ago.
+    description: Show usage metrics since this date. This is a timestamp in the format (YYYY-MM-DD). Maximum value is 28 days ago.
     required: false
   until:
-    description: Show usage metrics until this date. This is a timestamp in ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ). Maximum value is 28 days ago.
+    description: Show usage metrics until this date. This is a timestamp in the format (YYYY-MM-DD). Maximum value is 28 days ago.
     required: false
   job-summary:
     description: Whether to generate a report

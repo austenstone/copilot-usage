@@ -1,7 +1,7 @@
 {
   "image": "mcr.microsoft.com/devcontainers/typescript-node:20",
   "name": "Austen",
-  "postCreateCommand": "npm i",
+  "postCreateCommand": "npm i; echo 'Ensure you have set the token in the .env file if you want to run tests.';",
   "features": {
     "ghcr.io/devcontainers/features/git:1": {
       "version": "latest",
