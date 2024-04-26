@@ -97,9 +97,9 @@ export const createJobSummarySeatInfo = (data: jobSummarySeatInfoResponse) => {
     .addHeading(`Inactive this cycle: ${data.seat_breakdown.inactive_this_cycle}`, 3)
 }
 
-type jobSummarySeatAssignmentsResponse = Endpoints["GET /orgs/{org}/copilot/billing/seats"]["response"]["data"];
+type jobSummarySeatAssignmentsResponse = Endpoints["GET /orgs/{org}/copilot/billing/seats"]["response"]["data"]["seats"];
 export const createJobSummarySeatAssignments = (data: jobSummarySeatAssignmentsResponse) => {
-  if (!data.seats) return;
+  if (!data) data = [];
   return summary
     .addHeading('Seat Assignments')
     .addTable([
@@ -113,10 +113,10 @@ export const createJobSummarySeatAssignments = (data: jobSummarySeatAssignmentsR
         { data: 'Updated At', header: true },
         { data: 'Pending Cancellation Date', header: true }
       ],
-      ...data.seats.map(seat => [
+      ...data.map(seat => [
         seat.assignee?.avatar_url,
         seat.assignee?.login,
-        seat.assigning_team?.name,
+        String(seat.assigning_team?.name),
         seat.last_activity_at ? dateFormat(seat.last_activity_at) : 'No Activity',
         seat.last_activity_editor,
         dateFormat(seat.created_at),

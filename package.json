@@ -4,7 +4,7 @@
   "description": "A GitHub Action to get copilot usage",
   "private": false,
   "scripts": {
-    "build": "webpack",
+    "build": "tsc && ncc build lib/action.js -o dist --source-map",
     "test": "jest",
     "lint": "eslint src/**/*.ts",
     "dev": "webpack serve"

@@ -1,12 +1,11 @@
 import { debug, getBooleanInput, getInput, info, setOutput } from "@actions/core";
 import { getOctokit } from "@actions/github";
-import { RequestError } from "@octokit/request-error";
 import { DefaultArtifactClient } from "@actions/artifact";
 import { writeFileSync } from "fs";
-import { Json2CsvOptions } from "json-2-csv";
+import { Json2CsvOptions, json2csv } from "json-2-csv";
+import { toXML } from 'jstoxml';
 import { createJobSummaryFooter, createJobSummarySeatAssignments, createJobSummarySeatInfo, createJobSummaryUsage } from "./job-summary";
-import { createCSV } from "./csv";
-import { createXML } from "./xml";
+import { warn } from "console";
 
 export type CopilotUsageBreakdown = {
   language: string;
@@ -53,21 +52,12 @@ interface Input {
   };
 }
 
-const handleError = (error: unknown): void => {
-  if (error instanceof RequestError) {
-    info(`Error fetching Copilot usage data: ${error.message}, did you provide the correct 'github-token' for the enterprise, organization, or team?`);
-  } else {
-    info("Error fetching Copilot usage data");
-  }
-  debug(JSON.stringify(error, null, 2));
-}
-
 const getInputs = (): Input => {
   const result = {} as Input;
-  result.token = getInput("github-token");
-  result.organization = getInput("organization");
-  result.enterprise = getInput("enterprise");
-  result.team = getInput("team");
+  result.token = getInput("github-token").trim();
+  result.organization = getInput("organization").trim();
+  result.enterprise = getInput("enterprise").trim();
+  result.team = getInput("team").trim();
   result.jobSummary = getBooleanInput("job-summary");
   result.days = parseInt(getInput("days"));
   result.since = getInput("since");
@@ -79,11 +69,8 @@ const getInputs = (): Input => {
     header: true,
     indent: "  ",
   };
-  if (!result.token?.trim()) {
+  if (!result.token) {
     throw new Error("github-token is required");
-  }
-  if (result.team && !result.organization) {
-    throw new Error("organization is required when team is provided");
   }
   return result;
 };
@@ -107,6 +94,9 @@ const run = async (): Promise<void> => {
       ...params
     });
   } else if (input.team) {
+    if (!input.organization) {
+      throw new Error("organization is required when team is provided");
+    }
     info(`Fetching Copilot usage for team ${input.team} inside organization ${input.organization}`);
     req = octokit.paginate("GET /orgs/{org}/team/{team}/copilot/usage", {
       org: input.organization,
@@ -120,19 +110,12 @@ const run = async (): Promise<void> => {
       ...params
     });
   } else {
-    throw new Error("organization, enterprise or team is required");
+    throw new Error("organization, enterprise or team input is required");
   }
 
-  let data: CopilotUsageResponse;
-  try {
-    data = await req as CopilotUsageResponse;
-  } catch (error) {
-    handleError(error);
-    throw error;
-  }
+  const data = await req as CopilotUsageResponse;
   if (!data || data.length === 0) {
-    info("No Copilot usage data found");
-    return;
+    return warn("No Copilot usage data found");
   }
   debug(JSON.stringify(data, null, 2));
   info(`Fetched Copilot usage data for ${data.length} days (${data[0].day} to ${data[data.length - 1].day})`);
@@ -140,31 +123,19 @@ const run = async (): Promise<void> => {
   if (input.jobSummary) {
     await createJobSummaryUsage(data).write();
 
-    if (input.organization && !input.team) {
+    if (input.organization && !input.team) { // refuse to fetch organization seat info if looking for team usage
       info(`Fetching Copilot details for organization ${input.organization}`);
-      let orgSeatInfo;
-      try {
-        orgSeatInfo = await octokit.rest.copilot.getCopilotOrganizationDetails({
-          org: input.organization
-        });
-      } catch (error) {
-        handleError(error);
-        throw error;
-      }
+      const orgSeatInfo = await octokit.rest.copilot.getCopilotOrganizationDetails({
+        org: input.organization
+      });
       if (orgSeatInfo?.data) {
         await createJobSummarySeatInfo(orgSeatInfo.data).write();
       }
 
       info(`Fetching Copilot seat assignments for organization ${input.organization}`);
-      let orgSeatAssignments;
-      try {
-        orgSeatAssignments = await octokit.rest.copilot.listCopilotSeats({
-          org: input.organization
-        });
-      } catch (error) {
-        handleError(error);
-        throw error;
-      }
+      const orgSeatAssignments = await octokit.rest.copilot.listCopilotSeats({
+        org: input.organization
+      });
       if (orgSeatAssignments?.data) {
         await createJobSummarySeatAssignments(orgSeatAssignments.data)?.write();
       }
@@ -175,20 +146,14 @@ const run = async (): Promise<void> => {
     }
   }
 
-  if (input.csv) {
-    const csv = await createCSV(data, input.csvOptions);
-    writeFileSync('copilot-usage.csv', csv);
-    const artifact = new DefaultArtifactClient()
-    if (process.env.GITHUB_ACTIONS) {
+  if (input.csv || input.xml) {
+    const artifact = new DefaultArtifactClient();
+    if (input.csv) {
+      writeFileSync('copilot-usage.csv', await json2csv(data, input.csvOptions));
       await artifact.uploadArtifact('copilot-usage', ['copilot-usage.csv'], '.');
     }
-  }
-
-  if (input.xml) {
-    const xml = await createXML(data, input.xmlOptions);
-    writeFileSync('copilot-usage.xml', xml);
-    const artifact = new DefaultArtifactClient()
-    if (process.env.GITHUB_ACTIONS) {
+    if (input.xml) {
+      writeFileSync('copilot-usage.xml', await toXML(data, input.xmlOptions));
       await artifact.uploadArtifact('copilot-usage', ['copilot-usage.xml'], '.');
     }
   }
