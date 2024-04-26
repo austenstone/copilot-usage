@@ -8,7 +8,7 @@ import { Json2CsvOptions } from "json-2-csv";
 import { createXML } from "./xml";
 import { RequestError } from "@octokit/request-error";
 
-type CopilotUsageBreakdown = {
+export type CopilotUsageBreakdown = {
   language: string;
   editor: string;
   suggestions_count: number;
@@ -18,7 +18,7 @@ type CopilotUsageBreakdown = {
   active_users: number;
 };
 
-type CopilotUsageResponseData = {
+export type CopilotUsageResponseData = {
   day: string;
   total_suggestions_count: number;
   total_acceptances_count: number;
@@ -134,7 +134,6 @@ const run = async (): Promise<void> => {
     handleError(error);
     throw error;
   }
-
   if (!data || data.length === 0) {
     info("No Copilot usage data found");
     return;
@@ -143,7 +142,7 @@ const run = async (): Promise<void> => {
   info(`Fetched Copilot usage data for ${data.length} days (${data[0].day} to ${data[data.length - 1].day})`);
 
   if (input.jobSummary) {
-    await createJobSummaryUsage(data);
+    await createJobSummaryUsage(data).write();
 
     if (input.organization && !input.team) {
       info(`Fetching Copilot details for organization ${input.organization}`);
@@ -157,7 +156,7 @@ const run = async (): Promise<void> => {
         throw error;
       }
       if (orgSeatInfo?.data) {
-        await createJobSummarySeatInfo(orgSeatInfo.data);
+        await createJobSummarySeatInfo(orgSeatInfo.data).write();
       }
 
       info(`Fetching Copilot seat assignments for organization ${input.organization}`);
@@ -170,8 +169,8 @@ const run = async (): Promise<void> => {
         handleError(error);
         throw error;
       }
-      if (orgSeatAssignments?.data.seats) {
-        await createJobSummarySeatAssignments(orgSeatAssignments.data);
+      if (orgSeatAssignments?.data) {
+        await createJobSummarySeatAssignments(orgSeatAssignments.data)?.write();
       }
     }
     

@@ -4,9 +4,15 @@ import { test } from '@jest/globals';
 import dotenv from 'dotenv'
 dotenv.config({ override: true })
 
-import run from "../src/run";
-// import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
+interface _SummaryPrivate {
+  _buffer: string,
+  _filePath?: string;
+}
 
+// import run from "../src/run";
+import { writeFileSync } from 'fs';
+import { createJobSummaryUsage } from '../src/job-summary';
+// existsSync, readFileSync, unlinkSync, 
 const addInput = (key, value) => process.env[`INPUT_${key.replace(/ /g, '-').toUpperCase()}`] = value || ''
 // const removeInput = (key) => delete process.env[`INPUT_${key.replace(/ /g, '-').toUpperCase()}`]
 
@@ -19,7 +25,10 @@ const input: any = {
 }
 
 const organization = process.env.GITHUB_ORG || process.env.GITHUB_REPOSITORY?.split('/')[0];
-if (!organization) throw new Error('GITHUB_ORG or GITHUB_REPOSITORY is required');
+if (!organization) {
+  writeFileSync('.env', 'GITHUB_TOKEN=ghp_123\nGITHUB_ORG=org');
+  throw new Error('GITHUB_ORG or GITHUB_REPOSITORY is required');
+}
 
 beforeEach(() => {
   Object.keys(process.env).forEach(key => {
@@ -27,12 +36,38 @@ beforeEach(() => {
   });
   Object.entries(input).forEach(([key, value]) => addInput(key, value));
   process.env['GITHUB_REPOSITORY'] = `austenstone/${path.basename(process.cwd())}`;
+    const fileName = 'copilot-usage.md';
+    writeFileSync(fileName, '');
+    process.env['GITHUB_STEP_SUMMARY'] = fileName;
 });
 
 test('run with github organization', async () => {
-  console.log(process.env.GITHUB_TOKEN)
   addInput('organization', organization);
-  await run()
+  const summary = await createJobSummaryUsage([
+    {
+      day: '01-01-2024',
+      total_suggestions_count: 123,
+      total_acceptances_count: 123,
+      total_lines_suggested: 132,
+      total_lines_accepted: 132,
+      total_active_users: 123,
+      total_chat_acceptances: 123,
+      total_chat_turns: 123,
+      total_active_chat_users: 123,
+      breakdown: [
+        {
+          language: 'python',
+          editor: 'vscode',
+          suggestions_count: 1,
+          acceptances_count: 1,
+          lines_suggested: 1,
+          lines_accepted: 1,
+          active_users: 1,
+        }
+      ]
+    }
+  ]);
+  console.log((summary as unknown as _SummaryPrivate)._buffer)
 });
 
 // test('run with github team', async () => {
