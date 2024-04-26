@@ -30,18 +30,18 @@ inputs:
     description: Show usage metrics until this date. This is a timestamp in ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ). Maximum value is 28 days ago.
     required: false
   job-summary:
-    description: Wither to generate a report
+    description: Whether to generate a report
     required: false
     default: true
   csv:
-    description: Wither to generate CSV as a workflow artifact
+    description: Whether to generate CSV as a workflow artifact
     required: false
     default: false
   csv-options:
     description: Options for the CSV generation
     required: false
   xml:
-    description: Wither to generate XML as a workflow artifact
+    description: Whether to generate XML as a workflow artifact
     required: false
     default: false
   xml-options:

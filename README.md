@@ -11,14 +11,15 @@ Powered by the [REST API endpoints for GitHub Copilot usage metrics](https://doc
 ## Usage
 Create a workflow (eg: `.github/workflows/copilot-usage.yml`). See [Creating a Workflow file](https://help.github.com/en/articles/configuring-a-workflow#creating-a-workflow-file).
 
-
 ### PAT(Personal Access Token)
 
 You will need to [create a PAT(Personal Access Token)](https://github.com/settings/tokens/new?scopes=admin:org) that has the `copilot`, `manage_billing:copilot`, `admin:org`, `admin:enterprise`, or `manage_billing:enterprise` scope to use this endpoint.
 
 Add this PAT as a secret so we can use it as input `github-token`, see [Creating encrypted secrets for a repository](https://docs.github.com/en/enterprise-cloud@latest/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository). 
 
-#### Example
+#### Basic Example
+
+The default behavior is to get the usage for the repository owner which is likely the organization.
 
 > [!IMPORTANT]  
 > You need to set the secret `TOKEN` in your repository settings.
@@ -39,6 +40,24 @@ jobs:
         with:
           github-token: ${{ secrets.TOKEN }}
 ```
+## Example get team usage
+
+```yml
+      - uses: austenstone/copilot-usage@main
+        with:
+          github-token: ${{ secrets.TOKEN }}
+          organization: 'org-slug'
+          team: 'team-slug'
+```
+
+## Example get enterprise usage
+
+```yml
+      - uses: austenstone/copilot-usage@main
+        with:
+          github-token: ${{ secrets.TOKEN }}
+          enterprise: 'enterprise-slug'
+```
 
 #### Example sending email PDF report
 
@@ -58,7 +77,6 @@ jobs:
     steps:
       - uses: austenstone/copilot-usage@main
         with:
-          organization: ${{ github.repository_owner }}
           github-token: ${{ secrets.TOKEN }}
       - uses: austenstone/job-summary-to-pdf@main
         id: pdf
@@ -72,8 +90,8 @@ jobs:
           password: ${{ secrets.PASSWORD }}
           from: ${{ secrets.EMAIL }}
           to: ${{ secrets.EMAIL }} # Recipient email
-          subject: "Copilot Usage Report"
-          body: "Attached is the Copilot Usage Report!"
+          subject: "Copilot Usage Report (${{ steps.usage.outputs.since }} - ${{ steps.usage.outputs.until }})"
+          body: "Attached is the Copilot Usage Report for ${{ steps.usage.outputs.since }} - ${{ steps.usage.outputs.until }}!"
           attachments: ${{ steps.pdf.outputs.pdf-file }}
 ```
 
@@ -83,6 +101,9 @@ jobs:
 ![image](https://github.com/austenstone/copilot-usage/assets/22425467/94c9c913-3924-495a-9d7f-6b79185de219)
 
 ## ➡️ Inputs
+
+We look first for `enterprise` input, then `team`, and finally `organization`. If none are provided, we default to the repository owner which is likely the organization.
+
 Various inputs are defined in [`action.yml`](action.yml):
 
 | Name | Description | Default |

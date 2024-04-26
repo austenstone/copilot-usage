@@ -10,6 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: austenstone/copilot-usage@main
+        id: usage
         with:
           organization: ${{ secrets.ORG }}
           github-token: ${{ secrets.TOKEN }}
@@ -25,6 +26,6 @@ jobs:
           password: ${{ secrets.PASSWORD }}
           from: ${{ secrets.EMAIL }}
           to: ${{ secrets.EMAIL }} # Recipient email
-          subject: "Copilot Usage Report"
-          body: "Attached is the Copilot Usage Report!"
+          subject: "Copilot Usage Report (${{ steps.usage.outputs.since }} - ${{ steps.usage.outputs.until }})"
+          body: "Attached is the Copilot Usage Report for ${{ steps.usage.outputs.since }} - ${{ steps.usage.outputs.until }}!"
           attachments: ${{ steps.pdf.outputs.pdf-file }}

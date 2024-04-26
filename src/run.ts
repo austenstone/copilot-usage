@@ -1,17 +1,44 @@
-import { getBooleanInput, getInput, info, setOutput } from "@actions/core";
+import { debug, getBooleanInput, getInput, info, setOutput } from "@actions/core";
 import { getOctokit } from "@actions/github";
-import { CopilotUsageResponse } from "./types";
 import { DefaultArtifactClient } from "@actions/artifact";
 import { writeFileSync } from "fs";
-import { createJobSummaryFooter, createJobSummarySeatAssignments, createJobSummarySeatInfo, createJobSummaryUsage } from "./job.summary";
+import { createJobSummaryFooter, createJobSummarySeatAssignments, createJobSummarySeatInfo, createJobSummaryUsage } from "./job-summary";
 import { createCSV } from "./csv";
 import { Json2CsvOptions } from "json-2-csv";
-import { debug } from "console";
 import { createXML } from "./xml";
+
+type CopilotUsageBreakdown = {
+  language: string;
+  editor: string;
+  suggestions_count: number;
+  acceptances_count: number;
+  lines_suggested: number;
+  lines_accepted: number;
+  active_users: number;
+};
+
+type CopilotUsageResponseData = {
+  day: string;
+  total_suggestions_count: number;
+  total_acceptances_count: number;
+  total_lines_suggested: number;
+  total_lines_accepted: number;
+  total_active_users: number;
+  total_chat_acceptances: number;
+  total_chat_turns: number;
+  total_active_chat_users: number;
+  breakdown: CopilotUsageBreakdown[];
+};
+
+type CopilotUsageResponse = CopilotUsageResponseData[];
+
+export {
+  CopilotUsageResponse
+}
 
 interface Input {
   token: string;
-  organization?: string;
+  organization: string;
   enterprise?: string;
   team?: string;
   days?: number;
@@ -19,9 +46,9 @@ interface Input {
   until?: string;
   jobSummary: boolean;
   csv: boolean;
-  csvOptions: Json2CsvOptions;
+  csvOptions?: Json2CsvOptions;
   xml: boolean;
-  xmlOptions: {
+  xmlOptions?: {
     header: boolean;
     indent: string;
     attributeExplicitTrue: boolean;
@@ -46,11 +73,8 @@ const getInputs = (): Input => {
     header: true,
     indent: "  ",
   };
-  if (!result.token || result.token === "") {
+  if (!result.token?.trim()) {
     throw new Error("github-token is required");
-  }
-  if (!result.organization && !result.enterprise && !result.team) {
-    throw new Error("organization, enterprise or team is required");
   }
   if (result.team && !result.organization) {
     throw new Error("organization is required when team is provided");
@@ -65,10 +89,9 @@ const run = async (): Promise<void> => {
   const params = {} as Record<string, string>;
   if (input.days) {
     params.since = new Date(new Date().setDate(new Date().getDate() - input.days)).toISOString().split('T')[0];
-    info(`Fetching Copilot usage for the last ${input.days} days (since ${params.since})`)
   } else if (input.since || input.until) {
-    params.since = input.since || '';
-    params.until = input.until || '';
+    if (input.since) params.since = input.since;
+    if (input.until) params.until = input.until;
   }
   let req: Promise<unknown[]>;
   if (input.enterprise) {

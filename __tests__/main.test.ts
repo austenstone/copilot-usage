@@ -6,6 +6,7 @@ import run from "../src/run";
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
 
 const addInput = (key, value) => process.env[`INPUT_${key.replace(/ /g, '-').toUpperCase()}`] = value || ''
+const removeInput = (key) => delete process.env[`INPUT_${key.replace(/ /g, '-').toUpperCase()}`]
 
 const input: any = {
   'github-token': process.env.GITHUB_TOKEN,
@@ -72,4 +73,51 @@ test('test run with xml', async () => {
   await run();
   expect(existsSync('copilot-usage.xml')).toBe(true);
   unlinkSync('copilot-usage.xml');
+});
+
+test('test run with no org, team, or enterprise', async () => {
+  await expect(run()).rejects.toThrow('organization, enterprise or team is required');
+});
+
+test('test run with no token', async () => {
+  removeInput('github-token');
+  await expect(run()).rejects.toThrow('github-token is required');
+});
+
+test('test get only 7 days of data', async () => {
+  const fileName = "copilot-usage.csv";
+  const numDays = 7;
+  addInput('organization', organization);
+  addInput('csv', 'true');
+  addInput('days', numDays.toString());
+  await run();
+  expect(existsSync(fileName)).toBe(true);
+  const csv = readFileSync(fileName).toString();
+  expect(csv.split('\n').length - 1).toEqual(numDays);
+});
+
+test('test get data since a specific date', async () => {
+  const fileName = "copilot-usage.csv";
+  const since = new Date(new Date().setDate(new Date().getDate() - 7)).toISOString().split('T')[0];
+  addInput('organization', organization);
+  addInput('csv', 'true');
+  addInput('since', since);
+  await run();
+  expect(existsSync(fileName)).toBe(true);
+  const csv = readFileSync(fileName).toString();
+  expect(csv.split('\n').length - 1).toEqual(7);
+});
+
+test('test get data since and until a specific date', async () => {
+  const fileName = "copilot-usage.csv";
+  const since = new Date(new Date().setDate(new Date().getDate() - 7)).toISOString().split('T')[0];
+  const until = new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().split('T')[0];
+  addInput('organization', organization);
+  addInput('csv', 'true');
+  addInput('since', since);
+  addInput('until', until);
+  await run();
+  expect(existsSync(fileName)).toBe(true);
+  const csv = readFileSync(fileName).toString();
+  expect(csv.split('\n').length - 1).toEqual(6);
 });
