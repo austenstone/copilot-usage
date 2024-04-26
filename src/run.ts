@@ -1,12 +1,12 @@
 import { debug, getBooleanInput, getInput, info, setOutput } from "@actions/core";
 import { getOctokit } from "@actions/github";
+import { RequestError } from "@octokit/request-error";
 import { DefaultArtifactClient } from "@actions/artifact";
 import { writeFileSync } from "fs";
+import { Json2CsvOptions } from "json-2-csv";
 import { createJobSummaryFooter, createJobSummarySeatAssignments, createJobSummarySeatInfo, createJobSummaryUsage } from "./job-summary";
 import { createCSV } from "./csv";
-import { Json2CsvOptions } from "json-2-csv";
 import { createXML } from "./xml";
-import { RequestError } from "@octokit/request-error";
 
 export type CopilotUsageBreakdown = {
   language: string;
@@ -31,11 +31,7 @@ export type CopilotUsageResponseData = {
   breakdown: CopilotUsageBreakdown[];
 };
 
-type CopilotUsageResponse = CopilotUsageResponseData[];
-
-export {
-  CopilotUsageResponse
-}
+export type CopilotUsageResponse = CopilotUsageResponseData[];
 
 interface Input {
   token: string;
