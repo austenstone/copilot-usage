@@ -4,7 +4,7 @@
   "description": "A GitHub Action to get copilot usage",
   "private": false,
   "scripts": {
-    "build": "tsc && ncc build lib/action.js -o dist --source-map",
+    "build": "tsc && ncc build src/index.ts -o dist --source-map --license LICENSE",
     "test": "jest",
     "lint": "eslint src/**/*.ts",
     "dev": "webpack serve"
@@ -34,6 +34,7 @@
     "@eslint/js": "^9.1.1",
     "@types/jest": "^29.5.12",
     "@types/node": "^20.12.7",
+    "@vercel/ncc": "^0.38.1",
     "dotenv": "^16.4.5",
     "eslint": "^8.57.0",
     "eslint-plugin-jest": "^28.2.0",
