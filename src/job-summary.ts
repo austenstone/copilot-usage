@@ -1,5 +1,5 @@
 import { summary } from "@actions/core";
-import { CopilotUsageBreakdown, CopilotUsageResponse, CopilotUsageResponseData } from "./run";
+import { CopilotUsageBreakdown, CopilotUsageResponse } from "./run";
 import { RestEndpointMethodTypes } from '@octokit/action';
 
 interface CustomUsageBreakdown {
@@ -12,20 +12,17 @@ interface CustomUsageBreakdown {
   };
 }
 
-const groupBreakdown = (key: string | ((item: CopilotUsageResponseData) => string), data: CopilotUsageResponse, sort?: (a: [string, CopilotUsageBreakdown], b: [string, CopilotUsageBreakdown]) => number) => {
-  const breakdown: {
-    [key: string]: CopilotUsageBreakdown
-  } = data.reduce((acc, item) => {
-    const _key = key instanceof Function ? key(item) : item[key];
+const groupBreakdown = (key: string, data: CopilotUsageResponse, sort?: (a: [string, CopilotUsageBreakdown], b: [string, CopilotUsageBreakdown]) => number) => {
+  const breakdown: { [key: string]: CopilotUsageBreakdown } = data.reduce((acc, item) => {
     item.breakdown.forEach((breakdownItem) => {
-      if (acc[breakdownItem[_key]]) {
-        acc[breakdownItem[_key]].suggestions_count += breakdownItem.suggestions_count;
-        acc[breakdownItem[_key]].acceptances_count += breakdownItem.acceptances_count;
-        acc[breakdownItem[_key]].lines_suggested += breakdownItem.lines_suggested;
-        acc[breakdownItem[_key]].lines_accepted += breakdownItem.lines_accepted;
-        acc[breakdownItem[_key]].active_users += breakdownItem.active_users;
+      if (acc[breakdownItem[key]]) {
+        acc[breakdownItem[key]].suggestions_count += breakdownItem.suggestions_count;
+        acc[breakdownItem[key]].acceptances_count += breakdownItem.acceptances_count;
+        acc[breakdownItem[key]].lines_suggested += breakdownItem.lines_suggested;
+        acc[breakdownItem[key]].lines_accepted += breakdownItem.lines_accepted;
+        acc[breakdownItem[key]].active_users += breakdownItem.active_users;
       } else {
-        acc[breakdownItem[_key]] = {
+        acc[breakdownItem[key]] = {
           language: breakdownItem.language.replace(/-/g, '&#8209;'),
           editor: breakdownItem.editor,
           suggestions_count: breakdownItem.suggestions_count,
@@ -46,10 +43,10 @@ const groupBreakdown = (key: string | ((item: CopilotUsageResponseData) => strin
 export const createJobSummaryUsage = (data: CopilotUsageResponse) => {
   const languageUsage: CustomUsageBreakdown = groupBreakdown('language', data);
   const editorUsage: CustomUsageBreakdown = groupBreakdown('editor', data);
-  const dayOfWeekUsage: CustomUsageBreakdown = groupBreakdown((item) => dateFormat(item.day, { weekday: 'long' }), data, (a, b) => {
-    const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    return days.indexOf(a[0]) - days.indexOf(b[0]);
-  });
+  // const dayOfWeekUsage: CustomUsageBreakdown = groupBreakdown((item) => dateFormat(item.day, { weekday: 'long' }), data, (a, b) => {
+  //   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  //   return days.indexOf(a[0]) - days.indexOf(b[0]);
+  // });
   
   const totalAcceptanceCount = data.reduce((acc, item) => acc + item.total_acceptances_count, 0);
   const totalSuggestionsCount = data.reduce((acc, item) => acc + item?.total_suggestions_count, 0);
@@ -75,7 +72,7 @@ export const createJobSummaryUsage = (data: CopilotUsageResponse) => {
     .addHeading('Daily Usage')
     .addHeading(`The most active day was ${dateFormat(mostActiveDay.day)} with ${mostActiveDay.total_active_users} active users.`, 3)
     .addHeading(`The day with the highest acceptance rate was ${dateFormat(highestAcceptanceRateDay.day)} with an acceptance rate of ${(highestAcceptanceRateDay.total_acceptances_count / highestAcceptanceRateDay.total_suggestions_count * 100).toFixed(2)}%.`, 3)
-    .addRaw(getPieChartWeekdayUsage(dayOfWeekUsage))
+    // .addRaw(getPieChartWeekdayUsage(dayOfWeekUsage))
     .addTable(getTableData(data))
 }
 
@@ -159,15 +156,15 @@ const getTableData = (data: CopilotUsageResponse) => {
   ];
 }
 
-const getPieChartWeekdayUsage = (data: CustomUsageBreakdown) => {
-  return `\n\`\`\`mermaid
-pie showData
-title Suggestions by Day of the Week
-${Object.entries(data)
-      .map(([language, obj]) => `"${language}" : ${obj.suggestions_count}`)
-      .join('\n')}
-\`\`\`\n`;
-}
+// const getPieChartWeekdayUsage = (data: CustomUsageBreakdown) => {
+//   return `\n\`\`\`mermaid
+// pie showData
+// title Suggestions by Day of the Week
+// ${Object.entries(data)
+//       .map(([language, obj]) => `"${language}" : ${obj.suggestions_count}`)
+//       .join('\n')}
+// \`\`\`\n`;
+// }
 
 const getTableLanguageData = (languageUsage: CustomUsageBreakdown) => {
   return [
