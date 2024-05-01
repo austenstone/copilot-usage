@@ -131,7 +131,7 @@ const run = async (): Promise<void> => {
       if (orgSeatInfo?.data) {
         await createJobSummarySeatInfo(orgSeatInfo.data).write();
       }
-
+    
       info(`Fetching Copilot seat assignments for organization ${input.organization}`);
       const orgSeatAssignments = await octokit.rest.copilot.listCopilotSeats({
         org: input.organization

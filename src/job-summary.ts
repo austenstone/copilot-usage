@@ -1,6 +1,6 @@
 import { summary } from "@actions/core";
-import { Endpoints } from "@octokit/types";
 import { CopilotUsageBreakdown, CopilotUsageResponse, CopilotUsageResponseData } from "./run";
+import { RestEndpointMethodTypes } from '@octokit/action';
 
 interface CustomUsageBreakdown {
   [key: string]: {
@@ -79,8 +79,7 @@ export const createJobSummaryUsage = (data: CopilotUsageResponse) => {
     .addTable(getTableData(data))
 }
 
-type jobSummarySeatInfoResponse = Endpoints["GET /orgs/{org}/copilot/billing"]["response"]["data"];
-export const createJobSummarySeatInfo = (data: jobSummarySeatInfoResponse) => {
+export const createJobSummarySeatInfo = (data: RestEndpointMethodTypes["copilot"]["getCopilotOrganizationDetails"]["response"]["data"]) => {
   return summary
     .addHeading('Seat Info')
     .addHeading(`Seat Management Setting: ${data.seat_management_setting}`, 3)
@@ -97,8 +96,7 @@ export const createJobSummarySeatInfo = (data: jobSummarySeatInfoResponse) => {
     .addHeading(`Inactive this cycle: ${data.seat_breakdown.inactive_this_cycle}`, 3)
 }
 
-type jobSummarySeatAssignmentsResponse = Endpoints["GET /orgs/{org}/copilot/billing/seats"]["response"]["data"]["seats"];
-export const createJobSummarySeatAssignments = (data: jobSummarySeatAssignmentsResponse) => {
+export const createJobSummarySeatAssignments = (data: RestEndpointMethodTypes["copilot"]["listCopilotSeats"]["response"]["data"]["seats"]) => {
   if (!data) data = [];
   return summary
     .addHeading('Seat Assignments')

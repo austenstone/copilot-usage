@@ -1,8 +1,8 @@
-import { Endpoints } from "@octokit/types";
 import { CopilotUsageResponse } from "../../src/run";
 import { writeFileSync } from "fs";
 import { createJobSummarySeatAssignments, createJobSummarySeatInfo, createJobSummaryUsage } from "../../src/job-summary";
 import { summary } from "@actions/core";
+import { RestEndpointMethodTypes } from '@octokit/plugin-rest-endpoint-methods/dist-types/generated/parameters-and-response-types';
 
 const getSummaryBuffer = (_summary: typeof summary): string => {
   return (_summary as unknown as {
@@ -275,8 +275,7 @@ export const exampleResponseTeam: CopilotUsageResponse = [
   }
 ];
 
-type jobSummarySeatInfoResponse = Endpoints["GET /orgs/{org}/copilot/billing"]["response"]["data"];
-export const exampleSeatInfoResponse: jobSummarySeatInfoResponse = {
+export const exampleSeatInfoResponse: RestEndpointMethodTypes["copilot"]["getCopilotOrganizationDetails"]["response"]["data"] = {
   "seat_breakdown": {
     "total": 12,
     "added_this_cycle": 9,
@@ -289,8 +288,7 @@ export const exampleSeatInfoResponse: jobSummarySeatInfoResponse = {
   "public_code_suggestions": "block"
 };
 
-type jobSummarySeatAssignmentsResponse = Endpoints["GET /orgs/{org}/copilot/billing/seats"]["response"]["data"]["seats"];
-export const exampleSeatAssignmentResponse: jobSummarySeatAssignmentsResponse = [
+export const exampleSeatAssignmentResponse: RestEndpointMethodTypes["copilot"]["listCopilotSeats"]["response"]["data"]["seats"] = [
   {
     "created_at": "2021-08-03T18:00:00-06:00",
     "updated_at": "2021-09-23T15:00:00-06:00",
