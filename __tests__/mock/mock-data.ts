@@ -2,7 +2,7 @@ import { CopilotUsageResponse } from "../../src/run";
 import { writeFileSync } from "fs";
 import { createJobSummarySeatAssignments, createJobSummarySeatInfo, createJobSummaryUsage } from "../../src/job-summary";
 import { summary } from "@actions/core";
-import { RestEndpointMethodTypes } from '@octokit/plugin-rest-endpoint-methods/dist-types/generated/parameters-and-response-types';
+import { RestEndpointMethodTypes } from '@octokit/action';
 
 const getSummaryBuffer = (_summary: typeof summary): string => {
   return (_summary as unknown as {
