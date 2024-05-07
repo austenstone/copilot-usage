@@ -13,9 +13,9 @@ const getSummaryBuffer = (_summary: typeof summary): string => {
   })._buffer
 }
 
-// beforeAll(async () => {
-//   await createMockData();
-// });
+beforeAll(async () => {
+  // await createMockData();
+});
 
 beforeEach(() => {
   summary.emptyBuffer();
