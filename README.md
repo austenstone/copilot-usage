@@ -1,5 +1,7 @@
 # Copilot Usage Action
 
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/8903/badge)](https://www.bestpractices.dev/projects/8903)
+
 Get Copilot usage data as:
 * Md Job Summary
 * CSV
