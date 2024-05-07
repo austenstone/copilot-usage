@@ -1,17 +1,19 @@
 import { summary } from "@actions/core";
 const groupBreakdown = (key, data, sort) => {
+    if (!data)
+        console.log('no data', key, data);
     const breakdown = data.reduce((acc, item) => {
-        const _key = key instanceof Function ? key(item) : item[key];
+        console.log('acc', acc);
         item.breakdown.forEach((breakdownItem) => {
-            if (acc[breakdownItem[_key]]) {
-                acc[breakdownItem[_key]].suggestions_count += breakdownItem.suggestions_count;
-                acc[breakdownItem[_key]].acceptances_count += breakdownItem.acceptances_count;
-                acc[breakdownItem[_key]].lines_suggested += breakdownItem.lines_suggested;
-                acc[breakdownItem[_key]].lines_accepted += breakdownItem.lines_accepted;
-                acc[breakdownItem[_key]].active_users += breakdownItem.active_users;
+            if (acc[breakdownItem[key]]) {
+                acc[breakdownItem[key]].suggestions_count += breakdownItem.suggestions_count;
+                acc[breakdownItem[key]].acceptances_count += breakdownItem.acceptances_count;
+                acc[breakdownItem[key]].lines_suggested += breakdownItem.lines_suggested;
+                acc[breakdownItem[key]].lines_accepted += breakdownItem.lines_accepted;
+                acc[breakdownItem[key]].active_users += breakdownItem.active_users;
             }
             else {
-                acc[breakdownItem[_key]] = {
+                acc[breakdownItem[key]] = {
                     language: breakdownItem.language.replace(/-/g, '&#8209;'),
                     editor: breakdownItem.editor,
                     suggestions_count: breakdownItem.suggestions_count,
@@ -27,12 +29,7 @@ const groupBreakdown = (key, data, sort) => {
     return Object.fromEntries(Object.entries(breakdown).sort(sort ? sort : (a, b) => b[1].acceptances_count - a[1].acceptances_count));
 };
 export const createJobSummaryUsage = (data) => {
-    const languageUsage = groupBreakdown('language', data);
-    const editorUsage = groupBreakdown('editor', data);
-    const dayOfWeekUsage = groupBreakdown((item) => dateFormat(item.day, { weekday: 'long' }), data, (a, b) => {
-        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        return days.indexOf(a[0]) - days.indexOf(b[0]);
-    });
+    console.log('createJobSummaryUsage', data);
     const totalAcceptanceCount = data.reduce((acc, item) => acc + item.total_acceptances_count, 0);
     const totalSuggestionsCount = data.reduce((acc, item) => acc + item?.total_suggestions_count, 0);
     const totalAcceptanceRate = (totalAcceptanceCount / totalSuggestionsCount * 100).toFixed(2);
@@ -48,15 +45,10 @@ export const createJobSummaryUsage = (data) => {
         .addRaw(getXyChartAcceptanceRate(data))
         .addRaw(getXyChartDailyActiveUsers(data))
         .addHeading('Language Usage')
-        .addRaw(getPieChartLanguageUsage(languageUsage))
-        .addTable(getTableLanguageData(languageUsage))
         .addHeading('Editor Usage')
-        .addRaw(getPieChartEditorUsage(editorUsage))
-        .addTable(getTableEditorData(editorUsage))
         .addHeading('Daily Usage')
         .addHeading(`The most active day was ${dateFormat(mostActiveDay.day)} with ${mostActiveDay.total_active_users} active users.`, 3)
         .addHeading(`The day with the highest acceptance rate was ${dateFormat(highestAcceptanceRateDay.day)} with an acceptance rate of ${(highestAcceptanceRateDay.total_acceptances_count / highestAcceptanceRateDay.total_suggestions_count * 100).toFixed(2)}%.`, 3)
-        .addRaw(getPieChartWeekdayUsage(dayOfWeekUsage))
         .addTable(getTableData(data));
 };
 export const createJobSummarySeatInfo = (data) => {
@@ -135,15 +127,6 @@ const getTableData = (data) => {
             item.total_active_chat_users?.toLocaleString()
         ])
     ];
-};
-const getPieChartWeekdayUsage = (data) => {
-    return `\n\`\`\`mermaid
-pie showData
-title Suggestions by Day of the Week
-${Object.entries(data)
-        .map(([language, obj]) => `"${language}" : ${obj.suggestions_count}`)
-        .join('\n')}
-\`\`\`\n`;
 };
 const getTableLanguageData = (languageUsage) => {
     return [

@@ -47,7 +47,7 @@ export const createJobSummaryUsage = (data: CopilotUsageResponse) => {
   //   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   //   return days.indexOf(a[0]) - days.indexOf(b[0]);
   // });
-  
+
   const totalAcceptanceCount = data.reduce((acc, item) => acc + item.total_acceptances_count, 0);
   const totalSuggestionsCount = data.reduce((acc, item) => acc + item?.total_suggestions_count, 0);
   const totalAcceptanceRate = (totalAcceptanceCount / totalSuggestionsCount * 100).toFixed(2);
@@ -74,9 +74,11 @@ export const createJobSummaryUsage = (data: CopilotUsageResponse) => {
     .addHeading(`The day with the highest acceptance rate was ${dateFormat(highestAcceptanceRateDay.day)} with an acceptance rate of ${(highestAcceptanceRateDay.total_acceptances_count / highestAcceptanceRateDay.total_suggestions_count * 100).toFixed(2)}%.`, 3)
     // .addRaw(getPieChartWeekdayUsage(dayOfWeekUsage))
     .addTable(getTableData(data))
+  return summary;
 }
 
 export const createJobSummarySeatInfo = (data: RestEndpointMethodTypes["copilot"]["getCopilotOrganizationDetails"]["response"]["data"]) => {
+  console.log('job summary seat info', data);
   return summary
     .addHeading('Seat Info')
     .addHeading(`Seat Management Setting: ${data.seat_management_setting}`, 3)
@@ -123,8 +125,8 @@ export const createJobSummarySeatAssignments = (data: RestEndpointMethodTypes["c
 
 export const createJobSummaryFooter = async (organization: string) => {
   summary
-  .addLink(`Manage Access for ${organization}`, `https://github.com/organizations/${organization}/settings/copilot/seat_management`)
-  .write();
+    .addLink(`Manage Access for ${organization}`, `https://github.com/organizations/${organization}/settings/copilot/seat_management`)
+    .write();
 }
 
 const getTableData = (data: CopilotUsageResponse) => {

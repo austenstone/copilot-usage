@@ -13,6 +13,14 @@ const getSummaryBuffer = (_summary: typeof summary): string => {
   })._buffer
 }
 
+// beforeAll(async () => {
+//   await createMockData();
+// });
+
+beforeEach(() => {
+  summary.emptyBuffer();
+});
+
 test('createJobSummaryUsage(enterpriseUsage)', async () => {
   const summary = await createJobSummaryUsage(exampleResponseEnterprise);
   expect(summary).toBeDefined();

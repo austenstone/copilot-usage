@@ -2,7 +2,7 @@ import { CopilotUsageResponse } from "../../src/run";
 import { writeFileSync } from "fs";
 import { createJobSummarySeatAssignments, createJobSummarySeatInfo, createJobSummaryUsage } from "../../src/job-summary";
 import { summary } from "@actions/core";
-import { RestEndpointMethodTypes } from '@octokit/action';
+import { RestEndpointMethodTypes } from "@octokit/action";
 
 const getSummaryBuffer = (_summary: typeof summary): string => {
   return (_summary as unknown as {
@@ -10,21 +10,28 @@ const getSummaryBuffer = (_summary: typeof summary): string => {
     _filePath?: string;
   })._buffer
 }
-const createMockData = async () => {
+export const createMockData = async () => {
   let summary;
   summary = await createJobSummaryUsage(exampleResponseEnterprise);
   writeFileSync('./__tests__/mock/enterprise-usage-summary.md', getSummaryBuffer(summary));
+  summary.emptyBuffer();
+
   summary = await createJobSummaryUsage(exampleResponseOrg);
   writeFileSync('./__tests__/mock/org-usage-summary.md', getSummaryBuffer(summary));
+  summary.emptyBuffer();
+
   summary = await createJobSummaryUsage(exampleResponseTeam);
   writeFileSync('./__tests__/mock/team-usage-summary.md', getSummaryBuffer(summary));
+  summary.emptyBuffer();
+
   summary = await createJobSummarySeatInfo(exampleSeatInfoResponse);
   writeFileSync('./__tests__/mock/org-seat-info-summary.md', getSummaryBuffer(summary));
+  summary.emptyBuffer();
+
   summary = await createJobSummarySeatAssignments(exampleSeatAssignmentResponse);
   writeFileSync('./__tests__/mock/org-seat-assignments-summary.md', getSummaryBuffer(summary));
+  summary.emptyBuffer();
 }
-// createMockData();
-console.log(createMockData);
 
 export const exampleResponseEnterprise: CopilotUsageResponse = [
   {
