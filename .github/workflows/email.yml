@@ -16,7 +16,7 @@ jobs:
         with:
           organization: ${{ secrets.ORG }}
           github-token: ${{ secrets.TOKEN }}
-      - uses: austenstone/job-summary-to-pdf@main
+      - uses: austenstone/job-summary-to-pdf@v1.0
         id: pdf
         with:
           name: copilot-usage
