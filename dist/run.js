@@ -115,3 +115,4 @@ const run = async () => {
     setOutput("days", data.length.toString());
 };
 export default run;
+//# sourceMappingURL=run.js.map

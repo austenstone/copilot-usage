@@ -1,9 +1,6 @@
 import { summary } from "@actions/core";
 const groupBreakdown = (key, data, sort) => {
-    if (!data)
-        console.log('no data', key, data);
     const breakdown = data.reduce((acc, item) => {
-        console.log('acc', acc);
         item.breakdown.forEach((breakdownItem) => {
             if (acc[breakdownItem[key]]) {
                 acc[breakdownItem[key]].suggestions_count += breakdownItem.suggestions_count;
@@ -29,7 +26,8 @@ const groupBreakdown = (key, data, sort) => {
     return Object.fromEntries(Object.entries(breakdown).sort(sort ? sort : (a, b) => b[1].acceptances_count - a[1].acceptances_count));
 };
 export const createJobSummaryUsage = (data) => {
-    console.log('createJobSummaryUsage', data);
+    const languageUsage = groupBreakdown('language', data);
+    const editorUsage = groupBreakdown('editor', data);
     const totalAcceptanceCount = data.reduce((acc, item) => acc + item.total_acceptances_count, 0);
     const totalSuggestionsCount = data.reduce((acc, item) => acc + item?.total_suggestions_count, 0);
     const totalAcceptanceRate = (totalAcceptanceCount / totalSuggestionsCount * 100).toFixed(2);
@@ -45,13 +43,19 @@ export const createJobSummaryUsage = (data) => {
         .addRaw(getXyChartAcceptanceRate(data))
         .addRaw(getXyChartDailyActiveUsers(data))
         .addHeading('Language Usage')
+        .addRaw(getPieChartLanguageUsage(languageUsage))
+        .addTable(getTableLanguageData(languageUsage))
         .addHeading('Editor Usage')
+        .addRaw(getPieChartEditorUsage(editorUsage))
+        .addTable(getTableEditorData(editorUsage))
         .addHeading('Daily Usage')
         .addHeading(`The most active day was ${dateFormat(mostActiveDay.day)} with ${mostActiveDay.total_active_users} active users.`, 3)
         .addHeading(`The day with the highest acceptance rate was ${dateFormat(highestAcceptanceRateDay.day)} with an acceptance rate of ${(highestAcceptanceRateDay.total_acceptances_count / highestAcceptanceRateDay.total_suggestions_count * 100).toFixed(2)}%.`, 3)
         .addTable(getTableData(data));
+    return summary;
 };
 export const createJobSummarySeatInfo = (data) => {
+    console.log('job summary seat info', data);
     return summary
         .addHeading('Seat Info')
         .addHeading(`Seat Management Setting: ${data.seat_management_setting}`, 3)
@@ -76,22 +80,22 @@ export const createJobSummarySeatAssignments = (data) => {
         [
             { data: 'Avatar', header: true },
             { data: 'Login', header: true },
-            { data: 'Team', header: true },
             { data: 'Last Activity', header: true },
             { data: 'Last Editor Used', header: true },
             { data: 'Created At', header: true },
             { data: 'Updated At', header: true },
-            { data: 'Pending Cancellation Date', header: true }
+            { data: 'Pending Cancellation Date', header: true },
+            { data: 'Team', header: true },
         ],
         ...data.map(seat => [
             seat.assignee?.avatar_url,
             seat.assignee?.login,
-            String(seat.assigning_team?.name),
             seat.last_activity_at ? dateFormat(seat.last_activity_at) : 'No Activity',
             seat.last_activity_editor,
             dateFormat(seat.created_at),
             dateFormat(seat.updated_at),
-            dateFormat(seat.pending_cancellation_date)
+            dateFormat(seat.pending_cancellation_date),
+            String(seat.assigning_team?.name || 'No Team'),
         ])
     ]);
 };
@@ -241,3 +245,4 @@ const dateFormat = (date, format = { month: 'numeric', day: 'numeric', year: 'nu
         return 'undefined';
     return new Date(date).toLocaleDateString('en-US', format);
 };
+//# sourceMappingURL=job-summary.js.map
