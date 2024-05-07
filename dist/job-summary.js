@@ -94,8 +94,8 @@ export const createJobSummarySeatAssignments = (data) => {
             seat.last_activity_editor,
             dateFormat(seat.created_at),
             dateFormat(seat.updated_at),
-            dateFormat(seat.pending_cancellation_date),
-            String(seat.assigning_team?.name || 'No Team'),
+            dateFormat(seat.pending_cancellation_date) || ' ',
+            String(seat.assigning_team?.name || ' '),
         ])
     ]);
 };
