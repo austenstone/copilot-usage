@@ -88,7 +88,7 @@ export const createJobSummarySeatAssignments = (data) => {
             { data: 'Team', header: true },
         ],
         ...data.map(seat => [
-            seat.assignee?.avatar_url,
+            `<img src="${seat.assignee?.avatar_url}" width="33" />`,
             seat.assignee?.login,
             seat.last_activity_at ? dateFormat(seat.last_activity_at) : 'No Activity',
             seat.last_activity_editor,
