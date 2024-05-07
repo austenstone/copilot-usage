@@ -78,7 +78,6 @@ export const createJobSummaryUsage = (data: CopilotUsageResponse) => {
 }
 
 export const createJobSummarySeatInfo = (data: RestEndpointMethodTypes["copilot"]["getCopilotOrganizationDetails"]["response"]["data"]) => {
-  console.log('job summary seat info', data);
   return summary
     .addHeading('Seat Info')
     .addHeading(`Seat Management Setting: ${data.seat_management_setting}`, 3)
