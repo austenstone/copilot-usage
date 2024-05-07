@@ -1,6 +1,6 @@
 import { summary } from "@actions/core";
-import { Endpoints } from "@octokit/types";
-import { CopilotUsageResponse } from "./run";
+import { CopilotUsageBreakdown, CopilotUsageResponse } from "./run";
+import { RestEndpointMethodTypes } from '@octokit/action';
 
 interface CustomUsageBreakdown {
   [key: string]: {
@@ -12,17 +12,17 @@ interface CustomUsageBreakdown {
   };
 }
 
-export const createJobSummaryUsage = async (data: CopilotUsageResponse) => {
-  const languageUsage: CustomUsageBreakdown = data.reduce((acc, item) => {
+const groupBreakdown = (key: string, data: CopilotUsageResponse, sort?: (a: [string, CopilotUsageBreakdown], b: [string, CopilotUsageBreakdown]) => number) => {
+  const breakdown: { [key: string]: CopilotUsageBreakdown } = data.reduce((acc, item) => {
     item.breakdown.forEach((breakdownItem) => {
-      if (acc[breakdownItem.language]) {
-        acc[breakdownItem.language].suggestions_count += breakdownItem.suggestions_count;
-        acc[breakdownItem.language].acceptances_count += breakdownItem.acceptances_count;
-        acc[breakdownItem.language].lines_suggested += breakdownItem.lines_suggested;
-        acc[breakdownItem.language].lines_accepted += breakdownItem.lines_accepted;
-        acc[breakdownItem.language].active_users += breakdownItem.active_users;
+      if (acc[breakdownItem[key]]) {
+        acc[breakdownItem[key]].suggestions_count += breakdownItem.suggestions_count;
+        acc[breakdownItem[key]].acceptances_count += breakdownItem.acceptances_count;
+        acc[breakdownItem[key]].lines_suggested += breakdownItem.lines_suggested;
+        acc[breakdownItem[key]].lines_accepted += breakdownItem.lines_accepted;
+        acc[breakdownItem[key]].active_users += breakdownItem.active_users;
       } else {
-        acc[breakdownItem.language] = {
+        acc[breakdownItem[key]] = {
           language: breakdownItem.language.replace(/-/g, '&#8209;'),
           editor: breakdownItem.editor,
           suggestions_count: breakdownItem.suggestions_count,
@@ -34,93 +34,26 @@ export const createJobSummaryUsage = async (data: CopilotUsageResponse) => {
       }
     });
     return acc;
-  }, {});
-  const sortedLanguageUsage = Object.fromEntries(
-    Object.entries(languageUsage)
-      .sort((a, b) => b[1].acceptances_count - a[1].acceptances_count)
+  }, {} as { [key: string]: CopilotUsageBreakdown });
+  return Object.fromEntries(
+    Object.entries(breakdown).sort(sort ? sort : (a, b) => b[1].acceptances_count - a[1].acceptances_count)
   );
+}
 
-  const editorUsage: CustomUsageBreakdown = data.reduce((acc, item) => {
-    item.breakdown.forEach((breakdownItem) => {
-      if (acc[breakdownItem.editor]) {
-        acc[breakdownItem.editor].suggestions_count += breakdownItem.suggestions_count;
-        acc[breakdownItem.editor].acceptances_count += breakdownItem.acceptances_count;
-        acc[breakdownItem.editor].lines_suggested += breakdownItem.lines_suggested;
-        acc[breakdownItem.editor].lines_accepted += breakdownItem.lines_accepted;
-        acc[breakdownItem.editor].active_users += breakdownItem.active_users;
-      } else {
-        acc[breakdownItem.editor] = {
-          editor: breakdownItem.editor,
-          suggestions_count: breakdownItem.suggestions_count,
-          acceptances_count: breakdownItem.acceptances_count,
-          lines_suggested: breakdownItem.lines_suggested,
-          lines_accepted: breakdownItem.lines_accepted,
-          active_users: breakdownItem.active_users,
-        };
-      }
-    });
-    return acc;
-  }, {});
-  const sortedEditorUsage = Object.fromEntries(
-    Object.entries(editorUsage)
-      .sort((a, b) => b[1].acceptances_count - a[1].acceptances_count)
-  );
+export const createJobSummaryUsage = (data: CopilotUsageResponse) => {
+  const languageUsage: CustomUsageBreakdown = groupBreakdown('language', data);
+  const editorUsage: CustomUsageBreakdown = groupBreakdown('editor', data);
+  // const dayOfWeekUsage: CustomUsageBreakdown = groupBreakdown((item) => dateFormat(item.day, { weekday: 'long' }), data, (a, b) => {
+  //   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  //   return days.indexOf(a[0]) - days.indexOf(b[0]);
+  // });
 
-  const dayOfWeekUsage: CustomUsageBreakdown = data.reduce((acc, item) => {
-    const dayOfWeek = dateFormat(item.day, { weekday: 'long' });
-    if (acc[dayOfWeek]) {
-      acc[dayOfWeek].suggestions_count += item.total_suggestions_count;
-      acc[dayOfWeek].acceptances_count += item.total_acceptances_count;
-      acc[dayOfWeek].lines_suggested += item.total_lines_suggested;
-      acc[dayOfWeek].lines_accepted += item.total_lines_accepted;
-      acc[dayOfWeek].active_users += item.total_active_users;
-    } else {
-      acc[dayOfWeek] = {
-        dayOfWeek,
-        suggestions_count: item.total_suggestions_count,
-        acceptances_count: item.total_acceptances_count,
-        lines_suggested: item.total_lines_suggested,
-        lines_accepted: item.total_lines_accepted,
-        active_users: item.total_active_users,
-      };
-    }
-    return acc;
-  }, {});
-
-  const sortedDayOfWeekUsage = Object.fromEntries(
-    Object.entries(dayOfWeekUsage)
-      .sort((a, b) => {
-        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        return days.indexOf(a[0]) - days.indexOf(b[0]);
-      })
-  );
-
-  const totalAcceptanceCount = data.reduce((acc, item) => {
-    if (typeof item?.total_acceptances_count === 'number' && item?.total_acceptances_count > 0) {
-      return acc + item.total_acceptances_count;
-    }
-    return acc;
-  }, 0);
-  const totalSuggestionsCount = data.reduce((acc, item) => {
-    if (typeof item?.total_suggestions_count === 'number' && item?.total_suggestions_count > 0) {
-      return acc + item?.total_suggestions_count;
-    }
-    return acc;
-  }, 0);
+  const totalAcceptanceCount = data.reduce((acc, item) => acc + item.total_acceptances_count, 0);
+  const totalSuggestionsCount = data.reduce((acc, item) => acc + item?.total_suggestions_count, 0);
   const totalAcceptanceRate = (totalAcceptanceCount / totalSuggestionsCount * 100).toFixed(2);
-  const totalLinesOfCodeAccepted = data.reduce((acc, item) => {
-    if (typeof item?.total_lines_accepted === 'number' && item?.total_lines_accepted > 0) {
-      return acc + item?.total_lines_accepted;
-    }
-    return acc;
-  }, 0);
-
-  const mostActiveDay = data.reduce((acc, item) => {
-    return (acc.total_active_users > item.total_active_users) ? acc : item;
-  });
-  const highestAcceptanceRateDay = data.reduce((acc, item) => {
-    return ((acc.total_acceptances_count / acc.total_suggestions_count) > (item.total_acceptances_count / item.total_suggestions_count)) ? acc : item;
-  });
+  const totalLinesOfCodeAccepted = data.reduce((acc, item) => acc + item?.total_lines_accepted, 0);
+  const mostActiveDay = data.reduce((acc, item) => (acc.total_active_users > item.total_active_users) ? acc : item);
+  const highestAcceptanceRateDay = data.reduce((acc, item) => ((acc.total_acceptances_count / acc.total_suggestions_count) > (item.total_acceptances_count / item.total_suggestions_count)) ? acc : item);
 
   return summary
     .addHeading(`Copilot Usage<br>${dateFormat(data[0].day)} - ${dateFormat(data[data.length - 1].day)}`)
@@ -131,21 +64,20 @@ export const createJobSummaryUsage = async (data: CopilotUsageResponse) => {
     .addRaw(getXyChartAcceptanceRate(data))
     .addRaw(getXyChartDailyActiveUsers(data))
     .addHeading('Language Usage')
-    .addRaw(getPieChartLanguageUsage(sortedLanguageUsage))
-    .addTable(getTableLanguageData(sortedLanguageUsage))
+    .addRaw(getPieChartLanguageUsage(languageUsage))
+    .addTable(getTableLanguageData(languageUsage))
     .addHeading('Editor Usage')
-    .addRaw(getPieChartEditorUsage(sortedEditorUsage))
-    .addTable(getTableEditorData(sortedEditorUsage))
+    .addRaw(getPieChartEditorUsage(editorUsage))
+    .addTable(getTableEditorData(editorUsage))
     .addHeading('Daily Usage')
     .addHeading(`The most active day was ${dateFormat(mostActiveDay.day)} with ${mostActiveDay.total_active_users} active users.`, 3)
     .addHeading(`The day with the highest acceptance rate was ${dateFormat(highestAcceptanceRateDay.day)} with an acceptance rate of ${(highestAcceptanceRateDay.total_acceptances_count / highestAcceptanceRateDay.total_suggestions_count * 100).toFixed(2)}%.`, 3)
-    .addRaw(getPieChartWeekdayUsage(sortedDayOfWeekUsage))
+    // .addRaw(getPieChartWeekdayUsage(dayOfWeekUsage))
     .addTable(getTableData(data))
-    .write();
+  return summary;
 }
 
-type jobSummarySeatInfoResponse = Endpoints["GET /orgs/{org}/copilot/billing"]["response"]["data"];
-export const createJobSummarySeatInfo = async (data: jobSummarySeatInfoResponse) => {
+export const createJobSummarySeatInfo = (data: RestEndpointMethodTypes["copilot"]["getCopilotOrganizationDetails"]["response"]["data"]) => {
   return summary
     .addHeading('Seat Info')
     .addHeading(`Seat Management Setting: ${data.seat_management_setting}`, 3)
@@ -160,50 +92,44 @@ export const createJobSummarySeatInfo = async (data: jobSummarySeatInfoResponse)
     .addHeading(`Pending cancellations: ${data.seat_breakdown.pending_cancellation}`, 3)
     .addHeading(`Active this cycle: ${data.seat_breakdown.active_this_cycle}`, 3)
     .addHeading(`Inactive this cycle: ${data.seat_breakdown.inactive_this_cycle}`, 3)
-    .write()
 }
 
-type jobSummarySeatAssignmentsResponse = Endpoints["GET /orgs/{org}/copilot/billing/seats"]["response"]["data"];
-export const createJobSummarySeatAssignments = async (data: jobSummarySeatAssignmentsResponse) => {
-  if (!data.seats) return;
-  const tableData = [
-    [
-      { data: 'Avatar', header: true },
-      { data: 'Login', header: true },
-      { data: 'Team', header: true },
-      { data: 'Last Activity', header: true },
-      { data: 'Last Editor Used', header: true },
-      { data: 'Created At', header: true },
-      { data: 'Updated At', header: true },
-      { data: 'Pending Cancellation Date', header: true }
-    ]
-  ];
-  data.seats.forEach(seat => {
-    tableData.push([
-      { data: `<img src="${seat.assignee?.avatar_url}" width="33" />`, header: false },
-      { data: String(seat.assignee?.login), header: false },
-      { data: String(seat.assigning_team?.name), header: false },
-      { data: seat.last_activity_at ? dateFormat(seat.last_activity_at) : 'No Activity', header: false },
-      { data: seat.last_activity_editor ? String(seat.last_activity_editor) : 'Unknown', header: false },
-      { data: dateFormat(seat.created_at), header: false },
-      { data: dateFormat(seat.updated_at), header: false },
-      { data: dateFormat(seat.pending_cancellation_date), header: false }
-    ]);
-  });
+export const createJobSummarySeatAssignments = (data: RestEndpointMethodTypes["copilot"]["listCopilotSeats"]["response"]["data"]["seats"]) => {
+  if (!data) data = [];
   return summary
     .addHeading('Seat Assignments')
-    .addTable(tableData)
-    .write()
+    .addTable([
+      [
+        { data: 'Avatar', header: true },
+        { data: 'Login', header: true },
+        { data: 'Last Activity', header: true },
+        { data: 'Last Editor Used', header: true },
+        { data: 'Created At', header: true },
+        { data: 'Updated At', header: true },
+        { data: 'Pending Cancellation Date', header: true },
+        { data: 'Team', header: true },
+      ],
+      ...data.map(seat => [
+        `<img src="${seat.assignee?.avatar_url}" width="33" />`,
+        seat.assignee?.login,
+        seat.last_activity_at ? dateFormat(seat.last_activity_at) : 'No Activity',
+        seat.last_activity_editor,
+        dateFormat(seat.created_at),
+        dateFormat(seat.updated_at),
+        dateFormat(seat.pending_cancellation_date) || ' ',
+        String(seat.assigning_team?.name || ' '),
+      ] as string[])
+    ])
 }
 
 export const createJobSummaryFooter = async (organization: string) => {
   summary
-  .addLink(`Manage Access for ${organization}`, `https://github.com/organizations/${organization}/settings/copilot/seat_management`)
-  .write();
+    .addLink(`Manage Access for ${organization}`, `https://github.com/organizations/${organization}/settings/copilot/seat_management`)
+    .write();
 }
 
 const getTableData = (data: CopilotUsageResponse) => {
-  const tableData = [
+  return [
     [
       { data: 'Day', header: true },
       { data: 'Suggestions', header: true },
@@ -215,41 +141,34 @@ const getTableData = (data: CopilotUsageResponse) => {
       { data: 'Chat Acceptances', header: true },
       { data: 'Chat Turns', header: true },
       { data: 'Active Chat Users', header: true }
-    ]
+    ],
+    ...data.map(item => [
+      dateFormat(item.day),
+      item.total_suggestions_count?.toLocaleString(),
+      item.total_acceptances_count?.toLocaleString(),
+      `${(item.total_acceptances_count / item.total_suggestions_count * 100).toFixed(2)}%`,
+      item.total_lines_suggested?.toLocaleString(),
+      item.total_lines_accepted?.toLocaleString(),
+      item.total_active_users?.toLocaleString(),
+      item.total_chat_acceptances?.toLocaleString(),
+      item.total_chat_turns?.toLocaleString(),
+      item.total_active_chat_users?.toLocaleString()
+    ] as string[])
   ];
-  data.forEach(item => {
-    let total_acceptance_rate = 0;
-    if (item.total_acceptances_count && item.total_suggestions_count) {
-      total_acceptance_rate = item.total_acceptances_count / item.total_suggestions_count * 100;
-    }
-    tableData.push([
-      { data: dateFormat(item.day), header: false },
-      { data: item.total_suggestions_count?.toLocaleString(), header: false },
-      { data: item.total_acceptances_count?.toLocaleString(), header: false },
-      { data: `${total_acceptance_rate.toFixed(2)}%`, header: false },
-      { data: item.total_lines_suggested?.toLocaleString(), header: false },
-      { data: item.total_lines_accepted?.toLocaleString(), header: false },
-      { data: item.total_active_users?.toLocaleString(), header: false },
-      { data: item.total_chat_acceptances?.toLocaleString(), header: false },
-      { data: item.total_chat_turns?.toLocaleString(), header: false },
-      { data: item.total_active_chat_users?.toLocaleString(), header: false }
-    ]);
-  });
-  return tableData;
 }
 
-const getPieChartWeekdayUsage = (data: CustomUsageBreakdown) => {
-  return `\n\`\`\`mermaid
-pie showData
-title Suggestions by Day of the Week
-${Object.entries(data)
-      .map(([language, obj]) => `"${language}" : ${obj.suggestions_count}`)
-      .join('\n')}
-\`\`\`\n`;
-}
+// const getPieChartWeekdayUsage = (data: CustomUsageBreakdown) => {
+//   return `\n\`\`\`mermaid
+// pie showData
+// title Suggestions by Day of the Week
+// ${Object.entries(data)
+//       .map(([language, obj]) => `"${language}" : ${obj.suggestions_count}`)
+//       .join('\n')}
+// \`\`\`\n`;
+// }
 
 const getTableLanguageData = (languageUsage: CustomUsageBreakdown) => {
-  const tableData = [
+  return [
     [
       { data: 'Language', header: true },
       { data: 'Suggestions', header: true },
@@ -258,24 +177,21 @@ const getTableLanguageData = (languageUsage: CustomUsageBreakdown) => {
       { data: 'Lines Suggested', header: true },
       { data: 'Lines Accepted', header: true },
       { data: 'Active Users', header: true }
-    ]
+    ],
+    ...Object.entries(languageUsage).map(([language, data]) => [
+      language,
+      data.suggestions_count.toLocaleString(),
+      data.acceptances_count.toLocaleString(),
+      `${((data.acceptances_count / data.suggestions_count) * 100).toFixed(2)}%`,
+      data.lines_suggested.toLocaleString(),
+      data.lines_accepted.toLocaleString(),
+      data.active_users.toLocaleString()
+    ] as string[])
   ];
-  Object.entries(languageUsage).forEach(([language, data]) => {
-    tableData.push([
-      { data: language, header: false },
-      { data: data.suggestions_count.toLocaleString(), header: false },
-      { data: data.acceptances_count.toLocaleString(), header: false },
-      { data: `${((data.acceptances_count / data.suggestions_count) * 100).toFixed(2)}%`, header: false },
-      { data: data.lines_suggested.toLocaleString(), header: false },
-      { data: data.lines_accepted.toLocaleString(), header: false },
-      { data: data.active_users.toLocaleString(), header: false }
-    ]);
-  });
-  return tableData;
 }
 
 const getTableEditorData = (editorUsage: CustomUsageBreakdown) => {
-  const tableData = [
+  return [
     [
       { data: 'Editor', header: true },
       { data: 'Suggestions', header: true },
@@ -284,20 +200,17 @@ const getTableEditorData = (editorUsage: CustomUsageBreakdown) => {
       { data: 'Lines Suggested', header: true },
       { data: 'Lines Accepted', header: true },
       { data: 'Active Users', header: true }
-    ]
+    ],
+    ...Object.entries(editorUsage).map(([editor, data]) => [
+      editor,
+      data.suggestions_count.toLocaleString(),
+      data.acceptances_count.toLocaleString(),
+      `${((data.acceptances_count / data.suggestions_count) * 100).toFixed(2)}%`,
+      data.lines_suggested.toLocaleString(),
+      data.lines_accepted.toLocaleString(),
+      data.active_users.toLocaleString()
+    ] as string[])
   ];
-  Object.entries(editorUsage).forEach(([editor, data]) => {
-    tableData.push([
-      { data: editor, header: false },
-      { data: data.suggestions_count.toLocaleString(), header: false },
-      { data: data.acceptances_count.toLocaleString(), header: false },
-      { data: `${((data.acceptances_count / data.suggestions_count) * 100).toFixed(2)}%`, header: false },
-      { data: data.lines_suggested.toLocaleString(), header: false },
-      { data: data.lines_accepted.toLocaleString(), header: false },
-      { data: data.active_users.toLocaleString(), header: false }
-    ]);
-  });
-  return tableData;
 }
 
 const getPieChartLanguageUsage = (languageUsage: CustomUsageBreakdown) => {

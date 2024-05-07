@@ -1,128 +1,52 @@
-import * as process from 'process';
-import * as path from 'path';
 import { test } from '@jest/globals';
 import dotenv from 'dotenv'
 dotenv.config({ override: true })
+import { createJobSummarySeatAssignments, createJobSummarySeatInfo, createJobSummaryUsage } from '../src/job-summary';
+import { summary } from '@actions/core/lib/summary';
+import { exampleResponseEnterprise, exampleResponseOrg, exampleResponseTeam, exampleSeatAssignmentResponse, exampleSeatInfoResponse } from './mock/mock-data';
+import { readFileSync } from 'fs';
 
-import run from "../src/run";
-// import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
-
-const addInput = (key, value) => process.env[`INPUT_${key.replace(/ /g, '-').toUpperCase()}`] = value || ''
-// const removeInput = (key) => delete process.env[`INPUT_${key.replace(/ /g, '-').toUpperCase()}`]
-
-const input: any = {
-  'github-token': process.env.GITHUB_TOKEN,
-  'job-summary': 'false',
-  'csv': 'false',
-  'xml': 'false',
-  'ACTIONS_RUNTIME_TOKEN': 'token',
+const getSummaryBuffer = (_summary: typeof summary): string => {
+  return (_summary as unknown as {
+    _buffer: string,
+    _filePath?: string;
+  })._buffer
 }
 
-const organization = process.env.GITHUB_ORG || process.env.GITHUB_REPOSITORY?.split('/')[0];
-if (!organization) throw new Error('GITHUB_ORG or GITHUB_REPOSITORY is required');
+beforeAll(async () => {
+  // await createMockData();
+});
 
 beforeEach(() => {
-  Object.keys(process.env).forEach(key => {
-    if (key.startsWith('INPUT_')) delete process.env[key];
-  });
-  Object.entries(input).forEach(([key, value]) => addInput(key, value));
-  process.env['GITHUB_REPOSITORY'] = `austenstone/${path.basename(process.cwd())}`;
+  summary.emptyBuffer();
 });
 
-test('run with github organization', async () => {
-  console.log(process.env.GITHUB_TOKEN)
-  addInput('organization', organization);
-  await run()
+test('createJobSummaryUsage(enterpriseUsage)', async () => {
+  const summary = await createJobSummaryUsage(exampleResponseEnterprise);
+  expect(summary).toBeDefined();
+  expect(getSummaryBuffer(summary)).toEqual(readFileSync('./__tests__/mock/enterprise-usage-summary.md', 'utf-8'));
 });
 
-// test('run with github team', async () => {
-//   addInput('organization', organization);
-//   addInput('team', 'corporate-solutions-eng');
-//   await run()
-// });
+test('createJobSummaryUsage(orgUsage)', async () => {
+  const summary = await createJobSummaryUsage(exampleResponseOrg);
+  expect(summary).toBeDefined();
+  expect(getSummaryBuffer(summary)).toEqual(readFileSync('./__tests__/mock/org-usage-summary.md', 'utf-8'));
+});
 
-// test('run with github enterprise', async () => {
-//   addInput('enterprise', organization); // same name as organization
-//   await run()
-// });
+test('createJobSummaryUsage(teamUsage)', async () => {
+  const summary = await createJobSummaryUsage(exampleResponseTeam);
+  expect(summary).toBeDefined();
+  expect(getSummaryBuffer(summary)).toEqual(readFileSync('./__tests__/mock/team-usage-summary.md', 'utf-8'));
+});
 
-// test('run job summary', async () => {
-//   const fileName = 'copilot-usage.md';
-//   writeFileSync(fileName, '');
-//   process.env['GITHUB_STEP_SUMMARY'] = fileName;
-//   addInput('organization', organization);
-//   addInput('job-summary', 'true');
-//   await run();
-//   expect(existsSync(fileName)).toBe(true);
-//   expect(readFileSync(fileName).toString()).toContain('Copilot Usage');
-//   unlinkSync(fileName);
-// });
+test('createJobSummarySeatInfo(orgSeatInfo)', async () => {
+  const summary = await createJobSummarySeatInfo(exampleSeatInfoResponse);
+  expect(summary).toBeDefined();
+  expect(getSummaryBuffer(summary)).toEqual(readFileSync('./__tests__/mock/org-seat-info-summary.md', 'utf-8'));
+});
 
-// test('run csv', async () => {
-//   const fileName = "copilot-usage.csv";
-//   const numDays = 20;
-//   addInput('organization', organization);
-//   addInput('csv', 'true');
-//   addInput('days', numDays.toString());
-//   await run();
-//   expect(existsSync(fileName)).toBe(true);
-//   const csv = readFileSync(fileName).toString();
-//   expect(csv).toContain('day,total_suggestions_count,total_acceptances_count,total_lines_suggested,total_lines_accepted,total_active_users,total_chat_acceptances,total_chat_turns,total_active_chat_users,breakdown');
-//   expect(csv.split('\n').length).toEqual(numDays);
-//   unlinkSync(fileName);
-// });
-
-// test('run with xml', async () => {
-//   addInput('organization', organization);
-//   addInput('xml', 'true');
-//   await run();
-//   expect(existsSync('copilot-usage.xml')).toBe(true);
-//   unlinkSync('copilot-usage.xml');
-// });
-
-// test('run with no org, team, or enterprise', async () => {
-//   await expect(run()).rejects.toThrow('organization, enterprise or team is required');
-// });
-
-// test('run with no token', async () => {
-//   removeInput('github-token');
-//   await expect(run()).rejects.toThrow('github-token is required');
-// });
-
-// test('get only 7 days of data', async () => {
-//   const fileName = "copilot-usage.csv";
-//   const numDays = 7;
-//   addInput('organization', organization);
-//   addInput('csv', 'true');
-//   addInput('days', numDays.toString());
-//   await run();
-//   expect(existsSync(fileName)).toBe(true);
-//   const csv = readFileSync(fileName).toString();
-//   expect(csv.split('\n').length - 1).toEqual(numDays);
-// });
-
-// test('get data since a specific date', async () => {
-//   const fileName = "copilot-usage.csv";
-//   const since = new Date(new Date().setDate(new Date().getDate() - 7)).toISOString().split('T')[0];
-//   addInput('organization', organization);
-//   addInput('csv', 'true');
-//   addInput('since', since);
-//   await run();
-//   expect(existsSync(fileName)).toBe(true);
-//   const csv = readFileSync(fileName).toString();
-//   expect(csv.split('\n').length - 1).toEqual(7);
-// });
-
-// test('get data since and until a specific date', async () => {
-//   const fileName = "copilot-usage.csv";
-//   const since = new Date(new Date().setDate(new Date().getDate() - 7)).toISOString().split('T')[0];
-//   const until = new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().split('T')[0];
-//   addInput('organization', organization);
-//   addInput('csv', 'true');
-//   addInput('since', since);
-//   addInput('until', until);
-//   await run();
-//   expect(existsSync(fileName)).toBe(true);
-//   const csv = readFileSync(fileName).toString();
-//   expect(csv.split('\n').length - 1).toEqual(6);
-// });
+test('createJobSummarySeatAssignments(orgSeatAssignments)', async () => {
+  const summary = await createJobSummarySeatAssignments(exampleSeatAssignmentResponse);
+  expect(summary).toBeDefined();
+  expect(getSummaryBuffer(summary)).toEqual(readFileSync('./__tests__/mock/org-seat-assignments-summary.md', 'utf-8'));
+});
