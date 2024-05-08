@@ -29,5 +29,6 @@ jobs:
           from: ${{ secrets.EMAIL }}
           to: ${{ secrets.EMAIL }} # Recipient email
           subject: "Copilot Usage Report (${{ steps.usage.outputs.since }} - ${{ steps.usage.outputs.until }})"
-          body: "Attached is the Copilot Usage Report for ${{ steps.usage.outputs.since }} - ${{ steps.usage.outputs.until }}!"
+          body: |
+            Attached is the Copilot Usage Report for ${{ steps.usage.outputs.since }} - ${{ steps.usage.outputs.until }}!
           attachments: ${{ steps.pdf.outputs.pdf-file }}
