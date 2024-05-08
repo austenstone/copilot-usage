@@ -39,8 +39,7 @@ export const createJobSummaryUsage = (data) => {
     const totalChatAcceptanceRate = (totalChatAcceptanceCount / totalChatTurns * 100).toFixed(2);
     const totalAvgChatUsers = data.reduce((acc, item) => acc + item.total_active_chat_users, 0) / data.filter((item) => item.total_chat_turns > 0).length;
     return summary
-        .addRaw(`<h1 style="border-bottom: 0; margin-bottom: 0; padding-bottom: 0">Copilot Usage</h1>`)
-        .addRaw(`<h2 style="border-bottom: 0; margin-top: 0">${data.length} days (${dateFormat(data[0].day)} - ${dateFormat(data[data.length - 1].day)})</h2>`)
+        .addHeading(`Copilot Usage<br>${data.length} days (${dateFormat(data[0].day)} - ${dateFormat(data[data.length - 1].day)})`)
         .addHeading(`Copilot Chat`, 2)
         .addList([
         `Acceptances: ${totalChatAcceptanceCount.toLocaleString()}`,
