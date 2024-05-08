@@ -32,12 +32,13 @@ jobs:
           html_body: |
             <!DOCTYPE html>
             <html>
+            
             <body>
               <h1>Copilot Usage Report</h1>
               <p>Attached is the Copilot Usage Report for ${{ steps.usage.outputs.since }} - ${{ steps.usage.outputs.until }}!</p>
-              <p>
-                <a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}>View the full report on GitHub.com</a>
-              </p>
+              <a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}">View the full report on
+                GitHub.com</a>
             </body>
+            
             </html>
           attachments: ${{ steps.pdf.outputs.pdf-file }}
