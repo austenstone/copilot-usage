@@ -39,19 +39,23 @@ export const createJobSummaryUsage = (data) => {
     const totalChatAcceptanceRate = (totalChatAcceptanceCount / totalChatTurns * 100).toFixed(2);
     const totalAvgChatUsers = data.reduce((acc, item) => acc + item.total_active_chat_users, 0) / data.filter((item) => item.total_chat_turns > 0).length;
     return summary
-        .addRaw(`<h1>Copilot Usage</h1>`)
-        .addRaw(`<h2>${data.length} days (${dateFormat(data[0].day)} - ${dateFormat(data[data.length - 1].day)})</h2>`)
-        .addHeading(`Copilot Chat`, 3)
-        .addHeading(`Acceptances: ${totalChatAcceptanceCount.toLocaleString()}`, 4)
-        .addHeading(`Turns: ${totalChatTurns.toLocaleString()}`, 4)
-        .addHeading(`Acceptance Rate: ${totalChatAcceptanceRate}%`, 4)
-        .addHeading(`Average Daily Users: ${totalAvgChatUsers.toFixed(2)}`, 4)
+        .addRaw(`<h1 style="border-bottom: 0; margin-bottom: 0; padding-bottom: 0">Copilot Usage</h1>`)
+        .addRaw(`<h2 style="border-bottom: 0; margin-top: 0">${data.length} days (${dateFormat(data[0].day)} - ${dateFormat(data[data.length - 1].day)})</h2>`)
+        .addHeading(`Copilot Chat`, 2)
+        .addList([
+        `Acceptances: ${totalChatAcceptanceCount.toLocaleString()}`,
+        `Turns: ${totalChatTurns.toLocaleString()}`,
+        `Acceptance Rate: ${totalChatAcceptanceRate}%`,
+        `Average Daily Users: ${totalAvgChatUsers.toFixed(2)}`
+    ])
         .addRaw(getXyChartChatAcceptanceRate(data))
-        .addHeading(`Copilot Completions`, 3)
-        .addHeading(`Suggestions: ${totalSuggestionsCount.toLocaleString()}`, 4)
-        .addHeading(`Acceptances: ${totalAcceptanceCount.toLocaleString()}`, 4)
-        .addHeading(`Acceptance Rate: ${totalAcceptanceRate}%`, 4)
-        .addHeading(`Lines of Code Accepted: ${totalLinesOfCodeAccepted.toLocaleString()}`, 4)
+        .addHeading(`Copilot Completions`, 2)
+        .addList([
+        `Suggestions: ${totalSuggestionsCount.toLocaleString()}`,
+        `Acceptances: ${totalAcceptanceCount.toLocaleString()}`,
+        `Acceptance Rate: ${totalAcceptanceRate}%`,
+        `Lines of Code Accepted: ${totalLinesOfCodeAccepted.toLocaleString()}`
+    ])
         .addRaw(getXyChartAcceptanceRate(data))
         .addRaw(getXyChartDailyActiveUsers(data))
         .addHeading('Language Usage')
