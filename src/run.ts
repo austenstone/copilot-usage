@@ -142,7 +142,7 @@ const run = async (): Promise<void> => {
     }
     
     if (input.organization) {
-      await createJobSummaryFooter(input.organization);
+      (await createJobSummaryFooter(input.organization)).write();
     }
   }
 

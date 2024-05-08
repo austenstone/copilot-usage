@@ -64,26 +64,30 @@ export const createJobSummaryUsage = (data) => {
         .addRaw(getPieChartEditorUsage(editorUsage))
         .addTable(getTableEditorData(editorUsage))
         .addHeading('Daily Usage')
-        .addHeading(`The most active day was ${dateFormat(mostActiveDay.day)} with ${mostActiveDay.total_active_users} active users.`, 3)
-        .addHeading(`The day with the highest acceptance rate was ${dateFormat(highestAcceptanceRateDay.day)} with an acceptance rate of ${(highestAcceptanceRateDay.total_acceptances_count / highestAcceptanceRateDay.total_suggestions_count * 100).toFixed(2)}%.`, 3)
+        .addList([
+        `Most Active Day: ${dateFormat(mostActiveDay.day)} (${mostActiveDay.total_active_users} active users)`,
+        `Highest Acceptance Rate: ${dateFormat(highestAcceptanceRateDay.day)} (${(highestAcceptanceRateDay.total_acceptances_count / highestAcceptanceRateDay.total_suggestions_count * 100).toFixed(2)}%)`
+    ])
         .addTable(getTableData(data));
     return summary;
 };
 export const createJobSummarySeatInfo = (data) => {
     return summary
         .addHeading('Seat Info')
-        .addHeading(`Seat Management Setting: ${data.seat_management_setting}`, 3)
-        .addHeading(`Public Code Suggestions Enabled: ${data.public_code_suggestions}`, 3)
-        .addHeading(`IDE Chat Enabled: ${data.ide_chat}`, 3)
-        .addHeading(`Platform IDE Enabled: ${data.platform_ide}`, 3)
-        .addHeading(`Platform Chat Enabled: ${data.platform_chat}`, 3)
-        .addHeading(`CLI Enabled: ${data.cli}`, 3)
-        .addHeading(`Total Seats: ${data.seat_breakdown.total}`, 3)
-        .addHeading(`Added this cycle: ${data.seat_breakdown.added_this_cycle}`, 3)
-        .addHeading(`Pending invites: ${data.seat_breakdown.pending_invitation}`, 3)
-        .addHeading(`Pending cancellations: ${data.seat_breakdown.pending_cancellation}`, 3)
-        .addHeading(`Active this cycle: ${data.seat_breakdown.active_this_cycle}`, 3)
-        .addHeading(`Inactive this cycle: ${data.seat_breakdown.inactive_this_cycle}`, 3);
+        .addList([
+        `Seat Management Setting: ${data.seat_management_setting}`,
+        `Public Code Suggestions Enabled: ${data.public_code_suggestions}`,
+        `IDE Chat Enabled: ${data.ide_chat}`,
+        `Platform IDE Enabled: ${data.platform_ide || 'disabled'}`,
+        `Platform Chat Enabled: ${data.platform_chat}`,
+        `CLI Enabled: ${data.cli}`,
+        `Total Seats: ${data.seat_breakdown.total}`,
+        `Added this cycle: ${data.seat_breakdown.added_this_cycle}`,
+        `Pending invites: ${data.seat_breakdown.pending_invitation}`,
+        `Pending cancellations: ${data.seat_breakdown.pending_cancellation}`,
+        `Active this cycle: ${data.seat_breakdown.active_this_cycle}`,
+        `Inactive this cycle: ${data.seat_breakdown.inactive_this_cycle}`
+    ]);
 };
 export const createJobSummarySeatAssignments = (data) => {
     if (!data)
@@ -114,9 +118,8 @@ export const createJobSummarySeatAssignments = (data) => {
     ]);
 };
 export const createJobSummaryFooter = async (organization) => {
-    summary
-        .addLink(`Manage Access for ${organization}`, `https://github.com/organizations/${organization}/settings/copilot/seat_management`)
-        .write();
+    return summary
+        .addLink(`Manage Access for ${organization}`, `https://github.com/organizations/${organization}/settings/copilot/seat_management`);
 };
 const getTableData = (data) => {
     return [
