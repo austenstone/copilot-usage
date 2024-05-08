@@ -115,8 +115,8 @@ Various inputs are defined in [`action.yml`](action.yml):
 | organization | The organization slug | ${{ github.repository_owner }} |
 | team | The team slug | |
 | days | The number of days to show usage metrics for | |
-| since | Show usage metrics since this date. This is a timestamp in ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ). Maximum value is 28 days ago | |
-| until | Show usage metrics until this date. This is a timestamp in ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ). Maximum value is 28 days ago | |
+| since | Show usage metrics since this date. This is a timestamp, in `YYYY-MM-DD` format. Maximum value is 28 days ago | |
+| until | Show usage metrics until this date. This is a timestamp, in `YYYY-MM-DD` format. Maximum value is 28 days ago | |
 | job-summary | Whether to generate a report | true |
 | csv | Whether to generate a CSV as a workflow artifact | false |
 | csv-options | The options for the CSV report | |

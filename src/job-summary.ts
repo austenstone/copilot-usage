@@ -1,5 +1,5 @@
 import { summary } from "@actions/core";
-import { CopilotUsageBreakdown, CopilotUsageResponse } from "./run";
+import { CopilotUsageBreakdown, CopilotUsageResponse, CopilotUsageResponseData } from "./run";
 import { RestEndpointMethodTypes } from '@octokit/action';
 
 interface CustomUsageBreakdown {
@@ -55,12 +55,25 @@ export const createJobSummaryUsage = (data: CopilotUsageResponse) => {
   const mostActiveDay = data.reduce((acc, item) => (acc.total_active_users > item.total_active_users) ? acc : item);
   const highestAcceptanceRateDay = data.reduce((acc, item) => ((acc.total_acceptances_count / acc.total_suggestions_count) > (item.total_acceptances_count / item.total_suggestions_count)) ? acc : item);
 
+  const totalChatAcceptanceCount = data.reduce((acc, item) => acc + item.total_chat_acceptances, 0);
+  const totalChatTurns = data.reduce((acc, item) => acc + item.total_chat_turns, 0);
+  const totalChatAcceptanceRate = (totalChatAcceptanceCount / totalChatTurns * 100).toFixed(2);
+  const totalAvgChatUsers = data.reduce((acc, item) => acc + item.total_active_chat_users, 0) / data.length;
+
+
   return summary
     .addHeading(`Copilot Usage<br>${dateFormat(data[0].day)} - ${dateFormat(data[data.length - 1].day)}`)
-    .addHeading(`Suggestions: ${totalSuggestionsCount.toLocaleString()}`, 3)
-    .addHeading(`Acceptances: ${totalAcceptanceCount.toLocaleString()}`, 3)
-    .addHeading(`Acceptance Rate: ${totalAcceptanceRate}%`, 3)
-    .addHeading(`Lines of Code Accepted: ${totalLinesOfCodeAccepted.toLocaleString()}`, 3)
+    .addHeading(`Completions`, 3)
+    .addHeading(`Suggestions: ${totalSuggestionsCount.toLocaleString()}`, 4)
+    .addHeading(`Acceptances: ${totalAcceptanceCount.toLocaleString()}`, 4)
+    .addHeading(`Acceptance Rate: ${totalAcceptanceRate}%`, 4)
+    .addHeading(`Lines of Code Accepted: ${totalLinesOfCodeAccepted.toLocaleString()}`, 4)
+    .addHeading(`Chat`, 3)
+    .addHeading(`Acceptances: ${totalChatAcceptanceCount.toLocaleString()}`, 4)
+    .addHeading(`Turns: ${totalChatTurns.toLocaleString()}`, 4)
+    .addHeading(`Acceptance Rate: ${totalChatAcceptanceRate}%`, 4)
+    .addHeading(`Average Daily Users: ${totalAvgChatUsers.toFixed(2)}`, 4)
+    .addRaw(getXyChartChatAcceptanceRate(data))
     .addRaw(getXyChartAcceptanceRate(data))
     .addRaw(getXyChartDailyActiveUsers(data))
     .addHeading('Language Usage')
@@ -236,8 +249,14 @@ title Editor Usage
 \`\`\`\n`;
 }
 
-const getXyChartAcceptanceRate = (data: CopilotUsageResponse) => {
-  const maxAcceptances = Math.max(...data.map((item) => item.total_acceptances_count)) + 10;
+const generateXyChart = (
+  data: CopilotUsageResponse, 
+  title: string, 
+  yAxisTitle: string, 
+  dataForBar: (item: CopilotUsageResponseData) => number, 
+  dataForLine: (item: CopilotUsageResponseData) => number,
+  maxData: number
+) => {
   return `\n\`\`\`mermaid
 ---
 config:
@@ -251,15 +270,39 @@ config:
             backgroundColor: "transparent"
 ---
 xychart-beta
-  title "Accepts & Acceptance Rate"
+  title "${title}"
   x-axis [${data.map((item) => `"${dateFormat(item.day, { month: '2-digit', day: '2-digit' })}"`).join(', ')
     }]
-  y-axis "Acceptances" 0 --> ${maxAcceptances}
-  bar [${data.map((item) => item.total_acceptances_count).join(', ')
+  y-axis "${yAxisTitle}" 0 --> ${maxData}
+  bar [${data.map(dataForBar).join(', ')
     }]
-  line [${data.map((item) => (item.total_acceptances_count / item.total_suggestions_count) * maxAcceptances).join(', ')
+  line [${data.map(dataForLine).join(', ')
     }]
 \`\`\`\n`;
+}
+
+const getXyChartAcceptanceRate = (data: CopilotUsageResponse) => {
+  const maxAcceptances = Math.max(...data.map((item) => item.total_acceptances_count)) + 10;
+  return generateXyChart(
+    data, 
+    "Accepts & Acceptance Rate", 
+    "Acceptances", 
+    (item) => item.total_acceptances_count, 
+    (item) => (item.total_acceptances_count / item.total_suggestions_count) * maxAcceptances,
+    maxAcceptances
+  );
+}
+
+const getXyChartChatAcceptanceRate = (data: CopilotUsageResponse) => {
+  const maxChatAcceptances = Math.max(...data.map((item) => item.total_chat_acceptances)) + 10;
+  return generateXyChart(
+    data, 
+    "Chat Accepts & Acceptance Rate", 
+    "Chat Acceptances",
+    (item) => item.total_chat_acceptances, 
+    (item) => (item.total_chat_acceptances / item.total_chat_turns) * maxChatAcceptances,
+    maxChatAcceptances
+  );
 }
 
 const getXyChartDailyActiveUsers = (data: CopilotUsageResponse) => {
