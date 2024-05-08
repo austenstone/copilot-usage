@@ -230,11 +230,11 @@ xychart-beta
 };
 const getXyChartAcceptanceRate = (data) => {
     const maxAcceptances = Math.max(...data.map((item) => item.total_acceptances_count)) + 10;
-    return generateXyChart(data, "Accepts & Acceptance Rate", "Acceptances", (item) => item.total_acceptances_count, (item) => (item.total_acceptances_count / item.total_suggestions_count) * maxAcceptances, maxAcceptances);
+    return generateXyChart(data, "Accepts & Acceptance Rate", "Acceptances", (item) => item.total_acceptances_count, (item) => ((item.total_acceptances_count / item.total_suggestions_count) * maxAcceptances) || 0, maxAcceptances);
 };
 const getXyChartChatAcceptanceRate = (data) => {
     const maxChatAcceptances = Math.max(...data.map((item) => item.total_chat_acceptances)) + 10;
-    return generateXyChart(data, "Chat Accepts & Acceptance Rate", "Chat Acceptances", (item) => item.total_chat_acceptances, (item) => (item.total_chat_acceptances / item.total_chat_turns) * maxChatAcceptances, maxChatAcceptances);
+    return generateXyChart(data, "Chat Accepts & Acceptance Rate", "Chat Acceptances", (item) => item.total_chat_acceptances, (item) => ((item.total_chat_acceptances / item.total_chat_turns) * maxChatAcceptances) || 0, maxChatAcceptances);
 };
 const getXyChartDailyActiveUsers = (data) => {
     const maxActiveUsers = Math.max(...data.map((item) => item.total_active_users)) + 10;

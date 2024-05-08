@@ -288,7 +288,7 @@ const getXyChartAcceptanceRate = (data: CopilotUsageResponse) => {
     "Accepts & Acceptance Rate", 
     "Acceptances", 
     (item) => item.total_acceptances_count, 
-    (item) => (item.total_acceptances_count / item.total_suggestions_count) * maxAcceptances,
+    (item) => ((item.total_acceptances_count / item.total_suggestions_count) * maxAcceptances) || 0,
     maxAcceptances
   );
 }
@@ -300,7 +300,7 @@ const getXyChartChatAcceptanceRate = (data: CopilotUsageResponse) => {
     "Chat Accepts & Acceptance Rate", 
     "Chat Acceptances",
     (item) => item.total_chat_acceptances, 
-    (item) => (item.total_chat_acceptances / item.total_chat_turns) * maxChatAcceptances,
+    (item) => ((item.total_chat_acceptances / item.total_chat_turns) * maxChatAcceptances) || 0,
     maxChatAcceptances
   );
 }
