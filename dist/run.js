@@ -95,7 +95,7 @@ const run = async () => {
             }
         }
         if (input.organization) {
-            await createJobSummaryFooter(input.organization);
+            (await createJobSummaryFooter(input.organization)).write();
         }
     }
     if (input.csv || input.xml) {

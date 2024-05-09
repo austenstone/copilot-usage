@@ -92,6 +92,28 @@ export const createJobSummarySeatInfo = (data) => {
 export const createJobSummarySeatAssignments = (data) => {
     if (!data)
         data = [];
+    console.log([
+        [
+            { data: 'Avatar', header: true },
+            { data: 'Login', header: true },
+            { data: 'Last Activity', header: true },
+            { data: 'Last Editor Used', header: true },
+            { data: 'Created At', header: true },
+            { data: 'Updated At', header: true },
+            { data: 'Pending Cancellation Date', header: true },
+            { data: 'Team', header: true },
+        ],
+        ...data.map(seat => [
+            `<img src="${seat.assignee?.avatar_url}" width="33" />`,
+            seat.assignee?.login,
+            seat.last_activity_at ? dateFormat(seat.last_activity_at) : 'No Activity',
+            seat.last_activity_editor,
+            dateFormat(seat.created_at),
+            dateFormat(seat.updated_at),
+            dateFormat(seat.pending_cancellation_date) || ' ',
+            String(seat.assigning_team?.name || ' '),
+        ])
+    ]);
     return summary
         .addHeading('Seat Assignments')
         .addTable([
@@ -118,8 +140,7 @@ export const createJobSummarySeatAssignments = (data) => {
     ]);
 };
 export const createJobSummaryFooter = async (organization) => {
-    return summary
-        .addLink(`Manage Access for ${organization}`, `https://github.com/organizations/${organization}/settings/copilot/seat_management`);
+    return summary.addLink(`Manage Access for ${organization}`, `https://github.com/organizations/${organization}/settings/copilot/seat_management`);
 };
 const getTableData = (data) => {
     return [
