@@ -6,8 +6,7 @@
   "scripts": {
     "build": "tsc && ncc build src/index.ts -o dist --source-map --license LICENSE",
     "test": "jest",
-    "lint": "eslint src/**/*.ts",
-    "dev": "webpack serve"
+    "lint": "eslint src/**/*.ts"
   },
   "keywords": [
     "actions",
