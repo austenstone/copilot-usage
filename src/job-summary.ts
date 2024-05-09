@@ -131,7 +131,7 @@ export const createJobSummarySeatAssignments = (data: RestEndpointMethodTypes["c
       `<img src="${seat.assignee?.avatar_url}" width="33" />`,
       seat.assignee?.login,
       seat.last_activity_at ? dateFormat(seat.last_activity_at) : 'No Activity',
-      seat.last_activity_editor,
+      seat.last_activity_editor || 'N/A',
       dateFormat(seat.created_at),
       dateFormat(seat.updated_at),
       dateFormat(seat.pending_cancellation_date) || ' ',
