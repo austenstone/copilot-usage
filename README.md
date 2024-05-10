@@ -93,7 +93,23 @@ jobs:
           from: ${{ secrets.EMAIL }}
           to: ${{ secrets.EMAIL }} # Recipient email
           subject: "Copilot Usage Report (${{ steps.usage.outputs.since }} - ${{ steps.usage.outputs.until }})"
-          body: "Attached is the Copilot Usage Report for ${{ steps.usage.outputs.since }} - ${{ steps.usage.outputs.until }}!"
+          html_body: |
+            <!DOCTYPE html>
+            <html>
+            
+            <body>
+              <h1>Copilot Usage Report</h1>
+              <p>Attached is the Copilot Usage Report for ${{ steps.usage.outputs.since }} - ${{ steps.usage.outputs.until }}!</p>
+              <p>
+                <a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}#:~:text=Copilot%20Usage%20summary">View the full report on
+                  GitHub.com</a>
+              </p>
+
+              ${{ steps.pdf.outputs.job-summary-html }}
+              
+            </body>
+            
+            </html>
           attachments: ${{ steps.pdf.outputs.pdf-file }}
 ```
 
