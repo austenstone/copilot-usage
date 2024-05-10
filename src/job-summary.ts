@@ -1,6 +1,6 @@
 import { summary } from "@actions/core";
 import { CopilotUsageBreakdown, CopilotUsageResponse, CopilotUsageResponseData } from "./run";
-import { RestEndpointMethodTypes } from '@octokit/action';
+import { RestEndpointMethodTypes } from "@actions/github/node_modules/@octokit/plugin-rest-endpoint-methods";
 
 interface CustomUsageBreakdown {
   [key: string]: {
