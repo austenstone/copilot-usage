@@ -80,7 +80,7 @@ jobs:
       - uses: austenstone/copilot-usage@v3
         with:
           github-token: ${{ secrets.TOKEN }}
-      - uses: austenstone/job-summary-to-pdf@v1.0
+      - uses: austenstone/job-summary@v2.0
         id: pdf
         with:
           name: copilot-usage
