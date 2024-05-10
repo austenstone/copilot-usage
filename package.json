@@ -28,7 +28,7 @@
     "@octokit/action": "^6.1.0",
     "json-2-csv": "^5.5.1",
     "jstoxml": "^5.0.1",
-    "octokit": "^3.2.0"
+    "octokit": "^3.2.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.1.1",
