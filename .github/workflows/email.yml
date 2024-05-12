@@ -2,7 +2,7 @@ name: Email Copilot Report
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 0 * * 0' # Sunday at midnight (00:00).
 permissions:
   contents: read
 
@@ -21,7 +21,7 @@ jobs:
         with:
           organization: ${{ secrets.ORG }}
           github-token: ${{ secrets.TOKEN }}
-      - uses: austenstone/job-summary-to-pdf@46efad7c26e2b493edec9c49c27214d0428dedc9 # v1.0
+      - uses: austenstone/job-summary@v2.0
         id: pdf
         with:
           name: copilot-usage
@@ -34,5 +34,21 @@ jobs:
           from: ${{ secrets.EMAIL }}
           to: ${{ secrets.EMAIL }} # Recipient email
           subject: "Copilot Usage Report (${{ steps.usage.outputs.since }} - ${{ steps.usage.outputs.until }})"
-          body: "Attached is the Copilot Usage Report for ${{ steps.usage.outputs.since }} - ${{ steps.usage.outputs.until }}!"
+          html_body: |
+            <!DOCTYPE html>
+            <html>
+            
+            <body>
+              <h1>Copilot Usage Report</h1>
+              <p>Attached is the Copilot Usage Report for ${{ steps.usage.outputs.since }} - ${{ steps.usage.outputs.until }}!</p>
+              <p>
+                <a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}#:~:text=Copilot%20Usage%20summary">View the full report on
+                  GitHub.com</a>
+              </p>
+
+              ${{ steps.pdf.outputs.job-summary-html }}
+              
+            </body>
+            
+            </html>
           attachments: ${{ steps.pdf.outputs.pdf-file }}

@@ -1,6 +1,6 @@
 import { summary } from "@actions/core";
-import { CopilotUsageBreakdown, CopilotUsageResponse } from "./run";
-import { RestEndpointMethodTypes } from '@octokit/action';
+import { CopilotUsageBreakdown, CopilotUsageResponse, CopilotUsageResponseData } from "./run";
+import { RestEndpointMethodTypes } from "@actions/github/node_modules/@octokit/plugin-rest-endpoint-methods";
 
 interface CustomUsageBreakdown {
   [key: string]: {
@@ -55,12 +55,28 @@ export const createJobSummaryUsage = (data: CopilotUsageResponse) => {
   const mostActiveDay = data.reduce((acc, item) => (acc.total_active_users > item.total_active_users) ? acc : item);
   const highestAcceptanceRateDay = data.reduce((acc, item) => ((acc.total_acceptances_count / acc.total_suggestions_count) > (item.total_acceptances_count / item.total_suggestions_count)) ? acc : item);
 
+  const totalChatAcceptanceCount = data.reduce((acc, item) => acc + item.total_chat_acceptances, 0);
+  const totalChatTurns = data.reduce((acc, item) => acc + item.total_chat_turns, 0);
+  const totalChatAcceptanceRate = (totalChatAcceptanceCount / totalChatTurns * 100).toFixed(2);
+  const totalAvgChatUsers = data.reduce((acc, item) => acc + item.total_active_chat_users, 0) / data.filter((item) => item.total_chat_turns > 0).length;
+
   return summary
-    .addHeading(`Copilot Usage<br>${dateFormat(data[0].day)} - ${dateFormat(data[data.length - 1].day)}`)
-    .addHeading(`Suggestions: ${totalSuggestionsCount.toLocaleString()}`, 3)
-    .addHeading(`Acceptances: ${totalAcceptanceCount.toLocaleString()}`, 3)
-    .addHeading(`Acceptance Rate: ${totalAcceptanceRate}%`, 3)
-    .addHeading(`Lines of Code Accepted: ${totalLinesOfCodeAccepted.toLocaleString()}`, 3)
+    .addHeading(`Copilot Usage<br>${data.length} days (${dateFormat(data[0].day)} - ${dateFormat(data[data.length - 1].day)})`)
+    .addHeading(`Copilot Chat`, 2)
+    .addList([
+      `Acceptances: ${totalChatAcceptanceCount.toLocaleString()}`,
+      `Turns: ${totalChatTurns.toLocaleString()}`,
+      `Acceptance Rate: ${totalChatAcceptanceRate}%`,
+      `Average Daily Users: ${totalAvgChatUsers.toFixed(2)}`
+    ])
+    .addRaw(getXyChartChatAcceptanceRate(data))
+    .addHeading(`Copilot Completions`, 2)
+    .addList([
+      `Suggestions: ${totalSuggestionsCount.toLocaleString()}`,
+      `Acceptances: ${totalAcceptanceCount.toLocaleString()}`,
+      `Acceptance Rate: ${totalAcceptanceRate}%`,
+      `Lines of Code Accepted: ${totalLinesOfCodeAccepted.toLocaleString()}`
+    ])
     .addRaw(getXyChartAcceptanceRate(data))
     .addRaw(getXyChartDailyActiveUsers(data))
     .addHeading('Language Usage')
@@ -70,8 +86,10 @@ export const createJobSummaryUsage = (data: CopilotUsageResponse) => {
     .addRaw(getPieChartEditorUsage(editorUsage))
     .addTable(getTableEditorData(editorUsage))
     .addHeading('Daily Usage')
-    .addHeading(`The most active day was ${dateFormat(mostActiveDay.day)} with ${mostActiveDay.total_active_users} active users.`, 3)
-    .addHeading(`The day with the highest acceptance rate was ${dateFormat(highestAcceptanceRateDay.day)} with an acceptance rate of ${(highestAcceptanceRateDay.total_acceptances_count / highestAcceptanceRateDay.total_suggestions_count * 100).toFixed(2)}%.`, 3)
+    .addList([
+      `Most Active Day: ${dateFormat(mostActiveDay.day)} (${mostActiveDay.total_active_users} active users)`,
+      `Highest Acceptance Rate: ${dateFormat(highestAcceptanceRateDay.day)} (${(highestAcceptanceRateDay.total_acceptances_count / highestAcceptanceRateDay.total_suggestions_count * 100).toFixed(2)}%)`
+    ])
     // .addRaw(getPieChartWeekdayUsage(dayOfWeekUsage))
     .addTable(getTableData(data))
   return summary;
@@ -80,18 +98,20 @@ export const createJobSummaryUsage = (data: CopilotUsageResponse) => {
 export const createJobSummarySeatInfo = (data: RestEndpointMethodTypes["copilot"]["getCopilotOrganizationDetails"]["response"]["data"]) => {
   return summary
     .addHeading('Seat Info')
-    .addHeading(`Seat Management Setting: ${data.seat_management_setting}`, 3)
-    .addHeading(`Public Code Suggestions Enabled: ${data.public_code_suggestions}`, 3)
-    .addHeading(`IDE Chat Enabled: ${data.ide_chat}`, 3)
-    .addHeading(`Platform IDE Enabled: ${data.platform_ide}`, 3)
-    .addHeading(`Platform Chat Enabled: ${data.platform_chat}`, 3)
-    .addHeading(`CLI Enabled: ${data.cli}`, 3)
-    .addHeading(`Total Seats: ${data.seat_breakdown.total}`, 3)
-    .addHeading(`Added this cycle: ${data.seat_breakdown.added_this_cycle}`, 3)
-    .addHeading(`Pending invites: ${data.seat_breakdown.pending_invitation}`, 3)
-    .addHeading(`Pending cancellations: ${data.seat_breakdown.pending_cancellation}`, 3)
-    .addHeading(`Active this cycle: ${data.seat_breakdown.active_this_cycle}`, 3)
-    .addHeading(`Inactive this cycle: ${data.seat_breakdown.inactive_this_cycle}`, 3)
+    .addList([
+      `Seat Management Setting: ${data.seat_management_setting}`,
+      `Public Code Suggestions Enabled: ${data.public_code_suggestions}`,
+      `IDE Chat Enabled: ${data.ide_chat}`,
+      `Platform IDE Enabled: ${data.platform_ide || 'disabled'}`, // TODO: Remove this line when platform_ide is available in the response
+      `Platform Chat Enabled: ${data.platform_chat}`,
+      `CLI Enabled: ${data.cli}`,
+      `Total Seats: ${data.seat_breakdown.total}`,
+      `Added this cycle: ${data.seat_breakdown.added_this_cycle}`,
+      `Pending invites: ${data.seat_breakdown.pending_invitation}`,
+      `Pending cancellations: ${data.seat_breakdown.pending_cancellation}`,
+      `Active this cycle: ${data.seat_breakdown.active_this_cycle}`,
+      `Inactive this cycle: ${data.seat_breakdown.inactive_this_cycle}`
+    ])
 }
 
 export const createJobSummarySeatAssignments = (data: RestEndpointMethodTypes["copilot"]["listCopilotSeats"]["response"]["data"]["seats"]) => {
@@ -113,7 +133,7 @@ export const createJobSummarySeatAssignments = (data: RestEndpointMethodTypes["c
         `<img src="${seat.assignee?.avatar_url}" width="33" />`,
         seat.assignee?.login,
         seat.last_activity_at ? dateFormat(seat.last_activity_at) : 'No Activity',
-        seat.last_activity_editor,
+        seat.last_activity_editor || 'N/A',
         dateFormat(seat.created_at),
         dateFormat(seat.updated_at),
         dateFormat(seat.pending_cancellation_date) || ' ',
@@ -123,9 +143,7 @@ export const createJobSummarySeatAssignments = (data: RestEndpointMethodTypes["c
 }
 
 export const createJobSummaryFooter = async (organization: string) => {
-  summary
-    .addLink(`Manage Access for ${organization}`, `https://github.com/organizations/${organization}/settings/copilot/seat_management`)
-    .write();
+  return summary.addLink(`Manage Access for ${organization}`, `https://github.com/organizations/${organization}/settings/copilot/seat_management`)
 }
 
 const getTableData = (data: CopilotUsageResponse) => {
@@ -236,8 +254,14 @@ title Editor Usage
 \`\`\`\n`;
 }
 
-const getXyChartAcceptanceRate = (data: CopilotUsageResponse) => {
-  const maxAcceptances = Math.max(...data.map((item) => item.total_acceptances_count)) + 10;
+const generateXyChart = (
+  data: CopilotUsageResponse, 
+  title: string, 
+  yAxisTitle: string, 
+  dataForBar: (item: CopilotUsageResponseData) => number, 
+  dataForLine: (item: CopilotUsageResponseData) => number,
+  maxData: number
+) => {
   return `\n\`\`\`mermaid
 ---
 config:
@@ -251,15 +275,39 @@ config:
             backgroundColor: "transparent"
 ---
 xychart-beta
-  title "Accepts & Acceptance Rate"
+  title "${title}"
   x-axis [${data.map((item) => `"${dateFormat(item.day, { month: '2-digit', day: '2-digit' })}"`).join(', ')
     }]
-  y-axis "Acceptances" 0 --> ${maxAcceptances}
-  bar [${data.map((item) => item.total_acceptances_count).join(', ')
+  y-axis "${yAxisTitle}" 0 --> ${maxData}
+  bar [${data.map(dataForBar).join(', ')
     }]
-  line [${data.map((item) => (item.total_acceptances_count / item.total_suggestions_count) * maxAcceptances).join(', ')
+  line [${data.map(dataForLine).join(', ')
     }]
 \`\`\`\n`;
+}
+
+const getXyChartAcceptanceRate = (data: CopilotUsageResponse) => {
+  const maxAcceptances = Math.max(...data.map((item) => item.total_acceptances_count)) + 10;
+  return generateXyChart(
+    data, 
+    "Accepts & Acceptance Rate", 
+    "Acceptances", 
+    (item) => item.total_acceptances_count, 
+    (item) => ((item.total_acceptances_count / item.total_suggestions_count) * maxAcceptances) || 0,
+    maxAcceptances
+  );
+}
+
+const getXyChartChatAcceptanceRate = (data: CopilotUsageResponse) => {
+  const maxChatAcceptances = Math.max(...data.map((item) => item.total_chat_acceptances)) + 10;
+  return generateXyChart(
+    data, 
+    "Chat Accepts & Acceptance Rate", 
+    "Chat Acceptances",
+    (item) => item.total_chat_acceptances, 
+    (item) => ((item.total_chat_acceptances / item.total_chat_turns) * maxChatAcceptances) || 0,
+    maxChatAcceptances
+  );
 }
 
 const getXyChartDailyActiveUsers = (data: CopilotUsageResponse) => {

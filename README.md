@@ -80,7 +80,7 @@ jobs:
       - uses: austenstone/copilot-usage@v3
         with:
           github-token: ${{ secrets.TOKEN }}
-      - uses: austenstone/job-summary-to-pdf@v1.0
+      - uses: austenstone/job-summary@v2.0
         id: pdf
         with:
           name: copilot-usage
@@ -93,7 +93,23 @@ jobs:
           from: ${{ secrets.EMAIL }}
           to: ${{ secrets.EMAIL }} # Recipient email
           subject: "Copilot Usage Report (${{ steps.usage.outputs.since }} - ${{ steps.usage.outputs.until }})"
-          body: "Attached is the Copilot Usage Report for ${{ steps.usage.outputs.since }} - ${{ steps.usage.outputs.until }}!"
+          html_body: |
+            <!DOCTYPE html>
+            <html>
+            
+            <body>
+              <h1>Copilot Usage Report</h1>
+              <p>Attached is the Copilot Usage Report for ${{ steps.usage.outputs.since }} - ${{ steps.usage.outputs.until }}!</p>
+              <p>
+                <a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}#:~:text=Copilot%20Usage%20summary">View the full report on
+                  GitHub.com</a>
+              </p>
+
+              ${{ steps.pdf.outputs.job-summary-html }}
+              
+            </body>
+            
+            </html>
           attachments: ${{ steps.pdf.outputs.pdf-file }}
 ```
 
@@ -115,8 +131,8 @@ Various inputs are defined in [`action.yml`](action.yml):
 | organization | The organization slug | ${{ github.repository_owner }} |
 | team | The team slug | |
 | days | The number of days to show usage metrics for | |
-| since | Show usage metrics since this date. This is a timestamp in ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ). Maximum value is 28 days ago | |
-| until | Show usage metrics until this date. This is a timestamp in ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ). Maximum value is 28 days ago | |
+| since | Show usage metrics since this date. This is a timestamp, in `YYYY-MM-DD` format. Maximum value is 28 days ago | |
+| until | Show usage metrics until this date. This is a timestamp, in `YYYY-MM-DD` format. Maximum value is 28 days ago | |
 | job-summary | Whether to generate a report | true |
 | csv | Whether to generate a CSV as a workflow artifact | false |
 | csv-options | The options for the CSV report | |
