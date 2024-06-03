@@ -38,14 +38,14 @@ jobs:
     name: Run Action
     runs-on: ubuntu-latest
     steps:
-      - uses: austenstone/copilot-usage@v3
+      - uses: austenstone/copilot-usage@v3.0
         with:
           github-token: ${{ secrets.TOKEN }}
 ```
 ## Example get team usage
 
 ```yml
-      - uses: austenstone/copilot-usage@v3
+      - uses: austenstone/copilot-usage@v3.0
         with:
           github-token: ${{ secrets.TOKEN }}
           organization: 'org-slug'
@@ -55,7 +55,7 @@ jobs:
 ## Example get enterprise usage
 
 ```yml
-      - uses: austenstone/copilot-usage@v3
+      - uses: austenstone/copilot-usage@v3.0
         with:
           github-token: ${{ secrets.TOKEN }}
           enterprise: 'enterprise-slug'
@@ -77,14 +77,14 @@ jobs:
   run:
     runs-on: ubuntu-latest
     steps:
-      - uses: austenstone/copilot-usage@v3
+      - uses: austenstone/copilot-usage@v3.0
         with:
           github-token: ${{ secrets.TOKEN }}
       - uses: austenstone/job-summary@v2.0
         id: pdf
         with:
           name: copilot-usage
-      - uses: dawidd6/action-send-mail@v3
+      - uses: dawidd6/action-send-mail@v3.0
         with:
           server_address: smtp.gmail.com
           server_port: 465
