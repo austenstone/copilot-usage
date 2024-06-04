@@ -11,7 +11,12 @@ jobs:
     name: Copilot Usage
     runs-on: ubuntu-latest
     steps:
-      - uses: austenstone/copilot-usage@main
+      - name: Harden Runner
+        uses: step-security/harden-runner@a4aa98b93cab29d9b1101a6143fb8bce00e2eac4 # v2.7.1
+        with:
+          egress-policy: audit
+
+      - uses: austenstone/copilot-usage@0b5e2d713dffd08144fcba1967afa828d606d7b5 # main
         id: usage
         with:
           organization: ${{ secrets.ORG }}
@@ -20,7 +25,7 @@ jobs:
         id: pdf
         with:
           name: copilot-usage
-      - uses: dawidd6/action-send-mail@v3
+      - uses: dawidd6/action-send-mail@4226df7daafa6fc901a43789c49bf7ab309066e7 # v3.11.0
         with:
           server_address: smtp.gmail.com
           server_port: 465
