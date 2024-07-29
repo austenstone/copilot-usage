@@ -146,6 +146,16 @@ Various inputs are defined in [`action.yml`](action.yml):
 | since | The date since which the usage metrics are shown |
 | until | The date until which the usage metrics are shown |
 
+### Endpoints
+
+The endpoints used by this action...
+
+* GET /enterprises/{enterprise}/copilot/usage
+* GET /orgs/{org}/team/{team}/copilot/usage
+* GET /orgs/{org}/copilot/usage
+* GET /orgs/{org}/copilot/billing
+* GET /orgs/{org}/copilot/billing/seats
+
 ## Example Job Summary
 
 <h1>Copilot Usage<br>3/30/2024 - 4/24/2024</h1>
