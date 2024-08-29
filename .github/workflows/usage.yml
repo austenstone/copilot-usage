@@ -13,6 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./
+        if: ${{ github.actor != 'dependabot[bot]' }}
         with:
           organization: ${{ secrets.ORG }}
           github-token: ${{ secrets.TOKEN }}
