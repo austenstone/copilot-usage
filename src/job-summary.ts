@@ -20,7 +20,7 @@ const groupBreakdown = (key: string, data: CopilotUsageResponse, sort?: (a: [str
         acc[breakdownItem[key]].acceptances_count += breakdownItem.acceptances_count;
         acc[breakdownItem[key]].lines_suggested += breakdownItem.lines_suggested;
         acc[breakdownItem[key]].lines_accepted += breakdownItem.lines_accepted;
-        acc[breakdownItem[key]].active_users += breakdownItem.active_users;
+        acc[breakdownItem[key]].active_users = Math.max(acc[breakdownItem[key]].active_users, breakdownItem.active_users);
       } else {
         acc[breakdownItem[key]] = {
           language: breakdownItem.language.replace(/-/g, '&#8209;'),
