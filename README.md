@@ -1,7 +1,5 @@
 # Copilot Usage Action
 
-[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/8903/badge)](https://www.bestpractices.dev/projects/8903)
-
 Get Copilot usage data as:
 * Md Job Summary
 * CSV
@@ -262,3 +260,5 @@ title Suggestions by Day of the Week
 
 ## Further help
 To get more help on the Actions see [documentation](https://docs.github.com/en/actions).
+
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/8903/badge)](https://www.bestpractices.dev/projects/8903)
