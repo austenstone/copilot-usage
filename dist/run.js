@@ -96,7 +96,7 @@ const run = async () => {
                 seats: (orgSeatAssignments).reduce((acc, rsp) => acc.concat(rsp.seats), [])
             };
             if (_orgSeatAssignments.total_seats > 0 && _orgSeatAssignments?.seats) {
-                _orgSeatAssignments.seats = _orgSeatAssignments.seats.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+                _orgSeatAssignments.seats = _orgSeatAssignments.seats.sort((a, b) => new Date(b.last_activity_at).getTime() - new Date(a.last_activity_at).getTime());
                 await createJobSummarySeatAssignments(_orgSeatAssignments?.seats)?.write();
             }
         }
