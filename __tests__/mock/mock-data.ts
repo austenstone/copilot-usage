@@ -366,3 +366,5 @@ export const exampleSeatAssignmentResponse: RestEndpointMethodTypes["copilot"]["
     }
   }
 ];
+
+createMockData();
