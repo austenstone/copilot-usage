@@ -90,7 +90,7 @@ const run = async () => {
             const orgSeatAssignments = await octokit.paginate(octokit.rest.copilot.listCopilotSeats, {
                 org: input.organization
             });
-            console.log(orgSeatAssignments);
+            console.log(JSON.stringify(orgSeatAssignments, null, 2));
             if (orgSeatAssignments?.seats) {
                 await createJobSummarySeatAssignments(orgSeatAssignments?.seats)?.write();
             }
