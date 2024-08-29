@@ -90,9 +90,13 @@ const run = async () => {
             const orgSeatAssignments = await octokit.paginate(octokit.rest.copilot.listCopilotSeats, {
                 org: input.organization
             });
-            console.log(JSON.stringify(orgSeatAssignments, null, 2));
-            if (orgSeatAssignments?.seats) {
-                await createJobSummarySeatAssignments(orgSeatAssignments?.seats)?.write();
+            console.log(orgSeatAssignments);
+            const _orgSeatAssignments = {
+                total_seats: orgSeatAssignments[0]?.total_seats || 0,
+                seats: (orgSeatAssignments).reduce((acc, rsp) => acc.concat(rsp.seats), [])
+            };
+            if (_orgSeatAssignments.total_seats > 0 && _orgSeatAssignments?.seats) {
+                await createJobSummarySeatAssignments(_orgSeatAssignments?.seats)?.write();
             }
         }
         if (input.organization) {
