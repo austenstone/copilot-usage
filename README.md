@@ -36,14 +36,14 @@ jobs:
     name: Run Action
     runs-on: ubuntu-latest
     steps:
-      - uses: austenstone/copilot-usage@v3.0
+      - uses: austenstone/copilot-usage@v4
         with:
           github-token: ${{ secrets.TOKEN }}
 ```
 ## Example get team usage
 
 ```yml
-      - uses: austenstone/copilot-usage@v3.0
+      - uses: austenstone/copilot-usage@v4
         with:
           github-token: ${{ secrets.TOKEN }}
           organization: 'org-slug'
@@ -53,7 +53,7 @@ jobs:
 ## Example get enterprise usage
 
 ```yml
-      - uses: austenstone/copilot-usage@v3.0
+      - uses: austenstone/copilot-usage@v4
         with:
           github-token: ${{ secrets.TOKEN }}
           enterprise: 'enterprise-slug'
@@ -75,14 +75,14 @@ jobs:
   run:
     runs-on: ubuntu-latest
     steps:
-      - uses: austenstone/copilot-usage@v3.0
+      - uses: austenstone/copilot-usage@v4
         with:
           github-token: ${{ secrets.TOKEN }}
       - uses: austenstone/job-summary@v2.0
         id: pdf
         with:
           name: copilot-usage
-      - uses: dawidd6/action-send-mail@v3.0
+      - uses: dawidd6/action-send-mail@v4
         with:
           server_address: smtp.gmail.com
           server_port: 465
@@ -156,8 +156,10 @@ The endpoints used by this action...
 
 ## Example Job Summary
 
+[View latest reports](https://github.com/austenstone/copilot-usage/actions/workflows/usage.yml)
+
 <details>
-<summary> Click to expand! </summary>
+<summary>Click to expand example!</summary>
 
 <h1>Copilot Usage<br>27 days (8/2/2024 - 8/28/2024)</h1>
 <h2>Copilot Chat</h2>
