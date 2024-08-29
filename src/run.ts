@@ -139,11 +139,13 @@ const run = async (): Promise<void> => {
       console.log(orgSeatAssignments);
       const _orgSeatAssignments = {
         total_seats: orgSeatAssignments[0]?.total_seats || 0,
-        seats: (orgSeatAssignments).reduce((acc, rsp) => acc.concat(rsp.seats), [] as object[])
+        // octokit paginate returns an array of objects (bug)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        seats: (orgSeatAssignments).reduce((acc, rsp) => acc.concat(rsp.seats), [] as any[])
       };
       if (_orgSeatAssignments.total_seats > 0 && _orgSeatAssignments?.seats) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await createJobSummarySeatAssignments(_orgSeatAssignments?.seats as any)?.write();
+        _orgSeatAssignments.seats = _orgSeatAssignments.seats.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+        await createJobSummarySeatAssignments(_orgSeatAssignments?.seats)?.write();
       }
     }
 
