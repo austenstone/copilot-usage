@@ -1,13 +1,2 @@
 <h1>Seat Info</h1>
-<h3>Seat Management Setting: assign_selected</h3>
-<h3>Public Code Suggestions Enabled: block</h3>
-<h3>IDE Chat Enabled: undefined</h3>
-<h3>Platform IDE Enabled: undefined</h3>
-<h3>Platform Chat Enabled: undefined</h3>
-<h3>CLI Enabled: undefined</h3>
-<h3>Total Seats: 12</h3>
-<h3>Added this cycle: 9</h3>
-<h3>Pending invites: 0</h3>
-<h3>Pending cancellations: 0</h3>
-<h3>Active this cycle: 12</h3>
-<h3>Inactive this cycle: 11</h3>
+<ul><li>Seat Management Setting: assign_selected</li><li>Public Code Suggestions Enabled: block</li><li>IDE Chat Enabled: undefined</li><li>Platform IDE Enabled: disabled</li><li>Platform Chat Enabled: undefined</li><li>CLI Enabled: undefined</li><li>Total Seats: 12</li><li>Added this cycle: 9</li><li>Pending invites: 0</li><li>Pending cancellations: 0</li><li>Active this cycle: 12</li><li>Inactive this cycle: 11</li></ul>
