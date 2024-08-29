@@ -8,12 +8,12 @@ permissions:
 
 jobs:
   run:
+    if: ${{ github.actor != 'dependabot[bot]' }}
     name: Copilot Usage
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: ./
-        if: ${{ github.actor != 'dependabot[bot]' }}
         with:
           organization: ${{ secrets.ORG }}
           github-token: ${{ secrets.TOKEN }}
