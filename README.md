@@ -8,6 +8,9 @@ Get Copilot usage data as:
 
 Powered by the [REST API endpoints for GitHub Copilot usage metrics](https://docs.github.com/en/rest/copilot/copilot-usage).
 
+> [!TIP]
+> 🚀 Get this running FAST by using the [template](https://github.com/austenstone/copilot-usage-template)
+
 ## Usage
 Create a workflow (eg: `.github/workflows/copilot-usage.yml`). See [Creating a Workflow file](https://help.github.com/en/articles/configuring-a-workflow#creating-a-workflow-file).
 
