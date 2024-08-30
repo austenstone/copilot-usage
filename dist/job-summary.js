@@ -25,9 +25,50 @@ const groupBreakdown = (key, data, sort) => {
     }, {});
     return Object.fromEntries(Object.entries(breakdown).sort(sort ? sort : (a, b) => b[1].acceptances_count - a[1].acceptances_count));
 };
+const groupByWeek = (data) => {
+    const weekOfYear = date => {
+        const startOfYear = new Date(date.getFullYear(), 0, 1);
+        startOfYear.setDate(startOfYear.getDate() + (startOfYear.getDay() % 7));
+        return Math.round((date - Number(startOfYear)) / 604800000);
+    };
+    const res = data.reduce((acc, item) => {
+        const key = weekOfYear(new Date(item.day)).toString();
+        const existingItem = acc.find((item) => item.key === key);
+        if (existingItem) {
+            existingItem.total_suggestions_count += item.total_suggestions_count;
+            existingItem.total_acceptances_count += item.total_acceptances_count;
+            existingItem.total_lines_suggested += item.total_lines_suggested;
+            existingItem.total_lines_accepted += item.total_lines_accepted;
+            existingItem.total_active_users = Math.max(existingItem.total_active_users, item.total_active_users);
+            existingItem.total_chat_acceptances += item.total_chat_acceptances;
+            existingItem.total_chat_turns += item.total_chat_turns;
+            existingItem.total_active_chat_users = Math.max(existingItem.total_active_chat_users, item.total_active_chat_users);
+            existingItem.breakdown = existingItem.breakdown.concat(item.breakdown);
+        }
+        else {
+            acc.push({
+                key,
+                day: `Week ${key}, ${dateFormat(item.day)}`,
+                total_suggestions_count: item.total_suggestions_count,
+                total_acceptances_count: item.total_acceptances_count,
+                total_lines_suggested: item.total_lines_suggested,
+                total_lines_accepted: item.total_lines_accepted,
+                total_active_users: item.total_active_users,
+                total_chat_acceptances: item.total_chat_acceptances,
+                total_chat_turns: item.total_chat_turns,
+                total_active_chat_users: item.total_active_chat_users,
+                breakdown: item.breakdown,
+            });
+        }
+        return acc;
+    }, []);
+    res.forEach((item) => delete item.key);
+    return res;
+};
 export const createJobSummaryUsage = (data) => {
     const languageUsage = groupBreakdown('language', data);
     const editorUsage = groupBreakdown('editor', data);
+    const weeklyUsage = groupByWeek(data);
     const totalAcceptanceCount = data.reduce((acc, item) => acc + item.total_acceptances_count, 0);
     const totalSuggestionsCount = data.reduce((acc, item) => acc + item?.total_suggestions_count, 0);
     const totalAcceptanceRate = (totalAcceptanceCount / totalSuggestionsCount * 100).toFixed(2);
@@ -68,7 +109,9 @@ export const createJobSummaryUsage = (data) => {
         `Most Active Day: ${dateFormat(mostActiveDay.day)} (${mostActiveDay.total_active_users} active users)`,
         `Highest Acceptance Rate: ${dateFormat(highestAcceptanceRateDay.day)} (${(highestAcceptanceRateDay.total_acceptances_count / highestAcceptanceRateDay.total_suggestions_count * 100).toFixed(2)}%)`
     ])
-        .addTable(getTableData(data));
+        .addTable(getTableDailyUsage(data))
+        .addHeading('Weekly Usage')
+        .addTable(getTableDailyUsage(weeklyUsage, 'Week'));
     return summary;
 };
 export const createJobSummarySeatInfo = (data) => {
@@ -98,7 +141,7 @@ export const createJobSummarySeatAssignments = (data) => {
         [
             { data: 'Avatar', header: true },
             { data: 'Login', header: true },
-            { data: 'Last Activity', header: true },
+            { data: `Last Activity (${process.env.TZ || 'UTC'})`, header: true },
             { data: 'Last Editor Used', header: true },
             { data: 'Created At', header: true },
             { data: 'Updated At', header: true },
@@ -108,7 +151,7 @@ export const createJobSummarySeatAssignments = (data) => {
         ...data.map(seat => [
             `<img src="${seat.assignee?.avatar_url}" width="33" />`,
             seat.assignee?.login,
-            seat.last_activity_at ? dateFormat(seat.last_activity_at) : 'No Activity',
+            seat.last_activity_at ? dateFormat(seat.last_activity_at, { month: 'numeric', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric' }) : 'No Activity',
             seat.last_activity_editor || 'N/A',
             dateFormat(seat.created_at),
             dateFormat(seat.updated_at),
@@ -120,10 +163,10 @@ export const createJobSummarySeatAssignments = (data) => {
 export const createJobSummaryFooter = async (organization) => {
     return summary.addLink(`Manage Access for ${organization}`, `https://github.com/organizations/${organization}/settings/copilot/seat_management`);
 };
-const getTableData = (data) => {
+const getTableDailyUsage = (data, customDateHeader) => {
     return [
         [
-            { data: 'Day', header: true },
+            { data: customDateHeader ? customDateHeader : 'Day', header: true },
             { data: 'Suggestions', header: true },
             { data: 'Acceptances', header: true },
             { data: 'Acceptance Rate', header: true },
@@ -131,11 +174,12 @@ const getTableData = (data) => {
             { data: 'Lines Accepted', header: true },
             { data: 'Active Users', header: true },
             { data: 'Chat Acceptances', header: true },
+            { data: 'Chat Acceptance Rate', header: true },
             { data: 'Chat Turns', header: true },
             { data: 'Active Chat Users', header: true }
         ],
         ...data.map(item => [
-            dateFormat(item.day),
+            customDateHeader ? item.day : dateFormat(item.day),
             item.total_suggestions_count?.toLocaleString(),
             item.total_acceptances_count?.toLocaleString(),
             `${(item.total_acceptances_count / item.total_suggestions_count * 100).toFixed(2)}%`,
@@ -143,6 +187,7 @@ const getTableData = (data) => {
             item.total_lines_accepted?.toLocaleString(),
             item.total_active_users?.toLocaleString(),
             item.total_chat_acceptances?.toLocaleString(),
+            `${(item.total_chat_acceptances / item.total_chat_turns * 100).toFixed(2)}%`,
             item.total_chat_turns?.toLocaleString(),
             item.total_active_chat_users?.toLocaleString()
         ])
@@ -236,11 +281,11 @@ xychart-beta
 };
 const getXyChartAcceptanceRate = (data) => {
     const maxAcceptances = Math.max(...data.map((item) => item.total_acceptances_count)) + 10;
-    return generateXyChart(data, "Accepts & Acceptance Rate", "Acceptances", (item) => item.total_acceptances_count, (item) => ((item.total_acceptances_count / item.total_suggestions_count) * maxAcceptances) || 0, maxAcceptances);
+    return generateXyChart(data, "Completion Accepts & Acceptance Rate", "Acceptances", (item) => item.total_acceptances_count, (item) => ((item.total_acceptances_count / item.total_suggestions_count) * maxAcceptances) || 0, maxAcceptances);
 };
 const getXyChartChatAcceptanceRate = (data) => {
     const maxChatAcceptances = Math.max(...data.map((item) => item.total_chat_acceptances)) + 10;
-    return generateXyChart(data, "Chat Accepts & Acceptance Rate", "Chat Acceptances", (item) => item.total_chat_acceptances, (item) => ((item.total_chat_acceptances / item.total_chat_turns) * maxChatAcceptances) || 0, maxChatAcceptances);
+    return generateXyChart(data, "Chat Accepts & Acceptance Rate", "Acceptances", (item) => item.total_chat_acceptances, (item) => ((item.total_chat_acceptances / item.total_chat_turns) * maxChatAcceptances) || 0, maxChatAcceptances);
 };
 const getXyChartDailyActiveUsers = (data) => {
     const maxActiveUsers = Math.max(...data.map((item) => item.total_active_users)) + 10;
@@ -263,9 +308,11 @@ xychart-beta
   line [${data.map((item) => item.total_active_users).join(', ')}]
 \`\`\`\n`;
 };
+export const setJobSummaryTimeZone = (timeZone) => process.env.TZ = timeZone;
 const dateFormat = (date, format = { month: 'numeric', day: 'numeric', year: 'numeric' }) => {
     if (!date)
         return 'undefined';
+    format.timeZone = process.env.TZ || 'UTC';
     return new Date(date).toLocaleDateString('en-US', format);
 };
 //# sourceMappingURL=job-summary.js.map

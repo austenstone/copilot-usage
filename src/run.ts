@@ -4,7 +4,7 @@ import { DefaultArtifactClient } from "@actions/artifact";
 import { writeFileSync } from "fs";
 import { Json2CsvOptions, json2csv } from "json-2-csv";
 import { toXML } from 'jstoxml';
-import { createJobSummaryFooter, createJobSummarySeatAssignments, createJobSummarySeatInfo, createJobSummaryUsage } from "./job-summary";
+import { createJobSummaryFooter, createJobSummarySeatAssignments, createJobSummarySeatInfo, createJobSummaryUsage, setJobSummaryTimeZone } from "./job-summary";
 import { warn } from "console";
 
 export type CopilotUsageBreakdown = {
@@ -50,6 +50,7 @@ interface Input {
     attributeExplicitTrue: boolean;
     selfCloseTags: boolean;
   };
+  timeZone: string;
 }
 
 const getInputs = (): Input => {
@@ -69,6 +70,7 @@ const getInputs = (): Input => {
     header: true,
     indent: "  ",
   };
+  result.timeZone = getInput("time-zone");
   if (!result.token) {
     throw new Error("github-token is required");
   }
@@ -121,6 +123,7 @@ const run = async (): Promise<void> => {
   info(`Fetched Copilot usage data for ${data.length} days (${data[0].day} to ${data[data.length - 1].day})`);
 
   if (input.jobSummary) {
+    setJobSummaryTimeZone(input.timeZone);
     await createJobSummaryUsage(data).write();
 
     if (input.organization && !input.team) { // refuse to fetch organization seat info if looking for team usage
@@ -136,7 +139,6 @@ const run = async (): Promise<void> => {
       const orgSeatAssignments = await octokit.paginate(octokit.rest.copilot.listCopilotSeats, {
         org: input.organization
       }) as { total_seats: number, seats: object[] }[];
-      console.log(orgSeatAssignments);
       const _orgSeatAssignments = {
         total_seats: orgSeatAssignments[0]?.total_seats || 0,
         // octokit paginate returns an array of objects (bug)

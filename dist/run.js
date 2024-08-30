@@ -4,7 +4,7 @@ import { DefaultArtifactClient } from "@actions/artifact";
 import { writeFileSync } from "fs";
 import { json2csv } from "json-2-csv";
 import { toXML } from 'jstoxml';
-import { createJobSummaryFooter, createJobSummarySeatAssignments, createJobSummarySeatInfo, createJobSummaryUsage } from "./job-summary";
+import { createJobSummaryFooter, createJobSummarySeatAssignments, createJobSummarySeatInfo, createJobSummaryUsage, setJobSummaryTimeZone } from "./job-summary";
 import { warn } from "console";
 const getInputs = () => {
     const result = {};
@@ -23,6 +23,7 @@ const getInputs = () => {
         header: true,
         indent: "  ",
     };
+    result.timeZone = getInput("time-zone");
     if (!result.token) {
         throw new Error("github-token is required");
     }
@@ -77,6 +78,7 @@ const run = async () => {
     debug(JSON.stringify(data, null, 2));
     info(`Fetched Copilot usage data for ${data.length} days (${data[0].day} to ${data[data.length - 1].day})`);
     if (input.jobSummary) {
+        setJobSummaryTimeZone(input.timeZone);
         await createJobSummaryUsage(data).write();
         if (input.organization && !input.team) {
             info(`Fetching Copilot details for organization ${input.organization}`);
@@ -90,7 +92,6 @@ const run = async () => {
             const orgSeatAssignments = await octokit.paginate(octokit.rest.copilot.listCopilotSeats, {
                 org: input.organization
             });
-            console.log(orgSeatAssignments);
             const _orgSeatAssignments = {
                 total_seats: orgSeatAssignments[0]?.total_seats || 0,
                 seats: (orgSeatAssignments).reduce((acc, rsp) => acc.concat(rsp.seats), [])

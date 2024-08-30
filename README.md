@@ -40,7 +40,7 @@ jobs:
         with:
           github-token: ${{ secrets.TOKEN }}
 ```
-## Example get team usage
+#### Example get team usage
 
 ```yml
       - uses: austenstone/copilot-usage@v4
@@ -50,13 +50,22 @@ jobs:
           team: 'team-slug'
 ```
 
-## Example get enterprise usage
+#### Example get enterprise usage
 
 ```yml
       - uses: austenstone/copilot-usage@v4
         with:
           github-token: ${{ secrets.TOKEN }}
           enterprise: 'enterprise-slug'
+```
+
+#### Example get CSV
+
+```yml
+      - uses: austenstone/copilot-usage@v4
+        with:
+          github-token: ${{ secrets.TOKEN }}
+          csv: true
 ```
 
 #### Example sending email PDF report
@@ -124,18 +133,19 @@ Various inputs are defined in [`action.yml`](action.yml):
 
 | Name | Description | Default |
 | --- | --- | --- |
-| github-token | The GitHub token used to create an authenticated client | ${{ github.token }} |
+| github-token | The GitHub token used to create an authenticated client | |
 | enterprise | The GitHub enterprise slug | |
 | organization | The organization slug | ${{ github.repository_owner }} |
-| team | The team slug | |
-| days | The number of days to show usage metrics for | |
-| since | Show usage metrics since this date. This is a timestamp, in `YYYY-MM-DD` format. Maximum value is 28 days ago | |
-| until | Show usage metrics until this date. This is a timestamp, in `YYYY-MM-DD` format. Maximum value is 28 days ago | |
 | job-summary | Whether to generate a report | true |
 | csv | Whether to generate a CSV as a workflow artifact | false |
 | csv-options | The options for the CSV report | |
 | xml | Whether to generate an XML as a workflow artifact | false |
 | xml-options | The options for the XML report | |
+| team | The team slug | |
+| days | The number of days to show usage metrics for | |
+| since | Show usage metrics since this date. This is a timestamp, in `YYYY-MM-DD` format. Maximum value is 28 days ago | |
+| until | Show usage metrics until this date. This is a timestamp, in `YYYY-MM-DD` format. Maximum value is 28 days ago | |
+| time-zone | The time zone to use for the report | UTC |
 
 ## ⬅️ Outputs
 | Name | Description |

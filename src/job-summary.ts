@@ -40,6 +40,49 @@ const groupBreakdown = (key: string, data: CopilotUsageResponse, sort?: (a: [str
   );
 }
 
+const groupByWeek = (data: CopilotUsageResponse): CopilotUsageResponse => {
+  const weekOfYear = date => {
+    const startOfYear = new Date(date.getFullYear(), 0, 1);
+    startOfYear.setDate(startOfYear.getDate() + (startOfYear.getDay() % 7));
+    return Math.round((date - Number(startOfYear)) / 604_800_000);
+  };
+  interface _CopilotUsageResponseCustom extends CopilotUsageResponseData {
+    key?: string;
+  }
+  const res = data.reduce((acc, item) => {
+    const key = weekOfYear(new Date(item.day)).toString();
+    const existingItem = acc.find((item) => item.key === key);
+    if (existingItem) {
+      existingItem.total_suggestions_count += item.total_suggestions_count;
+      existingItem.total_acceptances_count += item.total_acceptances_count;
+      existingItem.total_lines_suggested += item.total_lines_suggested;
+      existingItem.total_lines_accepted += item.total_lines_accepted;
+      existingItem.total_active_users = Math.max(existingItem.total_active_users, item.total_active_users);
+      existingItem.total_chat_acceptances += item.total_chat_acceptances;
+      existingItem.total_chat_turns += item.total_chat_turns;
+      existingItem.total_active_chat_users = Math.max(existingItem.total_active_chat_users, item.total_active_chat_users);
+      existingItem.breakdown = existingItem.breakdown.concat(item.breakdown);
+    } else {
+      acc.push({
+        key,
+        day: `Week ${key}, ${dateFormat(item.day)}`,
+        total_suggestions_count: item.total_suggestions_count,
+        total_acceptances_count: item.total_acceptances_count,
+        total_lines_suggested: item.total_lines_suggested,
+        total_lines_accepted: item.total_lines_accepted,
+        total_active_users: item.total_active_users,
+        total_chat_acceptances: item.total_chat_acceptances,
+        total_chat_turns: item.total_chat_turns,
+        total_active_chat_users : item.total_active_chat_users,
+        breakdown: item.breakdown,
+      });
+    }
+    return acc;
+  }, [] as _CopilotUsageResponseCustom[]);
+  res.forEach((item) => delete item.key);
+  return res as CopilotUsageResponse;
+}
+
 export const createJobSummaryUsage = (data: CopilotUsageResponse) => {
   const languageUsage: CustomUsageBreakdown = groupBreakdown('language', data);
   const editorUsage: CustomUsageBreakdown = groupBreakdown('editor', data);
@@ -47,6 +90,7 @@ export const createJobSummaryUsage = (data: CopilotUsageResponse) => {
   //   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   //   return days.indexOf(a[0]) - days.indexOf(b[0]);
   // });
+  const weeklyUsage: CopilotUsageResponse = groupByWeek(data);
 
   const totalAcceptanceCount = data.reduce((acc, item) => acc + item.total_acceptances_count, 0);
   const totalSuggestionsCount = data.reduce((acc, item) => acc + item?.total_suggestions_count, 0);
@@ -91,7 +135,9 @@ export const createJobSummaryUsage = (data: CopilotUsageResponse) => {
       `Highest Acceptance Rate: ${dateFormat(highestAcceptanceRateDay.day)} (${(highestAcceptanceRateDay.total_acceptances_count / highestAcceptanceRateDay.total_suggestions_count * 100).toFixed(2)}%)`
     ])
     // .addRaw(getPieChartWeekdayUsage(dayOfWeekUsage))
-    .addTable(getTableData(data))
+    .addTable(getTableDailyUsage(data))
+    .addHeading('Weekly Usage')
+    .addTable(getTableDailyUsage(weeklyUsage, 'Week'))
   return summary;
 }
 
@@ -122,7 +168,7 @@ export const createJobSummarySeatAssignments = (data: RestEndpointMethodTypes["c
       [
         { data: 'Avatar', header: true },
         { data: 'Login', header: true },
-        { data: 'Last Activity', header: true },
+        { data: `Last Activity (${process.env.TZ || 'UTC'})`, header: true },
         { data: 'Last Editor Used', header: true },
         { data: 'Created At', header: true },
         { data: 'Updated At', header: true },
@@ -132,7 +178,7 @@ export const createJobSummarySeatAssignments = (data: RestEndpointMethodTypes["c
       ...data.map(seat => [
         `<img src="${seat.assignee?.avatar_url}" width="33" />`,
         seat.assignee?.login,
-        seat.last_activity_at ? dateFormat(seat.last_activity_at) : 'No Activity',
+        seat.last_activity_at ? dateFormat(seat.last_activity_at, { month: 'numeric', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric' }) : 'No Activity',
         seat.last_activity_editor || 'N/A',
         dateFormat(seat.created_at),
         dateFormat(seat.updated_at),
@@ -146,10 +192,10 @@ export const createJobSummaryFooter = async (organization: string) => {
   return summary.addLink(`Manage Access for ${organization}`, `https://github.com/organizations/${organization}/settings/copilot/seat_management`)
 }
 
-const getTableData = (data: CopilotUsageResponse) => {
+const getTableDailyUsage = (data: CopilotUsageResponse, customDateHeader?: string) => {
   return [
     [
-      { data: 'Day', header: true },
+      { data: customDateHeader ? customDateHeader : 'Day', header: true },
       { data: 'Suggestions', header: true },
       { data: 'Acceptances', header: true },
       { data: 'Acceptance Rate', header: true },
@@ -157,11 +203,12 @@ const getTableData = (data: CopilotUsageResponse) => {
       { data: 'Lines Accepted', header: true },
       { data: 'Active Users', header: true },
       { data: 'Chat Acceptances', header: true },
+      { data: 'Chat Acceptance Rate', header: true },
       { data: 'Chat Turns', header: true },
       { data: 'Active Chat Users', header: true }
     ],
     ...data.map(item => [
-      dateFormat(item.day),
+      customDateHeader ? item.day : dateFormat(item.day),
       item.total_suggestions_count?.toLocaleString(),
       item.total_acceptances_count?.toLocaleString(),
       `${(item.total_acceptances_count / item.total_suggestions_count * 100).toFixed(2)}%`,
@@ -169,6 +216,7 @@ const getTableData = (data: CopilotUsageResponse) => {
       item.total_lines_accepted?.toLocaleString(),
       item.total_active_users?.toLocaleString(),
       item.total_chat_acceptances?.toLocaleString(),
+      `${(item.total_chat_acceptances / item.total_chat_turns * 100).toFixed(2)}%`,
       item.total_chat_turns?.toLocaleString(),
       item.total_active_chat_users?.toLocaleString()
     ] as string[])
@@ -255,10 +303,10 @@ title Editor Usage
 }
 
 const generateXyChart = (
-  data: CopilotUsageResponse, 
-  title: string, 
-  yAxisTitle: string, 
-  dataForBar: (item: CopilotUsageResponseData) => number, 
+  data: CopilotUsageResponse,
+  title: string,
+  yAxisTitle: string,
+  dataForBar: (item: CopilotUsageResponseData) => number,
   dataForLine: (item: CopilotUsageResponseData) => number,
   maxData: number
 ) => {
@@ -289,10 +337,10 @@ xychart-beta
 const getXyChartAcceptanceRate = (data: CopilotUsageResponse) => {
   const maxAcceptances = Math.max(...data.map((item) => item.total_acceptances_count)) + 10;
   return generateXyChart(
-    data, 
-    "Accepts & Acceptance Rate", 
-    "Acceptances", 
-    (item) => item.total_acceptances_count, 
+    data,
+    "Completion Accepts & Acceptance Rate",
+    "Acceptances",
+    (item) => item.total_acceptances_count,
     (item) => ((item.total_acceptances_count / item.total_suggestions_count) * maxAcceptances) || 0,
     maxAcceptances
   );
@@ -301,10 +349,10 @@ const getXyChartAcceptanceRate = (data: CopilotUsageResponse) => {
 const getXyChartChatAcceptanceRate = (data: CopilotUsageResponse) => {
   const maxChatAcceptances = Math.max(...data.map((item) => item.total_chat_acceptances)) + 10;
   return generateXyChart(
-    data, 
-    "Chat Accepts & Acceptance Rate", 
-    "Chat Acceptances",
-    (item) => item.total_chat_acceptances, 
+    data,
+    "Chat Accepts & Acceptance Rate",
+    "Acceptances",
+    (item) => item.total_chat_acceptances,
     (item) => ((item.total_chat_acceptances / item.total_chat_turns) * maxChatAcceptances) || 0,
     maxChatAcceptances
   );
@@ -334,7 +382,9 @@ xychart-beta
 \`\`\`\n`;
 }
 
+export const setJobSummaryTimeZone = (timeZone: string) => process.env.TZ = timeZone;
 const dateFormat = (date: string | undefined | null, format: Intl.DateTimeFormatOptions = { month: 'numeric', day: 'numeric', year: 'numeric' }): string => {
   if (!date) return 'undefined';
+  format.timeZone = process.env.TZ || 'UTC';
   return new Date(date).toLocaleDateString('en-US', format);
 }
