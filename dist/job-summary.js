@@ -68,7 +68,9 @@ export const createJobSummaryUsage = (data) => {
         `Most Active Day: ${dateFormat(mostActiveDay.day)} (${mostActiveDay.total_active_users} active users)`,
         `Highest Acceptance Rate: ${dateFormat(highestAcceptanceRateDay.day)} (${(highestAcceptanceRateDay.total_acceptances_count / highestAcceptanceRateDay.total_suggestions_count * 100).toFixed(2)}%)`
     ])
-        .addTable(getTableData(data));
+        .addTable(getTableDailyUsage(data))
+        .addHeading('Wekkly Usage')
+        .addTable(getTableWeeklyUsage(data));
     return summary;
 };
 export const createJobSummarySeatInfo = (data) => {
@@ -120,7 +122,7 @@ export const createJobSummarySeatAssignments = (data) => {
 export const createJobSummaryFooter = async (organization) => {
     return summary.addLink(`Manage Access for ${organization}`, `https://github.com/organizations/${organization}/settings/copilot/seat_management`);
 };
-const getTableData = (data) => {
+const getTableDailyUsage = (data) => {
     return [
         [
             { data: 'Day', header: true },
@@ -146,6 +148,33 @@ const getTableData = (data) => {
             item.total_chat_turns?.toLocaleString(),
             item.total_active_chat_users?.toLocaleString()
         ])
+    ];
+};
+const getTableWeeklyUsage = (data) => {
+    return [
+        [
+            { data: 'Week', header: true },
+            { data: 'Suggestions', header: true },
+            { data: 'Acceptances', header: true },
+            { data: 'Acceptance Rate', header: true },
+            { data: 'Lines Suggested', header: true },
+            { data: 'Lines Accepted', header: true },
+            { data: 'Active Users', header: true }
+        ],
+        ...data.reduce((acc, item, index) => {
+            if (index % 7 === 0) {
+                acc.push([
+                    `Week of ${dateFormat(item.day, { month: 'numeric', day: 'numeric' })}`,
+                    item.total_suggestions_count?.toLocaleString(),
+                    item.total_acceptances_count?.toLocaleString(),
+                    `${(item.total_acceptances_count / item.total_suggestions_count * 100).toFixed(2)}%`,
+                    item.total_lines_suggested?.toLocaleString(),
+                    item.total_lines_accepted?.toLocaleString(),
+                    item.total_active_users?.toLocaleString()
+                ]);
+            }
+            return acc;
+        }, [])
     ];
 };
 const getTableLanguageData = (languageUsage) => {

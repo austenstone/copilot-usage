@@ -91,7 +91,9 @@ export const createJobSummaryUsage = (data: CopilotUsageResponse) => {
       `Highest Acceptance Rate: ${dateFormat(highestAcceptanceRateDay.day)} (${(highestAcceptanceRateDay.total_acceptances_count / highestAcceptanceRateDay.total_suggestions_count * 100).toFixed(2)}%)`
     ])
     // .addRaw(getPieChartWeekdayUsage(dayOfWeekUsage))
-    .addTable(getTableData(data))
+    .addTable(getTableDailyUsage(data))
+    .addHeading('Wekkly Usage')
+    .addTable(getTableWeeklyUsage(data))
   return summary;
 }
 
@@ -146,7 +148,7 @@ export const createJobSummaryFooter = async (organization: string) => {
   return summary.addLink(`Manage Access for ${organization}`, `https://github.com/organizations/${organization}/settings/copilot/seat_management`)
 }
 
-const getTableData = (data: CopilotUsageResponse) => {
+const getTableDailyUsage = (data: CopilotUsageResponse) => {
   return [
     [
       { data: 'Day', header: true },
@@ -172,6 +174,34 @@ const getTableData = (data: CopilotUsageResponse) => {
       item.total_chat_turns?.toLocaleString(),
       item.total_active_chat_users?.toLocaleString()
     ] as string[])
+  ];
+}
+
+const getTableWeeklyUsage = (data: CopilotUsageResponse) => {
+  return [
+    [
+      { data: 'Week', header: true },
+      { data: 'Suggestions', header: true },
+      { data: 'Acceptances', header: true },
+      { data: 'Acceptance Rate', header: true },
+      { data: 'Lines Suggested', header: true },
+      { data: 'Lines Accepted', header: true },
+      { data: 'Active Users', header: true }
+    ],
+    ...data.reduce((acc, item, index) => {
+      if (index % 7 === 0) {
+        acc.push([
+          `Week of ${dateFormat(item.day, { month: 'numeric', day: 'numeric' })}`,
+          item.total_suggestions_count?.toLocaleString(),
+          item.total_acceptances_count?.toLocaleString(),
+          `${(item.total_acceptances_count / item.total_suggestions_count * 100).toFixed(2)}%`,
+          item.total_lines_suggested?.toLocaleString(),
+          item.total_lines_accepted?.toLocaleString(),
+          item.total_active_users?.toLocaleString()
+        ] as string[])
+      }
+      return acc;
+    }, [] as string[][])
   ];
 }
 
