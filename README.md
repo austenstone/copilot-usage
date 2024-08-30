@@ -40,7 +40,7 @@ jobs:
         with:
           github-token: ${{ secrets.TOKEN }}
 ```
-## Example get team usage
+#### Example get team usage
 
 ```yml
       - uses: austenstone/copilot-usage@v4
@@ -50,13 +50,22 @@ jobs:
           team: 'team-slug'
 ```
 
-## Example get enterprise usage
+#### Example get enterprise usage
 
 ```yml
       - uses: austenstone/copilot-usage@v4
         with:
           github-token: ${{ secrets.TOKEN }}
           enterprise: 'enterprise-slug'
+```
+
+#### Example get CSV
+
+```yml
+      - uses: austenstone/copilot-usage@v4
+        with:
+          github-token: ${{ secrets.TOKEN }}
+          csv: true
 ```
 
 #### Example sending email PDF report
@@ -115,15 +124,6 @@ jobs:
 > Try using other messaging systems such as [slack](https://github.com/marketplace/actions/slack-send), [teams](https://github.com/marketplace/actions/microsoft-teams-notification), [discord](https://github.com/marketplace/actions/discord-message-notify), etc.
 
 ![image](https://github.com/austenstone/copilot-usage/assets/22425467/94c9c913-3924-495a-9d7f-6b79185de219)
-
-#### Example get CSV
-
-```yml
-      - uses: austenstone/copilot-usage@v4
-        with:
-          github-token: ${{ secrets.TOKEN }}
-          csv: true
-```
 
 ## ➡️ Inputs
 
