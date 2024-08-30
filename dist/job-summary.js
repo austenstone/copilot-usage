@@ -33,6 +33,7 @@ const groupByWeek = (data) => {
     };
     return data.reduce((acc, item) => {
         const key = weekOfYear(new Date(item.day)).toString();
+        console.log(`Week of year for ${item.day} is ${key}`);
         const existingItem = acc.find((item) => item.day === key);
         if (existingItem) {
             existingItem.total_suggestions_count += item.total_suggestions_count;
@@ -109,7 +110,7 @@ export const createJobSummaryUsage = (data) => {
     ])
         .addTable(getTableDailyUsage(data))
         .addHeading('Weekly Usage')
-        .addTable(getTableDailyUsage(weeklyUsage));
+        .addTable(getTableDailyUsage(weeklyUsage, false));
     return summary;
 };
 export const createJobSummarySeatInfo = (data) => {
@@ -161,7 +162,7 @@ export const createJobSummarySeatAssignments = (data) => {
 export const createJobSummaryFooter = async (organization) => {
     return summary.addLink(`Manage Access for ${organization}`, `https://github.com/organizations/${organization}/settings/copilot/seat_management`);
 };
-const getTableDailyUsage = (data) => {
+const getTableDailyUsage = (data, formatDate = true) => {
     return [
         [
             { data: 'Day', header: true },
@@ -176,7 +177,7 @@ const getTableDailyUsage = (data) => {
             { data: 'Active Chat Users', header: true }
         ],
         ...data.map(item => [
-            dateFormat(item.day),
+            formatDate ? dateFormat(item.day) : item.day,
             item.total_suggestions_count?.toLocaleString(),
             item.total_acceptances_count?.toLocaleString(),
             `${(item.total_acceptances_count / item.total_suggestions_count * 100).toFixed(2)}%`,
