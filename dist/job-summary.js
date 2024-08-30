@@ -143,7 +143,7 @@ export const createJobSummarySeatAssignments = (data) => {
         [
             { data: 'Avatar', header: true },
             { data: 'Login', header: true },
-            { data: 'Last Activity', header: true },
+            { data: `Last Activity (${process.env.TZ || 'UTC'})`, header: true },
             { data: 'Last Editor Used', header: true },
             { data: 'Created At', header: true },
             { data: 'Updated At', header: true },
