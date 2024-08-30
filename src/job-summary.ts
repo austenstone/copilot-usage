@@ -338,7 +338,7 @@ const getXyChartAcceptanceRate = (data: CopilotUsageResponse) => {
   const maxAcceptances = Math.max(...data.map((item) => item.total_acceptances_count)) + 10;
   return generateXyChart(
     data,
-    "Accepts & Acceptance Rate",
+    "Completion Accepts & Acceptance Rate",
     "Acceptances",
     (item) => item.total_acceptances_count,
     (item) => ((item.total_acceptances_count / item.total_suggestions_count) * maxAcceptances) || 0,
@@ -351,7 +351,7 @@ const getXyChartChatAcceptanceRate = (data: CopilotUsageResponse) => {
   return generateXyChart(
     data,
     "Chat Accepts & Acceptance Rate",
-    "Chat Acceptances",
+    "Acceptances",
     (item) => item.total_chat_acceptances,
     (item) => ((item.total_chat_acceptances / item.total_chat_turns) * maxChatAcceptances) || 0,
     maxChatAcceptances
