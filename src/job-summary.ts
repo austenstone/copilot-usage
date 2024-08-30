@@ -179,6 +179,13 @@ const getTableDailyUsage = (data: CopilotUsageResponse) => {
 
 // get weekly table that totals the data for each week
 const getTableWeeklyUsage = (data: CopilotUsageResponse) => {
+  const getWeekNumber = (d) => {
+    d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+    var yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    var weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    return [d.getUTCFullYear(), weekNo];
+  }
   return [
     [
       { data: 'Week', header: true },
@@ -190,10 +197,11 @@ const getTableWeeklyUsage = (data: CopilotUsageResponse) => {
       { data: 'Active Users', header: true }
     ],
     ...data.reduce((acc, item, index) => {
-      const week = Math.floor(index / 7) + 1;
-      if (index % 7 === 0) {
+      const date = new Date(item.day);
+      const week = getWeekNumber(date)[1];
+      if (index === 0 || week !== getWeekNumber(new Date(data[index - 1].day))[1]) {
         acc.push([
-          `Week ${week}`,
+          `Week of ${dateFormat(item.day, { month: '2-digit', day: '2-digit' })}`,
           item.total_suggestions_count?.toLocaleString(),
           item.total_acceptances_count?.toLocaleString(),
           `${(item.total_acceptances_count / item.total_suggestions_count * 100).toFixed(2)}%`,
@@ -202,12 +210,13 @@ const getTableWeeklyUsage = (data: CopilotUsageResponse) => {
           item.total_active_users?.toLocaleString()
         ] as string[]);
       } else {
-        acc[week - 1][1] = (parseInt(acc[week - 1][1]) + item.total_suggestions_count).toLocaleString();
-        acc[week - 1][2] = (parseInt(acc[week - 1][2]) + item.total_acceptances_count).toLocaleString();
-        acc[week - 1][3] = `${((parseInt(acc[week - 1][2]) / parseInt(acc[week - 1][1])) * 100).toFixed(2)}%`;
-        acc[week - 1][4] = (parseInt(acc[week - 1][4]) + item.total_lines_suggested).toLocaleString();
-        acc[week - 1][5] = (parseInt(acc[week - 1][5]) + item.total_lines_accepted).toLocaleString();
-        acc[week - 1][6] = (parseInt(acc[week - 1][6]) + item.total_active_users).toLocaleString();
+        const prev = acc[acc.length - 1];
+        prev[1] = (parseInt(prev[1]) + item.total_suggestions_count).toLocaleString();
+        prev[2] = (parseInt(prev[2]) + item.total_acceptances_count).toLocaleString();
+        prev[3] = `${((parseInt(prev[2]) / parseInt(prev[1])) * 100).toFixed(2)}%`;
+        prev[4] = (parseInt(prev[4]) + item.total_lines_suggested).toLocaleString();
+        prev[5] = (parseInt(prev[5]) + item.total_lines_accepted).toLocaleString();
+        prev[6] = (parseInt(prev[6]) + item.total_active_users).toLocaleString();
       }
       return acc;
     }, [] as string[][])
@@ -294,10 +303,10 @@ title Editor Usage
 }
 
 const generateXyChart = (
-  data: CopilotUsageResponse, 
-  title: string, 
-  yAxisTitle: string, 
-  dataForBar: (item: CopilotUsageResponseData) => number, 
+  data: CopilotUsageResponse,
+  title: string,
+  yAxisTitle: string,
+  dataForBar: (item: CopilotUsageResponseData) => number,
   dataForLine: (item: CopilotUsageResponseData) => number,
   maxData: number
 ) => {
@@ -328,10 +337,10 @@ xychart-beta
 const getXyChartAcceptanceRate = (data: CopilotUsageResponse) => {
   const maxAcceptances = Math.max(...data.map((item) => item.total_acceptances_count)) + 10;
   return generateXyChart(
-    data, 
-    "Accepts & Acceptance Rate", 
-    "Acceptances", 
-    (item) => item.total_acceptances_count, 
+    data,
+    "Accepts & Acceptance Rate",
+    "Acceptances",
+    (item) => item.total_acceptances_count,
     (item) => ((item.total_acceptances_count / item.total_suggestions_count) * maxAcceptances) || 0,
     maxAcceptances
   );
@@ -340,10 +349,10 @@ const getXyChartAcceptanceRate = (data: CopilotUsageResponse) => {
 const getXyChartChatAcceptanceRate = (data: CopilotUsageResponse) => {
   const maxChatAcceptances = Math.max(...data.map((item) => item.total_chat_acceptances)) + 10;
   return generateXyChart(
-    data, 
-    "Chat Accepts & Acceptance Rate", 
+    data,
+    "Chat Accepts & Acceptance Rate",
     "Chat Acceptances",
-    (item) => item.total_chat_acceptances, 
+    (item) => item.total_chat_acceptances,
     (item) => ((item.total_chat_acceptances / item.total_chat_turns) * maxChatAcceptances) || 0,
     maxChatAcceptances
   );
