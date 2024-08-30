@@ -203,6 +203,7 @@ const getTableDailyUsage = (data: CopilotUsageResponse, customDateHeader?: strin
       { data: 'Lines Accepted', header: true },
       { data: 'Active Users', header: true },
       { data: 'Chat Acceptances', header: true },
+      { data: 'Chat Acceptance Rate', header: true },
       { data: 'Chat Turns', header: true },
       { data: 'Active Chat Users', header: true }
     ],
@@ -215,6 +216,7 @@ const getTableDailyUsage = (data: CopilotUsageResponse, customDateHeader?: strin
       item.total_lines_accepted?.toLocaleString(),
       item.total_active_users?.toLocaleString(),
       item.total_chat_acceptances?.toLocaleString(),
+      `${(item.total_chat_acceptances / item.total_chat_turns * 100).toFixed(2)}%`,
       item.total_chat_turns?.toLocaleString(),
       item.total_active_chat_users?.toLocaleString()
     ] as string[])
