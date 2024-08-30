@@ -46,7 +46,10 @@ const groupByWeek = (data: CopilotUsageResponse): CopilotUsageResponse => {
     startOfYear.setDate(startOfYear.getDate() + (startOfYear.getDay() % 7));
     return Math.round((date - Number(startOfYear)) / 604_800_000);
   };
-  return data.reduce((acc, item) => {
+  interface _CopilotUsageResponseCustom extends CopilotUsageResponseData {
+    key?: string;
+  }
+  const res = data.reduce((acc, item) => {
     const key = weekOfYear(new Date(item.day)).toString();
     console.log(`Week of year for ${item.day} is ${key}`);
     const existingItem = acc.find((item) => item.day === key);
@@ -62,7 +65,8 @@ const groupByWeek = (data: CopilotUsageResponse): CopilotUsageResponse => {
       existingItem.breakdown = existingItem.breakdown.concat(item.breakdown);
     } else {
       acc.push({
-        day: key,
+        key,
+        day: `Week of ${dateFormat(item.day)}`,
         total_suggestions_count: item.total_suggestions_count,
         total_acceptances_count: item.total_acceptances_count,
         total_lines_suggested: item.total_lines_suggested,
@@ -75,7 +79,9 @@ const groupByWeek = (data: CopilotUsageResponse): CopilotUsageResponse => {
       });
     }
     return acc;
-  }, [] as CopilotUsageResponse);
+  }, [] as _CopilotUsageResponseCustom[]);
+  res.forEach((item) => delete item.key);
+  return res as CopilotUsageResponse;
 }
 
 export const createJobSummaryUsage = (data: CopilotUsageResponse) => {
@@ -133,7 +139,7 @@ export const createJobSummaryUsage = (data: CopilotUsageResponse) => {
     // .addRaw(getPieChartWeekdayUsage(dayOfWeekUsage))
     .addTable(getTableDailyUsage(data))
     .addHeading('Weekly Usage')
-    .addTable(getTableDailyUsage(weeklyUsage, false))
+    .addTable(getTableDailyUsage(weeklyUsage, 'Week'))
   return summary;
 }
 
@@ -188,10 +194,10 @@ export const createJobSummaryFooter = async (organization: string) => {
   return summary.addLink(`Manage Access for ${organization}`, `https://github.com/organizations/${organization}/settings/copilot/seat_management`)
 }
 
-const getTableDailyUsage = (data: CopilotUsageResponse, formatDate = true) => {
+const getTableDailyUsage = (data: CopilotUsageResponse, customDateHeader?: string) => {
   return [
     [
-      { data: 'Day', header: true },
+      { data: customDateHeader ? customDateHeader : 'Day', header: true },
       { data: 'Suggestions', header: true },
       { data: 'Acceptances', header: true },
       { data: 'Acceptance Rate', header: true },
@@ -203,7 +209,7 @@ const getTableDailyUsage = (data: CopilotUsageResponse, formatDate = true) => {
       { data: 'Active Chat Users', header: true }
     ],
     ...data.map(item => [
-      formatDate ? dateFormat(item.day) : item.day,
+      customDateHeader ? item.day : dateFormat(item.day),
       item.total_suggestions_count?.toLocaleString(),
       item.total_acceptances_count?.toLocaleString(),
       `${(item.total_acceptances_count / item.total_suggestions_count * 100).toFixed(2)}%`,

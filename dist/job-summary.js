@@ -31,7 +31,7 @@ const groupByWeek = (data) => {
         startOfYear.setDate(startOfYear.getDate() + (startOfYear.getDay() % 7));
         return Math.round((date - Number(startOfYear)) / 604800000);
     };
-    return data.reduce((acc, item) => {
+    const res = data.reduce((acc, item) => {
         const key = weekOfYear(new Date(item.day)).toString();
         console.log(`Week of year for ${item.day} is ${key}`);
         const existingItem = acc.find((item) => item.day === key);
@@ -48,7 +48,8 @@ const groupByWeek = (data) => {
         }
         else {
             acc.push({
-                day: key,
+                key,
+                day: `Week of ${dateFormat(item.day)}`,
                 total_suggestions_count: item.total_suggestions_count,
                 total_acceptances_count: item.total_acceptances_count,
                 total_lines_suggested: item.total_lines_suggested,
@@ -62,6 +63,8 @@ const groupByWeek = (data) => {
         }
         return acc;
     }, []);
+    res.forEach((item) => delete item.key);
+    return res;
 };
 export const createJobSummaryUsage = (data) => {
     const languageUsage = groupBreakdown('language', data);
@@ -110,7 +113,7 @@ export const createJobSummaryUsage = (data) => {
     ])
         .addTable(getTableDailyUsage(data))
         .addHeading('Weekly Usage')
-        .addTable(getTableDailyUsage(weeklyUsage, false));
+        .addTable(getTableDailyUsage(weeklyUsage, 'Week'));
     return summary;
 };
 export const createJobSummarySeatInfo = (data) => {
@@ -162,10 +165,10 @@ export const createJobSummarySeatAssignments = (data) => {
 export const createJobSummaryFooter = async (organization) => {
     return summary.addLink(`Manage Access for ${organization}`, `https://github.com/organizations/${organization}/settings/copilot/seat_management`);
 };
-const getTableDailyUsage = (data, formatDate = true) => {
+const getTableDailyUsage = (data, customDateHeader) => {
     return [
         [
-            { data: 'Day', header: true },
+            { data: customDateHeader ? customDateHeader : 'Day', header: true },
             { data: 'Suggestions', header: true },
             { data: 'Acceptances', header: true },
             { data: 'Acceptance Rate', header: true },
@@ -177,7 +180,7 @@ const getTableDailyUsage = (data, formatDate = true) => {
             { data: 'Active Chat Users', header: true }
         ],
         ...data.map(item => [
-            formatDate ? dateFormat(item.day) : item.day,
+            customDateHeader ? item.day : dateFormat(item.day),
             item.total_suggestions_count?.toLocaleString(),
             item.total_acceptances_count?.toLocaleString(),
             `${(item.total_acceptances_count / item.total_suggestions_count * 100).toFixed(2)}%`,
