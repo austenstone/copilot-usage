@@ -40,6 +40,43 @@ const groupBreakdown = (key: string, data: CopilotUsageResponse, sort?: (a: [str
   );
 }
 
+const groupByWeek = (data: CopilotUsageResponse): CopilotUsageResponse => {
+  const weekOfYear = date => {
+    const startOfYear = new Date(date.getFullYear(), 0, 1);
+    startOfYear.setDate(startOfYear.getDate() + (startOfYear.getDay() % 7));
+    return Math.round((date - Number(startOfYear)) / 604_800_000);
+  };
+  return data.reduce((acc, item) => {
+    const key = weekOfYear(new Date(item.day)).toString();
+    const existingItem = acc.find((item) => item.day === key);
+    if (existingItem) {
+      existingItem.total_suggestions_count += item.total_suggestions_count;
+      existingItem.total_acceptances_count += item.total_acceptances_count;
+      existingItem.total_lines_suggested += item.total_lines_suggested;
+      existingItem.total_lines_accepted += item.total_lines_accepted;
+      existingItem.total_active_users = Math.max(existingItem.total_active_users, item.total_active_users);
+      existingItem.total_chat_acceptances += item.total_chat_acceptances;
+      existingItem.total_chat_turns += item.total_chat_turns;
+      existingItem.total_active_chat_users = item.total_active_chat_users;
+      existingItem.breakdown = existingItem.breakdown.concat(item.breakdown);
+    } else {
+      acc.push({
+        day: key,
+        total_suggestions_count: item.total_suggestions_count,
+        total_acceptances_count: item.total_acceptances_count,
+        total_lines_suggested: item.total_lines_suggested,
+        total_lines_accepted: item.total_lines_accepted,
+        total_active_users: item.total_active_users,
+        total_chat_acceptances: item.total_chat_acceptances,
+        total_chat_turns: item.total_chat_turns,
+        total_active_chat_users : item.total_active_chat_users,
+        breakdown: item.breakdown,
+      });
+    }
+    return acc;
+  }, [] as CopilotUsageResponse);
+}
+
 export const createJobSummaryUsage = (data: CopilotUsageResponse) => {
   const languageUsage: CustomUsageBreakdown = groupBreakdown('language', data);
   const editorUsage: CustomUsageBreakdown = groupBreakdown('editor', data);
@@ -47,6 +84,8 @@ export const createJobSummaryUsage = (data: CopilotUsageResponse) => {
   //   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   //   return days.indexOf(a[0]) - days.indexOf(b[0]);
   // });
+  const weeklyUsage: CopilotUsageResponse = groupByWeek(data);
+  console.log(weeklyUsage);
 
   const totalAcceptanceCount = data.reduce((acc, item) => acc + item.total_acceptances_count, 0);
   const totalSuggestionsCount = data.reduce((acc, item) => acc + item?.total_suggestions_count, 0);
@@ -93,7 +132,7 @@ export const createJobSummaryUsage = (data: CopilotUsageResponse) => {
     // .addRaw(getPieChartWeekdayUsage(dayOfWeekUsage))
     .addTable(getTableDailyUsage(data))
     .addHeading('Weekly Usage')
-    .addTable(getTableWeeklyUsage(data))
+    .addTable(getTableDailyUsage(weeklyUsage))
   return summary;
 }
 
@@ -174,52 +213,6 @@ const getTableDailyUsage = (data: CopilotUsageResponse) => {
       item.total_chat_turns?.toLocaleString(),
       item.total_active_chat_users?.toLocaleString()
     ] as string[])
-  ];
-}
-
-// get weekly table that totals the data for each week
-const getTableWeeklyUsage = (data: CopilotUsageResponse) => {
-  const getWeekNumber = (d) => {
-    d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    const weekNo = Math.ceil((((d - Number(yearStart)) / 86400000) + 1) / 7);
-    return [d.getUTCFullYear(), weekNo];
-  }
-  return [
-    [
-      { data: 'Week', header: true },
-      { data: 'Suggestions', header: true },
-      { data: 'Acceptances', header: true },
-      { data: 'Acceptance Rate', header: true },
-      { data: 'Lines Suggested', header: true },
-      { data: 'Lines Accepted', header: true },
-      { data: 'Active Users', header: true }
-    ],
-    ...data.reduce((acc, item, index) => {
-      const date = new Date(item.day);
-      const week = getWeekNumber(date)[1];
-      if (index === 0 || week !== getWeekNumber(new Date(data[index - 1].day))[1]) {
-        acc.push([
-          `Week of ${dateFormat(item.day, { month: '2-digit', day: '2-digit' })}`,
-          item.total_suggestions_count?.toLocaleString(),
-          item.total_acceptances_count?.toLocaleString(),
-          `${(item.total_acceptances_count / item.total_suggestions_count * 100).toFixed(2)}%`,
-          item.total_lines_suggested?.toLocaleString(),
-          item.total_lines_accepted?.toLocaleString(),
-          item.total_active_users?.toLocaleString()
-        ] as string[]);
-      } else {
-        const prev = acc[acc.length - 1];
-        prev[1] = (parseInt(prev[1]) + item.total_suggestions_count).toLocaleString();
-        prev[2] = (parseInt(prev[2]) + item.total_acceptances_count).toLocaleString();
-        prev[3] = `${((parseInt(prev[2]) / parseInt(prev[1])) * 100).toFixed(2)}%`;
-        prev[4] = (parseInt(prev[4]) + item.total_lines_suggested).toLocaleString();
-        prev[5] = (parseInt(prev[5]) + item.total_lines_accepted).toLocaleString();
-        prev[6] = (parseInt(prev[6]) + item.total_active_users).toLocaleString();
-      }
-      return acc;
-    }, [] as string[][])
   ];
 }
 
