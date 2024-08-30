@@ -46,6 +46,10 @@ inputs:
   xml-options:
     description: Options for the XML generation
     required: false
+  time-zone:
+    description: The time zone to use for the report
+    required: false
+    default: "UTC"
 outputs:
   result:
     description: The copilot usage as a JSON string

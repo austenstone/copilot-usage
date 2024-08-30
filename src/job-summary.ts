@@ -382,7 +382,9 @@ xychart-beta
 \`\`\`\n`;
 }
 
+export const setJobSummaryTimeZone = (timeZone: string) => process.env.TZ = timeZone;
 const dateFormat = (date: string | undefined | null, format: Intl.DateTimeFormatOptions = { month: 'numeric', day: 'numeric', year: 'numeric' }): string => {
   if (!date) return 'undefined';
+  format.timeZone = process.env.TZ || 'UTC';
   return new Date(date).toLocaleDateString('en-US', format);
 }

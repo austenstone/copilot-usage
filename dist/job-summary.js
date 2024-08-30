@@ -308,9 +308,11 @@ xychart-beta
   line [${data.map((item) => item.total_active_users).join(', ')}]
 \`\`\`\n`;
 };
+export const setJobSummaryTimeZone = (timeZone) => process.env.TZ = timeZone;
 const dateFormat = (date, format = { month: 'numeric', day: 'numeric', year: 'numeric' }) => {
     if (!date)
         return 'undefined';
+    format.timeZone = process.env.TZ || 'UTC';
     return new Date(date).toLocaleDateString('en-US', format);
 };
 //# sourceMappingURL=job-summary.js.map
