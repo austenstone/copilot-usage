@@ -90,7 +90,6 @@ const run = async () => {
             const orgSeatAssignments = await octokit.paginate(octokit.rest.copilot.listCopilotSeats, {
                 org: input.organization
             });
-            console.log(orgSeatAssignments);
             const _orgSeatAssignments = {
                 total_seats: orgSeatAssignments[0]?.total_seats || 0,
                 seats: (orgSeatAssignments).reduce((acc, rsp) => acc.concat(rsp.seats), [])

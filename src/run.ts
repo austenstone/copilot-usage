@@ -136,7 +136,6 @@ const run = async (): Promise<void> => {
       const orgSeatAssignments = await octokit.paginate(octokit.rest.copilot.listCopilotSeats, {
         org: input.organization
       }) as { total_seats: number, seats: object[] }[];
-      console.log(orgSeatAssignments);
       const _orgSeatAssignments = {
         total_seats: orgSeatAssignments[0]?.total_seats || 0,
         // octokit paginate returns an array of objects (bug)

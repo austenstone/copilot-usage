@@ -69,7 +69,7 @@ export const createJobSummaryUsage = (data) => {
         `Highest Acceptance Rate: ${dateFormat(highestAcceptanceRateDay.day)} (${(highestAcceptanceRateDay.total_acceptances_count / highestAcceptanceRateDay.total_suggestions_count * 100).toFixed(2)}%)`
     ])
         .addTable(getTableDailyUsage(data))
-        .addHeading('Wekkly Usage')
+        .addHeading('Weekly Usage')
         .addTable(getTableWeeklyUsage(data));
     return summary;
 };
@@ -162,9 +162,10 @@ const getTableWeeklyUsage = (data) => {
             { data: 'Active Users', header: true }
         ],
         ...data.reduce((acc, item, index) => {
+            const week = Math.floor(index / 7) + 1;
             if (index % 7 === 0) {
                 acc.push([
-                    `Week of ${dateFormat(item.day, { month: 'numeric', day: 'numeric' })}`,
+                    `Week ${week}`,
                     item.total_suggestions_count?.toLocaleString(),
                     item.total_acceptances_count?.toLocaleString(),
                     `${(item.total_acceptances_count / item.total_suggestions_count * 100).toFixed(2)}%`,
@@ -172,6 +173,14 @@ const getTableWeeklyUsage = (data) => {
                     item.total_lines_accepted?.toLocaleString(),
                     item.total_active_users?.toLocaleString()
                 ]);
+            }
+            else {
+                acc[week - 1][1] = (parseInt(acc[week - 1][1]) + item.total_suggestions_count).toLocaleString();
+                acc[week - 1][2] = (parseInt(acc[week - 1][2]) + item.total_acceptances_count).toLocaleString();
+                acc[week - 1][3] = `${((parseInt(acc[week - 1][2]) / parseInt(acc[week - 1][1])) * 100).toFixed(2)}%`;
+                acc[week - 1][4] = (parseInt(acc[week - 1][4]) + item.total_lines_suggested).toLocaleString();
+                acc[week - 1][5] = (parseInt(acc[week - 1][5]) + item.total_lines_accepted).toLocaleString();
+                acc[week - 1][6] = (parseInt(acc[week - 1][6]) + item.total_active_users).toLocaleString();
             }
             return acc;
         }, [])
