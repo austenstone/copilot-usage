@@ -43,7 +43,7 @@ const groupByWeek = (data) => {
             existingItem.total_active_users = Math.max(existingItem.total_active_users, item.total_active_users);
             existingItem.total_chat_acceptances += item.total_chat_acceptances;
             existingItem.total_chat_turns += item.total_chat_turns;
-            existingItem.total_active_chat_users = item.total_active_chat_users;
+            existingItem.total_active_chat_users = Math.max(existingItem.total_active_chat_users, item.total_active_chat_users);
             existingItem.breakdown = existingItem.breakdown.concat(item.breakdown);
         }
         else {
@@ -153,7 +153,7 @@ export const createJobSummarySeatAssignments = (data) => {
         ...data.map(seat => [
             `<img src="${seat.assignee?.avatar_url}" width="33" />`,
             seat.assignee?.login,
-            seat.last_activity_at ? dateFormat(seat.last_activity_at) : 'No Activity',
+            seat.last_activity_at ? dateFormat(seat.last_activity_at, { month: 'numeric', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric' }) : 'No Activity',
             seat.last_activity_editor || 'N/A',
             dateFormat(seat.created_at),
             dateFormat(seat.updated_at),
