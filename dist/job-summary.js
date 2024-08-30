@@ -34,7 +34,7 @@ const groupByWeek = (data) => {
     const res = data.reduce((acc, item) => {
         const key = weekOfYear(new Date(item.day)).toString();
         console.log(`Week of year for ${item.day} is ${key}`);
-        const existingItem = acc.find((item) => item.day === key);
+        const existingItem = acc.find((item) => item.key === key);
         if (existingItem) {
             existingItem.total_suggestions_count += item.total_suggestions_count;
             existingItem.total_acceptances_count += item.total_acceptances_count;
