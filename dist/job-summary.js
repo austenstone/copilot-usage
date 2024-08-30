@@ -33,7 +33,6 @@ const groupByWeek = (data) => {
     };
     const res = data.reduce((acc, item) => {
         const key = weekOfYear(new Date(item.day)).toString();
-        console.log(`Week of year for ${item.day} is ${key}`);
         const existingItem = acc.find((item) => item.key === key);
         if (existingItem) {
             existingItem.total_suggestions_count += item.total_suggestions_count;
@@ -49,7 +48,7 @@ const groupByWeek = (data) => {
         else {
             acc.push({
                 key,
-                day: `Week of ${dateFormat(item.day)}`,
+                day: `Week ${key}, ${dateFormat(item.day)}`,
                 total_suggestions_count: item.total_suggestions_count,
                 total_acceptances_count: item.total_acceptances_count,
                 total_lines_suggested: item.total_lines_suggested,
@@ -70,7 +69,6 @@ export const createJobSummaryUsage = (data) => {
     const languageUsage = groupBreakdown('language', data);
     const editorUsage = groupBreakdown('editor', data);
     const weeklyUsage = groupByWeek(data);
-    console.log(weeklyUsage);
     const totalAcceptanceCount = data.reduce((acc, item) => acc + item.total_acceptances_count, 0);
     const totalSuggestionsCount = data.reduce((acc, item) => acc + item?.total_suggestions_count, 0);
     const totalAcceptanceRate = (totalAcceptanceCount / totalSuggestionsCount * 100).toFixed(2);
