@@ -179,11 +179,11 @@ const getTableDailyUsage = (data: CopilotUsageResponse) => {
 
 // get weekly table that totals the data for each week
 const getTableWeeklyUsage = (data: CopilotUsageResponse) => {
-  const getWeekNumber = (d) => {
+  const getWeekNumber = (d: any) => {
     d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
     d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-    var yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    var weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
     return [d.getUTCFullYear(), weekNo];
   }
   return [

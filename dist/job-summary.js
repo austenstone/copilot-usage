@@ -151,6 +151,13 @@ const getTableDailyUsage = (data) => {
     ];
 };
 const getTableWeeklyUsage = (data) => {
+    const getWeekNumber = (d) => {
+        d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+        d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+        return [d.getUTCFullYear(), weekNo];
+    };
     return [
         [
             { data: 'Week', header: true },
@@ -162,10 +169,11 @@ const getTableWeeklyUsage = (data) => {
             { data: 'Active Users', header: true }
         ],
         ...data.reduce((acc, item, index) => {
-            const week = Math.floor(index / 7) + 1;
-            if (index % 7 === 0) {
+            const date = new Date(item.day);
+            const week = getWeekNumber(date)[1];
+            if (index === 0 || week !== getWeekNumber(new Date(data[index - 1].day))[1]) {
                 acc.push([
-                    `Week ${week}`,
+                    `Week of ${dateFormat(item.day, { month: '2-digit', day: '2-digit' })}`,
                     item.total_suggestions_count?.toLocaleString(),
                     item.total_acceptances_count?.toLocaleString(),
                     `${(item.total_acceptances_count / item.total_suggestions_count * 100).toFixed(2)}%`,
@@ -175,12 +183,13 @@ const getTableWeeklyUsage = (data) => {
                 ]);
             }
             else {
-                acc[week - 1][1] = (parseInt(acc[week - 1][1]) + item.total_suggestions_count).toLocaleString();
-                acc[week - 1][2] = (parseInt(acc[week - 1][2]) + item.total_acceptances_count).toLocaleString();
-                acc[week - 1][3] = `${((parseInt(acc[week - 1][2]) / parseInt(acc[week - 1][1])) * 100).toFixed(2)}%`;
-                acc[week - 1][4] = (parseInt(acc[week - 1][4]) + item.total_lines_suggested).toLocaleString();
-                acc[week - 1][5] = (parseInt(acc[week - 1][5]) + item.total_lines_accepted).toLocaleString();
-                acc[week - 1][6] = (parseInt(acc[week - 1][6]) + item.total_active_users).toLocaleString();
+                const prev = acc[acc.length - 1];
+                prev[1] = (parseInt(prev[1]) + item.total_suggestions_count).toLocaleString();
+                prev[2] = (parseInt(prev[2]) + item.total_acceptances_count).toLocaleString();
+                prev[3] = `${((parseInt(prev[2]) / parseInt(prev[1])) * 100).toFixed(2)}%`;
+                prev[4] = (parseInt(prev[4]) + item.total_lines_suggested).toLocaleString();
+                prev[5] = (parseInt(prev[5]) + item.total_lines_accepted).toLocaleString();
+                prev[6] = (parseInt(prev[6]) + item.total_active_users).toLocaleString();
             }
             return acc;
         }, [])
