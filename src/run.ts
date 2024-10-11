@@ -145,7 +145,7 @@ const run = async (): Promise<void> => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         seats: (orgSeatAssignments).reduce((acc, rsp) => acc.concat(rsp.seats), [] as any[])
       };
-      if (_orgSeatAssignments.total_seats > 0 && _orgSeatAssignments?.seats) {
+      if (_orgSeatAssignments?.seats) {
         _orgSeatAssignments.seats = _orgSeatAssignments.seats.sort((a, b) => new Date(b.last_activity_at).getTime() - new Date(a.last_activity_at).getTime());
         await createJobSummarySeatAssignments(_orgSeatAssignments?.seats)?.write();
       }
