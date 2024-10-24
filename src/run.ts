@@ -158,7 +158,7 @@ const run = async (): Promise<void> => {
     }
   }
 
-  if (input.csv || input.xml) {
+  if (input.csv || input.xml || input.json) {
     const artifact = new DefaultArtifactClient();
     if (input.json) {
       info("Writing JSON artifact copilot-usage.json");
