@@ -255,7 +255,7 @@ const getTableLanguageData = (languageUsage: CustomUsageBreakdown) => {
       `${((data.acceptances_count / data.suggestions_count) * 100).toFixed(2)}%`,
       data.lines_suggested.toLocaleString(),
       data.lines_accepted.toLocaleString(),
-      data.active_users.toLocaleString()
+      data.active_users.toFixed(2).toLocaleString()
     ] as string[])
   ];
 }
@@ -269,7 +269,7 @@ const getTableEditorData = (editorUsage: CustomUsageBreakdown) => {
       { data: 'Acceptance Rate', header: true },
       { data: 'Lines Suggested', header: true },
       { data: 'Lines Accepted', header: true },
-      { data: 'Active Users', header: true }
+      { data: 'Avg Active Users', header: true }
     ],
     ...Object.entries(editorUsage).map(([editor, data]) => [
       editor,
@@ -278,7 +278,7 @@ const getTableEditorData = (editorUsage: CustomUsageBreakdown) => {
       `${((data.acceptances_count / data.suggestions_count) * 100).toFixed(2)}%`,
       data.lines_suggested.toLocaleString(),
       data.lines_accepted.toLocaleString(),
-      data.active_users.toLocaleString()
+      data.active_users.toFixed(2).toLocaleString()
     ] as string[])
   ];
 }
