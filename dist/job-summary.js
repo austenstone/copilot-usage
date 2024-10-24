@@ -7,7 +7,7 @@ const groupBreakdown = (key, data, sort) => {
                 acc[breakdownItem[key]].acceptances_count += breakdownItem.acceptances_count;
                 acc[breakdownItem[key]].lines_suggested += breakdownItem.lines_suggested;
                 acc[breakdownItem[key]].lines_accepted += breakdownItem.lines_accepted;
-                acc[breakdownItem[key]].active_users = Math.max(acc[breakdownItem[key]].active_users, breakdownItem.active_users);
+                acc[breakdownItem[key]].active_users = breakdownItem.active_users;
             }
             else {
                 acc[breakdownItem[key]] = {
@@ -23,6 +23,9 @@ const groupBreakdown = (key, data, sort) => {
         });
         return acc;
     }, {});
+    Object.entries(breakdown).forEach(([, value]) => {
+        value.active_users = value.active_users / data.length;
+    });
     return Object.fromEntries(Object.entries(breakdown).sort(sort ? sort : (a, b) => b[1].acceptances_count - a[1].acceptances_count));
 };
 const groupByWeek = (data) => {
@@ -67,6 +70,7 @@ const groupByWeek = (data) => {
 };
 export const createJobSummaryUsage = (data) => {
     const languageUsage = groupBreakdown('language', data);
+    console.log('languageUsage', languageUsage);
     const editorUsage = groupBreakdown('editor', data);
     const weeklyUsage = groupByWeek(data);
     const totalAcceptanceCount = data.reduce((acc, item) => acc + item.total_acceptances_count, 0);
@@ -202,7 +206,7 @@ const getTableLanguageData = (languageUsage) => {
             { data: 'Acceptance Rate', header: true },
             { data: 'Lines Suggested', header: true },
             { data: 'Lines Accepted', header: true },
-            { data: 'Active Users', header: true }
+            { data: 'Avg Active Users', header: true }
         ],
         ...Object.entries(languageUsage).map(([language, data]) => [
             language,

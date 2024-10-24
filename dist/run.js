@@ -109,17 +109,14 @@ const run = async () => {
     if (input.csv || input.xml || input.json) {
         const artifact = new DefaultArtifactClient();
         if (input.json) {
-            info("Writing JSON artifact copilot-usage.json");
             writeFileSync('copilot-usage.json', JSON.stringify(data, null, 2));
             await artifact.uploadArtifact('copilot-usage', ['copilot-usage.json'], '.');
         }
         if (input.csv) {
-            info("Writing CSV artifact copilot-usage.csv");
             writeFileSync('copilot-usage.csv', await json2csv(data, input.csvOptions));
             await artifact.uploadArtifact('copilot-usage', ['copilot-usage.csv'], '.');
         }
         if (input.xml) {
-            info("Writing XML artifact copilot-usage.xml");
             writeFileSync('copilot-usage.xml', await toXML(data, input.xmlOptions));
             await artifact.uploadArtifact('copilot-usage', ['copilot-usage.xml'], '.');
         }

@@ -20,7 +20,7 @@ const groupBreakdown = (key: string, data: CopilotUsageResponse, sort?: (a: [str
         acc[breakdownItem[key]].acceptances_count += breakdownItem.acceptances_count;
         acc[breakdownItem[key]].lines_suggested += breakdownItem.lines_suggested;
         acc[breakdownItem[key]].lines_accepted += breakdownItem.lines_accepted;
-        acc[breakdownItem[key]].active_users = Math.max(acc[breakdownItem[key]].active_users, breakdownItem.active_users);
+        acc[breakdownItem[key]].active_users = breakdownItem.active_users;
       } else {
         acc[breakdownItem[key]] = {
           language: breakdownItem.language.replace(/-/g, '&#8209;'),
@@ -35,6 +35,10 @@ const groupBreakdown = (key: string, data: CopilotUsageResponse, sort?: (a: [str
     });
     return acc;
   }, {} as { [key: string]: CopilotUsageBreakdown });
+  // average the active_users by the number of days in the data
+  Object.entries(breakdown).forEach(([, value]) => {
+    value.active_users = value.active_users / data.length;
+  });
   return Object.fromEntries(
     Object.entries(breakdown).sort(sort ? sort : (a, b) => b[1].acceptances_count - a[1].acceptances_count)
   );
@@ -85,6 +89,7 @@ const groupByWeek = (data: CopilotUsageResponse): CopilotUsageResponse => {
 
 export const createJobSummaryUsage = (data: CopilotUsageResponse) => {
   const languageUsage: CustomUsageBreakdown = groupBreakdown('language', data);
+  console.log('languageUsage', languageUsage);
   const editorUsage: CustomUsageBreakdown = groupBreakdown('editor', data);
   // const dayOfWeekUsage: CustomUsageBreakdown = groupBreakdown((item) => dateFormat(item.day, { weekday: 'long' }), data, (a, b) => {
   //   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -242,7 +247,7 @@ const getTableLanguageData = (languageUsage: CustomUsageBreakdown) => {
       { data: 'Acceptance Rate', header: true },
       { data: 'Lines Suggested', header: true },
       { data: 'Lines Accepted', header: true },
-      { data: 'Active Users', header: true }
+      { data: 'Avg Active Users', header: true }
     ],
     ...Object.entries(languageUsage).map(([language, data]) => [
       language,
