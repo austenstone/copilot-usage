@@ -21,10 +21,4 @@ jobs:
           organization: ${{ secrets.ORG }}
           github-token: ${{ secrets.TOKEN }}
           time-zone: "EST"
-      - run: echo "${{ steps.copilot-usage.outputs.result }}" | jq '.' > result.json
-      - name: Upload Usage
-        uses: actions/upload-artifact@v4
-        with:
-          name: usage
-          path: result.json
-
+          json: true

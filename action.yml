@@ -32,6 +32,10 @@ inputs:
     description: Whether to generate a report
     required: false
     default: true
+  json:
+    description: Whether to generate JSON as a workflow artifact
+    required: false
+    default: true
   csv:
     description: Whether to generate CSV as a workflow artifact
     required: false

@@ -107,6 +107,10 @@ const run = async () => {
     }
     if (input.csv || input.xml) {
         const artifact = new DefaultArtifactClient();
+        if (input.json) {
+            writeFileSync('copilot-usage.json', JSON.stringify(data, null, 2));
+            await artifact.uploadArtifact('copilot-usage', ['copilot-usage.json'], '.');
+        }
         if (input.csv) {
             writeFileSync('copilot-usage.csv', await json2csv(data, input.csvOptions));
             await artifact.uploadArtifact('copilot-usage', ['copilot-usage.csv'], '.');

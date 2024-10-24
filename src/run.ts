@@ -41,6 +41,7 @@ interface Input {
   since?: string;
   until?: string;
   jobSummary: boolean;
+  json: boolean;
   csv: boolean;
   csvOptions?: Json2CsvOptions;
   xml: boolean;
@@ -158,6 +159,10 @@ const run = async (): Promise<void> => {
 
   if (input.csv || input.xml) {
     const artifact = new DefaultArtifactClient();
+    if (input.json) {
+      writeFileSync('copilot-usage.json', JSON.stringify(data, null, 2));
+      await artifact.uploadArtifact('copilot-usage', ['copilot-usage.json'], '.');
+    }
     if (input.csv) {
       writeFileSync('copilot-usage.csv', await json2csv(data, input.csvOptions));
       await artifact.uploadArtifact('copilot-usage', ['copilot-usage.csv'], '.');
