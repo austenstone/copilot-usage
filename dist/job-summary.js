@@ -7,7 +7,7 @@ const groupBreakdown = (key, data, sort) => {
                 acc[breakdownItem[key]].acceptances_count += breakdownItem.acceptances_count;
                 acc[breakdownItem[key]].lines_suggested += breakdownItem.lines_suggested;
                 acc[breakdownItem[key]].lines_accepted += breakdownItem.lines_accepted;
-                acc[breakdownItem[key]].active_users = breakdownItem.active_users;
+                acc[breakdownItem[key]].active_users += breakdownItem.active_users;
             }
             else {
                 acc[breakdownItem[key]] = {
@@ -70,7 +70,6 @@ const groupByWeek = (data) => {
 };
 export const createJobSummaryUsage = (data) => {
     const languageUsage = groupBreakdown('language', data);
-    console.log('languageUsage', languageUsage);
     const editorUsage = groupBreakdown('editor', data);
     const weeklyUsage = groupByWeek(data);
     const totalAcceptanceCount = data.reduce((acc, item) => acc + item.total_acceptances_count, 0);

@@ -20,7 +20,7 @@ const groupBreakdown = (key: string, data: CopilotUsageResponse, sort?: (a: [str
         acc[breakdownItem[key]].acceptances_count += breakdownItem.acceptances_count;
         acc[breakdownItem[key]].lines_suggested += breakdownItem.lines_suggested;
         acc[breakdownItem[key]].lines_accepted += breakdownItem.lines_accepted;
-        acc[breakdownItem[key]].active_users = breakdownItem.active_users;
+        acc[breakdownItem[key]].active_users += breakdownItem.active_users;
       } else {
         acc[breakdownItem[key]] = {
           language: breakdownItem.language.replace(/-/g, '&#8209;'),
@@ -89,7 +89,6 @@ const groupByWeek = (data: CopilotUsageResponse): CopilotUsageResponse => {
 
 export const createJobSummaryUsage = (data: CopilotUsageResponse) => {
   const languageUsage: CustomUsageBreakdown = groupBreakdown('language', data);
-  console.log('languageUsage', languageUsage);
   const editorUsage: CustomUsageBreakdown = groupBreakdown('editor', data);
   // const dayOfWeekUsage: CustomUsageBreakdown = groupBreakdown((item) => dateFormat(item.day, { weekday: 'long' }), data, (a, b) => {
   //   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
