@@ -64,6 +64,7 @@ const getInputs = (): Input => {
   result.days = parseInt(getInput("days"));
   result.since = getInput("since");
   result.until = getInput("until");
+  result.json = getBooleanInput("json");
   result.csv = getBooleanInput("csv");
   result.csvOptions = getInput("csv-options") ? JSON.parse(getInput("csv-options")) : undefined;
   result.xml = getBooleanInput("xml");
