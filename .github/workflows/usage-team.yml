@@ -31,3 +31,4 @@ jobs:
       - uses: austenstone/job-summary@main
         with:
           name: ${{ matrix.team }}-copilot-usage
+          artifact-name: ${{ matrix.team }}-pdf
