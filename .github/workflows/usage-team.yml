@@ -28,6 +28,6 @@ jobs:
           github-token: ${{ secrets.TOKEN }}
           time-zone: "EST"
           artifact-name: ${{ matrix.team }}-copilot-usage
-      - uses: austenstone/job-summary@v2.0
+      - uses: austenstone/job-summary@main
         with:
           name: ${{ matrix.team }}-copilot-usage
