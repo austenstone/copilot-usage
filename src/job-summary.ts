@@ -331,9 +331,9 @@ xychart-beta
   x-axis [${data.map((item) => `"${dateFormat(item.day, { month: '2-digit', day: '2-digit' })}"`).join(', ')
     }]
   y-axis "${yAxisTitle}" 0 --> ${maxData}
-  bar [${data.map(dataForBar).join(', ')
+  bar [${data.map(dataForBar).map(v => v.toFixed(3)).join(', ')
     }]
-  line [${data.map(dataForLine).join(', ')
+  line [${data.map(dataForLine).map(v => v.toFixed(3)).join(', ')
     }]
 \`\`\`\n`;
 }
