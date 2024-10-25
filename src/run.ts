@@ -128,7 +128,7 @@ const run = async (): Promise<void> => {
 
   if (input.jobSummary) {
     setJobSummaryTimeZone(input.timeZone);
-    const name = input.enterprise || input.organization || `${input.organization} / ${input.team}`;
+    const name = input.enterprise || (input.team && input.organization) ? `${input.organization} / ${input.team}` : input.organization;
     await createJobSummaryUsage(data, name).write();
 
     if (input.organization && !input.team) { // refuse to fetch organization seat info if looking for team usage

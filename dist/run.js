@@ -81,7 +81,7 @@ const run = async () => {
     info(`Fetched Copilot usage data for ${data.length} days (${data[0].day} to ${data[data.length - 1].day})`);
     if (input.jobSummary) {
         setJobSummaryTimeZone(input.timeZone);
-        const name = input.enterprise || input.organization || `${input.organization} / ${input.team}`;
+        const name = input.enterprise || (input.team && input.organization) ? `${input.organization} / ${input.team}` : input.organization;
         await createJobSummaryUsage(data, name).write();
         if (input.organization && !input.team) {
             info(`Fetching Copilot details for organization ${input.organization}`);
