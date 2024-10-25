@@ -16,7 +16,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./
-        id: copilot-usage
         with:
           organization: ${{ secrets.ORG }}
           team: corporate-solutions-eng
@@ -24,7 +23,6 @@ jobs:
           time-zone: "EST"
           json: true
       - uses: ./
-        id: copilot-usage
         with:
           organization: ${{ secrets.ORG }}
           team: Bookstore Developers
