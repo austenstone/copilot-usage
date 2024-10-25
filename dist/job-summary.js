@@ -278,8 +278,8 @@ xychart-beta
   title "${title}"
   x-axis [${data.map((item) => `"${dateFormat(item.day, { month: '2-digit', day: '2-digit' })}"`).join(', ')}]
   y-axis "${yAxisTitle}" 0 --> ${maxData}
-  bar [${data.map(dataForBar).map(v => v.toFixed(3)).join(', ')}]
-  line [${data.map(dataForLine).map(v => v.toFixed(3)).join(', ')}]
+  bar [${data.map(dataForBar).map(v => isFinite(v) ? v.toFixed(3) : '0.000').join(', ')}]
+  line [${data.map(dataForLine).map(v => isFinite(v) ? v.toFixed(3) : '0.000').join(', ')}]
 \`\`\`\n`;
 };
 const getXyChartAcceptanceRate = (data) => {
