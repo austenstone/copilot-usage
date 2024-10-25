@@ -54,6 +54,10 @@ inputs:
     description: The time zone to use for the report
     required: false
     default: "UTC"
+  artifact-name:
+    description: The name of the artifact to create
+    required: false
+    default: "copilot-usage"
 outputs:
   result:
     description: The copilot usage as a JSON string

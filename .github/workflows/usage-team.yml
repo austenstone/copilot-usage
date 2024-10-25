@@ -22,6 +22,7 @@ jobs:
           github-token: ${{ secrets.TOKEN }}
           time-zone: "EST"
           json: true
+          artifact-name: "corporate-solutions-eng-copilot-usage"
       - uses: ./
         with:
           organization: ${{ secrets.ORG }}
@@ -29,3 +30,4 @@ jobs:
           github-token: ${{ secrets.TOKEN }}
           time-zone: "EST"
           json: true
+          artifact-name: "corporate-solutions-eng-copilot-usage"

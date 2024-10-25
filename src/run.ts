@@ -52,6 +52,7 @@ interface Input {
     selfCloseTags: boolean;
   };
   timeZone: string;
+  artifactName: string;
 }
 
 const getInputs = (): Input => {
@@ -73,6 +74,7 @@ const getInputs = (): Input => {
     indent: "  ",
   };
   result.timeZone = getInput("time-zone");
+  result.artifactName = getInput("artifact-name");
   if (!result.token) {
     throw new Error("github-token is required");
   }
@@ -162,15 +164,15 @@ const run = async (): Promise<void> => {
     const artifact = new DefaultArtifactClient();
     if (input.json) {
       writeFileSync('copilot-usage.json', JSON.stringify(data, null, 2));
-      await artifact.uploadArtifact('copilot-usage', ['copilot-usage.json'], '.');
+      await artifact.uploadArtifact(input.artifactName, ['copilot-usage.json'], '.');
     }
     if (input.csv) {
       writeFileSync('copilot-usage.csv', await json2csv(data, input.csvOptions));
-      await artifact.uploadArtifact('copilot-usage', ['copilot-usage.csv'], '.');
+      await artifact.uploadArtifact(input.artifactName, ['copilot-usage.csv'], '.');
     }
     if (input.xml) {
       writeFileSync('copilot-usage.xml', await toXML(data, input.xmlOptions));
-      await artifact.uploadArtifact('copilot-usage', ['copilot-usage.xml'], '.');
+      await artifact.uploadArtifact(input.artifactName, ['copilot-usage.xml'], '.');
     }
   }
 
