@@ -1,0 +1,33 @@
+name: Usage Teams
+on:
+  push:
+    branches: [ main ]
+    paths-ignore:
+      - "**.md"
+  workflow_dispatch:
+permissions:
+  contents: read
+
+jobs:
+  run:
+    if: ${{ github.actor != 'dependabot[bot]' }}
+    name: Copilot Usage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./
+        id: copilot-usage
+        with:
+          organization: ${{ secrets.ORG }}
+          team: corporate-solutions-eng
+          github-token: ${{ secrets.TOKEN }}
+          time-zone: "EST"
+          json: true
+      - uses: ./
+        id: copilot-usage
+        with:
+          organization: ${{ secrets.ORG }}
+          team: Bookstore Developers
+          github-token: ${{ secrets.TOKEN }}
+          time-zone: "EST"
+          json: true
