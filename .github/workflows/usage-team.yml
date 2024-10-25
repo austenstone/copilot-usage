@@ -25,7 +25,7 @@ jobs:
       - uses: ./
         with:
           organization: ${{ secrets.ORG }}
-          team: Bookstore Developers
+          team: bookstore-developers
           github-token: ${{ secrets.TOKEN }}
           time-zone: "EST"
           json: true
