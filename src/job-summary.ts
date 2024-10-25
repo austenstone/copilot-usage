@@ -87,7 +87,7 @@ const groupByWeek = (data: CopilotUsageResponse): CopilotUsageResponse => {
   return res as CopilotUsageResponse;
 }
 
-export const createJobSummaryUsage = (data: CopilotUsageResponse) => {
+export const createJobSummaryUsage = (data: CopilotUsageResponse, name: string) => {
   const languageUsage: CustomUsageBreakdown = groupBreakdown('language', data);
   const editorUsage: CustomUsageBreakdown = groupBreakdown('editor', data);
   // const dayOfWeekUsage: CustomUsageBreakdown = groupBreakdown((item) => dateFormat(item.day, { weekday: 'long' }), data, (a, b) => {
@@ -109,7 +109,7 @@ export const createJobSummaryUsage = (data: CopilotUsageResponse) => {
   const totalAvgChatUsers = data.reduce((acc, item) => acc + item.total_active_chat_users, 0) / data.filter((item) => item.total_chat_turns > 0).length;
 
   return summary
-    .addHeading(`Copilot Usage<br>${data.length} days (${dateFormat(data[0].day)} - ${dateFormat(data[data.length - 1].day)})`)
+    .addHeading(`Copilot Usage for ${name}<br>${dateFormat(data[0].day)} - ${dateFormat(data[data.length - 1].day)}`)
     .addHeading(`Copilot Chat`, 2)
     .addList([
       `Acceptances: ${totalChatAcceptanceCount.toLocaleString()}`,

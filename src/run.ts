@@ -128,7 +128,8 @@ const run = async (): Promise<void> => {
 
   if (input.jobSummary) {
     setJobSummaryTimeZone(input.timeZone);
-    await createJobSummaryUsage(data).write();
+    const name = input.enterprise || input.organization || `${input.organization} / ${input.team}`;
+    await createJobSummaryUsage(data, name).write();
 
     if (input.organization && !input.team) { // refuse to fetch organization seat info if looking for team usage
       info(`Fetching Copilot details for organization ${input.organization}`);

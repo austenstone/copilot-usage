@@ -68,7 +68,7 @@ const groupByWeek = (data) => {
     res.forEach((item) => delete item.key);
     return res;
 };
-export const createJobSummaryUsage = (data) => {
+export const createJobSummaryUsage = (data, name) => {
     const languageUsage = groupBreakdown('language', data);
     const editorUsage = groupBreakdown('editor', data);
     const weeklyUsage = groupByWeek(data);
@@ -83,7 +83,7 @@ export const createJobSummaryUsage = (data) => {
     const totalChatAcceptanceRate = (totalChatAcceptanceCount / totalChatTurns * 100).toFixed(2);
     const totalAvgChatUsers = data.reduce((acc, item) => acc + item.total_active_chat_users, 0) / data.filter((item) => item.total_chat_turns > 0).length;
     return summary
-        .addHeading(`Copilot Usage<br>${data.length} days (${dateFormat(data[0].day)} - ${dateFormat(data[data.length - 1].day)})`)
+        .addHeading(`Copilot Usage for ${name}<br>${dateFormat(data[0].day)} - ${dateFormat(data[data.length - 1].day)}`)
         .addHeading(`Copilot Chat`, 2)
         .addList([
         `Acceptances: ${totalChatAcceptanceCount.toLocaleString()}`,
