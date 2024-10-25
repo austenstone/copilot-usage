@@ -39,14 +39,15 @@ jobs:
     name: Run Action
     runs-on: ubuntu-latest
     steps:
-      - uses: austenstone/copilot-usage@v4.1
+      - uses: austenstone/copilot-usage@v4.2
         with:
           github-token: ${{ secrets.TOKEN }}
+          time-zone: 'EST'
 ```
 #### Example get team usage
 
 ```yml
-      - uses: austenstone/copilot-usage@v4.1
+      - uses: austenstone/copilot-usage@v4.2
         with:
           github-token: ${{ secrets.TOKEN }}
           organization: 'org-slug'
@@ -56,7 +57,7 @@ jobs:
 #### Example get enterprise usage
 
 ```yml
-      - uses: austenstone/copilot-usage@v4.1
+      - uses: austenstone/copilot-usage@v4.2
         with:
           github-token: ${{ secrets.TOKEN }}
           enterprise: 'enterprise-slug'
@@ -65,10 +66,39 @@ jobs:
 #### Example get CSV
 
 ```yml
-      - uses: austenstone/copilot-usage@v4.1
+      - uses: austenstone/copilot-usage@v4.2
         with:
           github-token: ${{ secrets.TOKEN }}
           csv: true
+```
+
+#### Example multiple teams
+```yml
+    strategy:
+      matrix:
+        team:
+          - 'team-slug1'
+          - 'team-slug2'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: austenstone/copilot-usage@v4.2
+        with:
+          github-token: ${{ secrets.TOKEN }}
+          organization: 'org-slug'
+          team: ${{ matrix.team }}
+```
+
+#### Example specific timezone
+
+You probably want to specify the timezone to get the usage in your local time. The default is UTC.
+EX: `EST`, `PST`, `CST`, [etc](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones).
+
+```yml
+      - uses: austenstone/copilot-usage@v4.2
+        with:
+          github-token: ${{ secrets.TOKEN }}
+          organization: 'org-slug'
+          time-zone: 'EST'
 ```
 
 #### Example sending email PDF report
@@ -87,7 +117,7 @@ jobs:
   run:
     runs-on: ubuntu-latest
     steps:
-      - uses: austenstone/copilot-usage@v4.1
+      - uses: austenstone/copilot-usage@v4.2
         with:
           github-token: ${{ secrets.TOKEN }}
       - uses: austenstone/job-summary@v2.0

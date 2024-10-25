@@ -13,9 +13,9 @@ jobs:
     if: ${{ github.actor != 'dependabot[bot]' }}
     name: Copilot Usage
     runs-on: ubuntu-latest
-    # create a matrix strategy to get both teams corporate-solutions-eng and bookstore-developers
     strategy:
       matrix:
+        # Add your teams here
         team:
           - corporate-solutions-eng
           - bookstore-developers
@@ -23,8 +23,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./
         with:
-          organization: ${{ secrets.ORG }}
+          # Add your organization here
+          organization: ${{ vars.ORG }}
           team: ${{ matrix.team }}
+          # Add your token here
           github-token: ${{ secrets.TOKEN }}
           time-zone: "EST"
           artifact-name: ${{ matrix.team }}-copilot-usage

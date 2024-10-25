@@ -18,7 +18,7 @@ jobs:
       - uses: ./
         id: copilot-usage
         with:
-          organization: ${{ secrets.ORG }}
+          organization: ${{ vars.ORG }}
           github-token: ${{ secrets.TOKEN }}
           time-zone: "EST"
           json: true
