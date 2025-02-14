@@ -1,5 +1,5 @@
 import { debug, getBooleanInput, getInput, info, setOutput } from "@actions/core";
-import { Octokit } from '@octokit/rest'
+import { Octokit, RestEndpointMethodTypes } from '@octokit/rest'
 import { DefaultArtifactClient } from "@actions/artifact";
 import { writeFileSync } from "fs";
 import { Json2CsvOptions, json2csv } from "json-2-csv";
@@ -94,7 +94,7 @@ const run = async (): Promise<void> => {
     if (input.since) params.since = input.since;
     if (input.until) params.until = input.until;
   }
-  let req: Promise<unknown[]>;
+  let req: Promise<RestEndpointMethodTypes["copilot"]["copilotMetricsForOrganization"]["response"]>;
   if (input.enterprise) {
     info(`Fetching Copilot usage for enterprise ${input.enterprise}`);
     req = octokit.paginate("GET /enterprises/{enterprise}/copilot/usage", {
@@ -126,7 +126,7 @@ const run = async (): Promise<void> => {
     throw new Error("organization, enterprise or team input is required");
   }
 
-  const data = await req as CopilotUsageResponse;
+  const data = await req;
   if (!data || data.length === 0) {
     return warn("No Copilot usage data found");
   }
