@@ -22,19 +22,19 @@ beforeEach(() => {
 });
 
 test('createJobSummaryUsage(enterpriseUsage)', async () => {
-  const summary = await createJobSummaryUsage(exampleResponseEnterprise);
+  const summary = await createJobSummaryUsage(exampleResponseEnterprise, 'enterprise');
   expect(summary).toBeDefined();
   expect(getSummaryBuffer(summary)).toEqual(readFileSync('./__tests__/mock/enterprise-usage-summary.md', 'utf-8'));
 });
 
 test('createJobSummaryUsage(orgUsage)', async () => {
-  const summary = await createJobSummaryUsage(exampleResponseOrg);
+  const summary = await createJobSummaryUsage(exampleResponseOrg, 'org');
   expect(summary).toBeDefined();
   expect(getSummaryBuffer(summary)).toEqual(readFileSync('./__tests__/mock/org-usage-summary.md', 'utf-8'));
 });
 
 test('createJobSummaryUsage(teamUsage)', async () => {
-  const summary = await createJobSummaryUsage(exampleResponseTeam);
+  const summary = await createJobSummaryUsage(exampleResponseTeam, 'team');
   expect(summary).toBeDefined();
   expect(getSummaryBuffer(summary)).toEqual(readFileSync('./__tests__/mock/team-usage-summary.md', 'utf-8'));
 });

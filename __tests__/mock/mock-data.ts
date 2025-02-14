@@ -12,15 +12,15 @@ const getSummaryBuffer = (_summary: typeof summary): string => {
 }
 export const createMockData = async () => {
   let summary;
-  summary = await createJobSummaryUsage(exampleResponseEnterprise);
+  summary = await createJobSummaryUsage(exampleResponseEnterprise, "enterprise");
   writeFileSync('./__tests__/mock/enterprise-usage-summary.md', getSummaryBuffer(summary));
   summary.emptyBuffer();
 
-  summary = await createJobSummaryUsage(exampleResponseOrg);
+  summary = await createJobSummaryUsage(exampleResponseOrg, "org");
   writeFileSync('./__tests__/mock/org-usage-summary.md', getSummaryBuffer(summary));
   summary.emptyBuffer();
 
-  summary = await createJobSummaryUsage(exampleResponseTeam);
+  summary = await createJobSummaryUsage(exampleResponseTeam, "team");
   writeFileSync('./__tests__/mock/team-usage-summary.md', getSummaryBuffer(summary));
   summary.emptyBuffer();
 
