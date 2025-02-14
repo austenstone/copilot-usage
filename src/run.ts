@@ -1,5 +1,5 @@
 import { debug, getBooleanInput, getInput, info, setOutput } from "@actions/core";
-import { getOctokit } from "@actions/github";
+import { Octokit } from '@octokit/rest'
 import { DefaultArtifactClient } from "@actions/artifact";
 import { writeFileSync } from "fs";
 import { Json2CsvOptions, json2csv } from "json-2-csv";
@@ -83,7 +83,9 @@ const getInputs = (): Input => {
 
 const run = async (): Promise<void> => {
   const input = getInputs();
-  const octokit = getOctokit(input.token);
+  const octokit = new Octokit({
+    auth: input.token
+  });
 
   const params = {} as Record<string, string>;
   if (input.days) {
@@ -111,7 +113,12 @@ const run = async (): Promise<void> => {
     });
   } else if (input.organization) {
     info(`Fetching Copilot usage for organization ${input.organization}`);
-    req = octokit.paginate("GET /orgs/{org}/copilot/usage", {
+    // req = octokit.paginate("GET /orgs/{org}/copilot/usage", {
+    //   org: input.organization,
+    //   ...params
+    // });
+
+    req = octokit.rest.copilot.copilotMetricsForOrganization({
       org: input.organization,
       ...params
     });

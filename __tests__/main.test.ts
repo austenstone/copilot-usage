@@ -1,10 +1,11 @@
-import { test } from '@jest/globals';
+import { test, beforeAll, beforeEach, expect } from 'vitest';
 import dotenv from 'dotenv'
 dotenv.config({ override: true })
 import { createJobSummarySeatAssignments, createJobSummarySeatInfo, createJobSummaryUsage } from '../src/job-summary';
 import { summary } from '@actions/core/lib/summary';
 import { exampleResponseEnterprise, exampleResponseOrg, exampleResponseTeam, exampleSeatAssignmentResponse, exampleSeatInfoResponse } from './mock/mock-data';
 import { readFileSync } from 'fs';
+import run from '../src/run';
 
 const getSummaryBuffer = (_summary: typeof summary): string => {
   return (_summary as unknown as {
@@ -20,6 +21,10 @@ beforeAll(async () => {
 beforeEach(() => {
   summary.emptyBuffer();
 });
+
+// test('run function', async () => {
+//   await run();
+// });
 
 test('createJobSummaryUsage(enterpriseUsage)', async () => {
   const summary = await createJobSummaryUsage(exampleResponseEnterprise, 'enterprise');
