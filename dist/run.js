@@ -4,7 +4,7 @@ import { DefaultArtifactClient } from "@actions/artifact";
 import { writeFileSync } from "fs";
 import { json2csv } from "json-2-csv";
 import { toXML } from 'jstoxml';
-import { createJobSummaryFooter, createJobSummarySeatAssignments, createJobSummarySeatInfo, createJobSummaryUsage, setJobSummaryTimeZone } from "./job-summary";
+import { createJobSummaryFooter, createJobSummarySeatAssignments, createJobSummarySeatInfo, setJobSummaryTimeZone } from "./job-summary";
 import { warn } from "console";
 const getInputs = () => {
     const result = {};
@@ -48,7 +48,6 @@ const run = async () => {
     }
     let req;
     if (input.enterprise) {
-        info(`Fetching Copilot usage for enterprise ${input.enterprise}`);
         req = octokit.paginate("GET /enterprises/{enterprise}/copilot/usage", {
             enterprise: input.enterprise,
             ...params
@@ -59,18 +58,18 @@ const run = async () => {
             throw new Error("organization is required when team is provided");
         }
         info(`Fetching Copilot usage for team ${input.team} inside organization ${input.organization}`);
-        req = octokit.paginate("GET /orgs/{org}/team/{team}/copilot/usage", {
+        req = octokit.rest.copilot.copilotMetricsForTeam({
             org: input.organization,
-            team: input.team,
+            team_slug: input.team,
             ...params
-        });
+        }).then(response => response.data);
     }
     else if (input.organization) {
         info(`Fetching Copilot usage for organization ${input.organization}`);
         req = octokit.rest.copilot.copilotMetricsForOrganization({
             org: input.organization,
             ...params
-        });
+        }).then(response => response.data);
     }
     else {
         throw new Error("organization, enterprise or team input is required");
@@ -83,8 +82,6 @@ const run = async () => {
     info(`Fetched Copilot usage data for ${data.length} days (${data[0].day} to ${data[data.length - 1].day})`);
     if (input.jobSummary) {
         setJobSummaryTimeZone(input.timeZone);
-        const name = input.enterprise || (input.team && input.organization) ? `${input.organization} / ${input.team}` : input.organization;
-        await createJobSummaryUsage(data, name).write();
         if (input.organization && !input.team) {
             info(`Fetching Copilot details for organization ${input.organization}`);
             const orgSeatInfo = await octokit.rest.copilot.getCopilotOrganizationDetails({

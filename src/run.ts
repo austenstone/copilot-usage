@@ -94,34 +94,28 @@ const run = async (): Promise<void> => {
     if (input.since) params.since = input.since;
     if (input.until) params.until = input.until;
   }
-  let req: Promise<RestEndpointMethodTypes["copilot"]["copilotMetricsForOrganization"]["response"]>;
+  let req: Promise<RestEndpointMethodTypes["copilot"]["copilotMetricsForOrganization"]["response"]["data"]>;
   if (input.enterprise) {
-    info(`Fetching Copilot usage for enterprise ${input.enterprise}`);
     req = octokit.paginate("GET /enterprises/{enterprise}/copilot/usage", {
       enterprise: input.enterprise,
       ...params
-    });
+    })
   } else if (input.team) {
     if (!input.organization) {
       throw new Error("organization is required when team is provided");
     }
     info(`Fetching Copilot usage for team ${input.team} inside organization ${input.organization}`);
-    req = octokit.paginate("GET /orgs/{org}/team/{team}/copilot/usage", {
+    req = octokit.rest.copilot.copilotMetricsForTeam({
       org: input.organization,
-      team: input.team,
+      team_slug: input.team,
       ...params
-    });
+    }).then(response => response.data);
   } else if (input.organization) {
     info(`Fetching Copilot usage for organization ${input.organization}`);
-    // req = octokit.paginate("GET /orgs/{org}/copilot/usage", {
-    //   org: input.organization,
-    //   ...params
-    // });
-
     req = octokit.rest.copilot.copilotMetricsForOrganization({
       org: input.organization,
       ...params
-    });
+    }).then(response => response.data);
   } else {
     throw new Error("organization, enterprise or team input is required");
   }
@@ -135,8 +129,8 @@ const run = async (): Promise<void> => {
 
   if (input.jobSummary) {
     setJobSummaryTimeZone(input.timeZone);
-    const name = input.enterprise || (input.team && input.organization) ? `${input.organization} / ${input.team}` : input.organization;
-    await createJobSummaryUsage(data, name).write();
+    // const name = input.enterprise || (input.team && input.organization) ? `${input.organization} / ${input.team}` : input.organization;
+    // await createJobSummaryUsage(data, name).write();
 
     if (input.organization && !input.team) { // refuse to fetch organization seat info if looking for team usage
       info(`Fetching Copilot details for organization ${input.organization}`);
