@@ -90,6 +90,56 @@ title Editor Usage
         .join('\n')}
 \`\`\`\n`;
 };
+const generateXyChart = (data, title, yAxisTitle, dataForBar, dataForLine, maxData) => {
+    return `\n\`\`\`mermaid
+---
+config:
+    xyChart:
+        width: ${data.length * 45}
+        height: 500
+        xAxis:
+            labelPadding: 20
+    themeVariables:
+        xyChart:
+            backgroundColor: "transparent"
+---
+xychart-beta
+  title "${title}"
+  x-axis [${data.map((day) => `"${dateFormat(day.date, { month: '2-digit', day: '2-digit' })}"`).join(', ')}]
+  y-axis "${yAxisTitle}" 0 --> ${maxData}
+  bar [${data.map(dataForBar).map(v => isFinite(v) ? v.toFixed(3) : '0.000').join(', ')}]
+  line [${data.map(dataForLine).map(v => isFinite(v) ? v.toFixed(3) : '0.000').join(', ')}]
+\`\`\`\n`;
+};
+const getXyChartAcceptanceRate = (data) => {
+    const maxAcceptances = Math.max(...data.map((day) => day.copilot_ide_code_completions?.editors?.reduce((sum, editor) => sum + (editor.models?.reduce((mSum, model) => mSum + (model.languages?.reduce((lSum, lang) => lSum + (lang.total_code_acceptances || 0), 0) || 0), 0) || 0), 0) || 0)) + 10;
+    return generateXyChart(data, "Completion Accepts & Acceptance Rate", "Acceptances", (day) => day.copilot_ide_code_completions?.editors?.reduce((sum, editor) => sum + (editor.models?.reduce((mSum, model) => mSum + (model.languages?.reduce((lSum, lang) => lSum + (lang.total_code_acceptances || 0), 0) || 0), 0) || 0), 0) || 0, (day) => {
+        const accepts = day.copilot_ide_code_completions?.editors?.reduce((sum, editor) => sum + (editor.models?.reduce((mSum, model) => mSum + (model.languages?.reduce((lSum, lang) => lSum + (lang.total_code_acceptances || 0), 0) || 0), 0) || 0), 0) || 0;
+        const suggestions = day.copilot_ide_code_completions?.editors?.reduce((sum, editor) => sum + (editor.models?.reduce((mSum, model) => mSum + (model.languages?.reduce((lSum, lang) => lSum + (lang.total_code_suggestions || 0), 0) || 0), 0) || 0), 0) || 0;
+        return ((accepts / suggestions) * maxAcceptances) || 0;
+    }, maxAcceptances);
+};
+const getXyChartDailyActiveUsers = (data) => {
+    const maxActiveUsers = Math.max(...data.map((day) => getTotalEngagedUsers(day))) + 10;
+    return `\n\`\`\`mermaid
+---
+config:
+    xyChart:
+        width: ${data.length * 45}
+        height: 500
+        xAxis:
+            labelPadding: 20
+    themeVariables:
+        xyChart:
+            backgroundColor: "transparent"
+---
+xychart-beta
+  title "Daily Active Users"
+  x-axis [${data.map((day) => `"${dateFormat(day.date, { month: '2-digit', day: '2-digit' })}"`).join(', ')}]
+  y-axis "Active Users" 0 --> ${maxActiveUsers}
+  line [${data.map((day) => getTotalEngagedUsers(day)).join(', ')}]
+\`\`\`\n`;
+};
 export const createJobSummaryUsage = (data, name) => {
     const languageMetrics = groupLanguageMetrics(data);
     const editorMetrics = groupEditorMetrics(data);
@@ -112,10 +162,12 @@ export const createJobSummaryUsage = (data, name) => {
         `Total Chat Interactions: ${totalChatTurns.toLocaleString()}`,
         `Most Active Day: ${dateFormat(mostActiveDay.date)} (${getTotalEngagedUsers(mostActiveDay)} active users)`
     ])
-        .addRaw(getPieChartLanguageUsage(languageMetrics))
+        .addRaw(getXyChartAcceptanceRate(data))
+        .addRaw(getXyChartDailyActiveUsers(data))
         .addHeading('Language Usage')
-        .addRaw(getPieChartEditorUsage(editorMetrics))
-        .addHeading('Editor Usage');
+        .addRaw(getPieChartLanguageUsage(languageMetrics))
+        .addHeading('Editor Usage')
+        .addRaw(getPieChartEditorUsage(editorMetrics));
 };
 const getTotalEngagedUsers = (day) => {
     return day.copilot_ide_code_completions?.editors?.reduce((sum, editor) => sum + (editor.total_engaged_users ?? 0), 0) || 0;
