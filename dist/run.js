@@ -4,7 +4,8 @@ import { DefaultArtifactClient } from "@actions/artifact";
 import { writeFileSync } from "fs";
 import { json2csv } from "json-2-csv";
 import { toXML } from 'jstoxml';
-import { createJobSummaryFooter, createJobSummarySeatAssignments, createJobSummarySeatInfo, setJobSummaryTimeZone } from "./job-summary";
+import { createJobSummaryFooter, createJobSummarySeatAssignments, createJobSummarySeatInfo, setJobSummaryTimeZone } from "./deprecated-job-summary";
+import { createJobSummaryUsage } from "./job-summary";
 import { warn } from "console";
 const getInputs = () => {
     const result = {};
@@ -82,6 +83,8 @@ const run = async () => {
     info(`Fetched Copilot usage data for ${data.length} days (${data[0].day} to ${data[data.length - 1].day})`);
     if (input.jobSummary) {
         setJobSummaryTimeZone(input.timeZone);
+        const name = input.enterprise || (input.team && input.organization) ? `${input.organization} / ${input.team}` : input.organization;
+        await createJobSummaryUsage(data, name).write();
         if (input.organization && !input.team) {
             info(`Fetching Copilot details for organization ${input.organization}`);
             const orgSeatInfo = await octokit.rest.copilot.getCopilotOrganizationDetails({

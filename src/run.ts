@@ -4,7 +4,8 @@ import { DefaultArtifactClient } from "@actions/artifact";
 import { writeFileSync } from "fs";
 import { Json2CsvOptions, json2csv } from "json-2-csv";
 import { toXML } from 'jstoxml';
-import { createJobSummaryFooter, createJobSummarySeatAssignments, createJobSummarySeatInfo, createJobSummaryUsage, setJobSummaryTimeZone } from "./job-summary";
+import { createJobSummaryFooter, createJobSummarySeatAssignments, createJobSummarySeatInfo, setJobSummaryTimeZone } from "./deprecated-job-summary";
+import { createJobSummaryUsage } from "./job-summary";
 import { warn } from "console";
 
 export type CopilotUsageBreakdown = {
@@ -129,8 +130,8 @@ const run = async (): Promise<void> => {
 
   if (input.jobSummary) {
     setJobSummaryTimeZone(input.timeZone);
-    // const name = input.enterprise || (input.team && input.organization) ? `${input.organization} / ${input.team}` : input.organization;
-    // await createJobSummaryUsage(data, name).write();
+    const name = input.enterprise || (input.team && input.organization) ? `${input.organization} / ${input.team}` : input.organization;
+    await createJobSummaryUsage(data, name).write();
 
     if (input.organization && !input.team) { // refuse to fetch organization seat info if looking for team usage
       info(`Fetching Copilot details for organization ${input.organization}`);
