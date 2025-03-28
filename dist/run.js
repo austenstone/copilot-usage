@@ -73,7 +73,6 @@ const run = async () => {
         return warn("No Copilot usage data found");
     }
     debug(JSON.stringify(data, null, 2));
-    console.log(JSON.stringify(data, null, 2));
     info(`Fetched Copilot usage data for ${data.length} days (${data[0].date} to ${data[data.length - 1].date})`);
     if (input.jobSummary) {
         setJobSummaryTimeZone(input.timeZone);
