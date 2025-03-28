@@ -36,7 +36,6 @@ export type CopilotUsageResponse = CopilotUsageResponseData[];
 interface Input {
   token: string;
   organization: string;
-  enterprise?: string;
   team?: string;
   days?: number;
   since?: string;
@@ -60,7 +59,6 @@ const getInputs = (): Input => {
   const result = {} as Input;
   result.token = getInput("github-token").trim();
   result.organization = getInput("organization").trim();
-  result.enterprise = getInput("enterprise").trim();
   result.team = getInput("team").trim();
   result.jobSummary = getBooleanInput("job-summary");
   result.days = parseInt(getInput("days"));
@@ -96,12 +94,8 @@ const run = async (): Promise<void> => {
     if (input.until) params.until = input.until;
   }
   let req: Promise<RestEndpointMethodTypes["copilot"]["copilotMetricsForOrganization"]["response"]["data"]>;
-  if (input.enterprise) {
-    req = octokit.paginate("GET /enterprises/{enterprise}/copilot/usage", {
-      enterprise: input.enterprise,
-      ...params
-    })
-  } else if (input.team) {
+
+  if (input.team) {
     if (!input.organization) {
       throw new Error("organization is required when team is provided");
     }
@@ -130,7 +124,7 @@ const run = async (): Promise<void> => {
 
   if (input.jobSummary) {
     setJobSummaryTimeZone(input.timeZone);
-    const name = input.enterprise || (input.team && input.organization) ? `${input.organization} / ${input.team}` : input.organization;
+    const name = (input.team && input.organization) ? `${input.organization} / ${input.team}` : input.organization;
     await createJobSummaryUsage(data, name).write();
 
     if (input.organization && !input.team) { // refuse to fetch organization seat info if looking for team usage
