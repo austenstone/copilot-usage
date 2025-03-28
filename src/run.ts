@@ -120,7 +120,7 @@ const run = async (): Promise<void> => {
     return warn("No Copilot usage data found");
   }
   debug(JSON.stringify(data, null, 2));
-  info(`Fetched Copilot usage data for ${data.length} days (${data[0].day} to ${data[data.length - 1].day})`);
+  info(`Fetched Copilot usage data for ${data.length} days (${data[0].date} to ${data[data.length - 1].date})`);
 
   if (input.jobSummary) {
     setJobSummaryTimeZone(input.timeZone);
@@ -129,11 +129,11 @@ const run = async (): Promise<void> => {
 
     if (input.organization && !input.team) { // refuse to fetch organization seat info if looking for team usage
       info(`Fetching Copilot details for organization ${input.organization}`);
-      const orgSeatInfo = await octokit.rest.copilot.getCopilotOrganizationDetails({
+      const orgCopilotDetails = await octokit.rest.copilot.getCopilotOrganizationDetails({
         org: input.organization
-      });
-      if (orgSeatInfo?.data) {
-        await createJobSummarySeatInfo(orgSeatInfo.data).write();
+      }).then(response => response.data);
+      if (orgCopilotDetails) {
+        await createJobSummarySeatInfo(orgCopilotDetails).write();
       }
 
       info(`Fetching Copilot seat assignments for organization ${input.organization}`);
@@ -174,8 +174,8 @@ const run = async (): Promise<void> => {
   }
 
   setOutput("result", JSON.stringify(data));
-  setOutput("since", data[0].day);
-  setOutput("until", data[data.length - 1].day);
+  setOutput("since", data[0].date);
+  setOutput("until", data[data.length - 1].date);
   setOutput("days", data.length.toString());
 };
 
