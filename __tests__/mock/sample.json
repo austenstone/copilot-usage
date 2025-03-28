@@ -1,0 +1,133 @@
+[
+  {
+    "date": "2025-03-01",
+    "copilot_ide_chat": {
+      "editors": [
+        {
+          "name": "vscode",
+          "models": [
+            {
+              "name": "default",
+              "total_chats": 1086,
+              "is_custom_model": false,
+              "total_engaged_users": 42,
+              "total_chat_copy_events": 90,
+              "total_chat_insertion_events": 12
+            }
+          ],
+          "total_engaged_users": 42
+        },
+        {
+          "name": "JetBrains",
+          "models": [
+            {
+              "name": "default",
+              "total_chats": 7,
+              "is_custom_model": false,
+              "total_engaged_users": 2,
+              "total_chat_copy_events": 0,
+              "total_chat_insertion_events": 0
+            }
+          ],
+          "total_engaged_users": 2
+        },
+        {
+          "name": "Xcode",
+          "models": [
+            {
+              "name": "default",
+          "total_engaged_users": 16
+        },
+        {
+          "name": "git-commit",
+          "total_engaged_users": 2
+        },
+        {
+          "name": "csharp",
+          "total_engaged_users": 6
+        },
+        {
+          "name": "json",
+          "total_engaged_users": 12
+        },
+        {
+          "name": "ql",
+          "total_engaged_users": 2
+        },
+        {
+          "name": "java",
+          "total_engaged_users": 8
+        },
+        {
+          "name": "rust",
+          "total_engaged_users": 1
+        },
+        {
+          "name": "ini",
+          "total_engaged_users": 3
+        },
+        {
+          "name": "css",
+          "total_engaged_users": 8
+        },
+        {
+          "name": "razor",
+          "total_engaged_users": 0
+        },
+        {
+          "name": "dotenv",
+          "total_engaged_users": 2
+        },
+        {
+          "name": "terraform",
+          "total_engaged_users": 1
+        },
+        {
+          "name": "ignore",
+          "total_engaged_users": 1
+        },
+        {
+          "name": "vue",
+          "total_engaged_users": 1
+        },
+        {
+          "name": "cpp",
+          "total_engaged_users": 3
+        },
+        {
+          "name": "scss",
+          "total_engaged_users": 3
+        },
+        {
+          "name": "xml",
+          "total_engaged_users": 1
+        },
+        {
+          "name": "dockerfile",
+          "total_engaged_users": 0
+        },
+        {
+          "name": "mermaid.flowchart",
+          "total_engaged_users": 0
+        },
+        {
+          "name": "oracle-sql",
+          "total_engaged_users": 0
+        },
+        {
+          "name": "plaintext",
+          "total_engaged_users": 1
+        },
+        {
+          "name": "tex",
+          "total_engaged_users": 0
+        },
+        {
+          "name": "objective-cpp",
+          "total_engaged_users": 0
+        }
+      ],
+      "total_engaged_users": 119
+    }
+  }
+]
