@@ -11,7 +11,6 @@ const getInputs = () => {
     const result = {};
     result.token = getInput("github-token").trim();
     result.organization = getInput("organization").trim();
-    result.enterprise = getInput("enterprise").trim();
     result.team = getInput("team").trim();
     result.jobSummary = getBooleanInput("job-summary");
     result.days = parseInt(getInput("days"));
@@ -48,13 +47,7 @@ const run = async () => {
             params.until = input.until;
     }
     let req;
-    if (input.enterprise) {
-        req = octokit.paginate("GET /enterprises/{enterprise}/copilot/usage", {
-            enterprise: input.enterprise,
-            ...params
-        });
-    }
-    else if (input.team) {
+    if (input.team) {
         if (!input.organization) {
             throw new Error("organization is required when team is provided");
         }
@@ -80,18 +73,19 @@ const run = async () => {
         return warn("No Copilot usage data found");
     }
     debug(JSON.stringify(data, null, 2));
-    info(`Fetched Copilot usage data for ${data.length} days (${data[0].day} to ${data[data.length - 1].day})`);
+    console.log(JSON.stringify(data, null, 2));
+    info(`Fetched Copilot usage data for ${data.length} days (${data[0].date} to ${data[data.length - 1].date})`);
     if (input.jobSummary) {
         setJobSummaryTimeZone(input.timeZone);
-        const name = input.enterprise || (input.team && input.organization) ? `${input.organization} / ${input.team}` : input.organization;
+        const name = (input.team && input.organization) ? `${input.organization} / ${input.team}` : input.organization;
         await createJobSummaryUsage(data, name).write();
         if (input.organization && !input.team) {
             info(`Fetching Copilot details for organization ${input.organization}`);
-            const orgSeatInfo = await octokit.rest.copilot.getCopilotOrganizationDetails({
+            const orgCopilotDetails = await octokit.rest.copilot.getCopilotOrganizationDetails({
                 org: input.organization
-            });
-            if (orgSeatInfo?.data) {
-                await createJobSummarySeatInfo(orgSeatInfo.data).write();
+            }).then(response => response.data);
+            if (orgCopilotDetails) {
+                await createJobSummarySeatInfo(orgCopilotDetails).write();
             }
             info(`Fetching Copilot seat assignments for organization ${input.organization}`);
             const orgSeatAssignments = await octokit.paginate(octokit.rest.copilot.listCopilotSeats, {
@@ -126,8 +120,8 @@ const run = async () => {
         }
     }
     setOutput("result", JSON.stringify(data));
-    setOutput("since", data[0].day);
-    setOutput("until", data[data.length - 1].day);
+    setOutput("since", data[0].date);
+    setOutput("until", data[data.length - 1].date);
     setOutput("days", data.length.toString());
 };
 export default run;
