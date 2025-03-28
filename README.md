@@ -16,7 +16,7 @@ Create a workflow (eg: `.github/workflows/copilot-usage.yml`). See [Creating a W
 
 ### PAT(Personal Access Token)
 
-You will need to [create a PAT(Personal Access Token)](https://github.com/settings/tokens/new?scopes=admin:org) that has the `copilot`, `manage_billing:copilot`, `admin:org`, `admin:enterprise`, or `manage_billing:enterprise` scope to use this endpoint.
+You will need to [create a PAT(Personal Access Token)](https://github.com/settings/tokens/new?scopes=manage_billing:copilot) that has the `manage_billing:copilot`, `read:org`, or `read:enterprise` scopes to use this endpoint.
 
 Add this PAT as a secret so we can use it as input `github-token`, see [Creating encrypted secrets for a repository](https://docs.github.com/en/enterprise-cloud@latest/actions/security-guides/encrypted-secrets#creating-encrypted-secrets-for-a-repository). 
 
@@ -52,15 +52,6 @@ jobs:
           github-token: ${{ secrets.TOKEN }}
           organization: 'org-slug'
           team: 'team-slug'
-```
-
-#### Example get enterprise usage
-
-```yml
-      - uses: austenstone/copilot-usage@v5.0
-        with:
-          github-token: ${{ secrets.TOKEN }}
-          enterprise: 'enterprise-slug'
 ```
 
 #### Example get CSV
@@ -160,14 +151,13 @@ jobs:
 
 ## ➡️ Inputs
 
-We look first for `enterprise` input, then `team`, and finally `organization`. If none are provided, we default to the repository owner which is likely the organization.
+If no `organization` or `team` input are provided, we default to the repository owner which is likely the organization.
 
 Various inputs are defined in [`action.yml`](action.yml):
 
 | Name | Description | Default |
 | --- | --- | --- |
 | github-token | The GitHub token used to create an authenticated client | |
-| enterprise | The GitHub enterprise slug | |
 | organization | The organization slug | ${{ github.repository_owner }} |
 | job-summary | Whether to generate a report | true |
 | csv | Whether to generate a CSV as a workflow artifact | false |
@@ -191,7 +181,6 @@ Various inputs are defined in [`action.yml`](action.yml):
 
 The endpoints used by this action...
 
-* GET /enterprises/{enterprise}/copilot/usage
 * GET /orgs/{org}/team/{team}/copilot/usage
 * GET /orgs/{org}/copilot/usage
 * GET /orgs/{org}/copilot/billing
