@@ -3,450 +3,233 @@ import { Endpoints } from "@octokit/types";
 
 type CopilotUsageResponse = Endpoints["GET /orgs/{org}/copilot/metrics"]["response"]["data"];
 
-const groupLanguageMetrics = (data: CopilotUsageResponse) => {
-  const metrics = new Map<string, {
-    total_engaged_users: number;
-    total_code_acceptances: number;
-    total_code_suggestions: number;
-    total_code_lines_accepted: number;
-    total_code_lines_suggested: number;
-  }>();
+interface BaseMetrics {
+  total_engaged_users: number;
+  total_code_acceptances: number;
+  total_code_suggestions: number;
+  total_code_lines_accepted: number;
+  total_code_lines_suggested: number;
+}
 
-  data.forEach(day => {
-    day.copilot_ide_code_completions?.editors?.forEach(editor => {
-      editor.models?.forEach(model => {
-        model.languages?.forEach(lang => {
-          const existing = metrics.get(lang.name || 'unknown') || {
-            total_engaged_users: 0,
-            total_code_acceptances: 0,
-            total_code_suggestions: 0,
-            total_code_lines_accepted: 0,
-            total_code_lines_suggested: 0
-          };
+interface ChartConfig {
+  width?: number;
+  height?: number;
+  title: string;
+  xAxis?: {
+    labelPadding: number;
+  };
+}
 
-          metrics.set(lang.name || 'unknown', {
-            total_engaged_users: Math.max(existing.total_engaged_users, lang.total_engaged_users || 0),
-            total_code_acceptances: existing.total_code_acceptances + (lang.total_code_acceptances || 0),
-            total_code_suggestions: existing.total_code_suggestions + (lang.total_code_suggestions || 0),
-            total_code_lines_accepted: existing.total_code_lines_accepted + (lang.total_code_lines_accepted || 0),
-            total_code_lines_suggested: existing.total_code_lines_suggested + (lang.total_code_lines_suggested || 0)
-          });
-        });
-      });
-    });
-  });
-
-  return Object.fromEntries(
-    Array.from(metrics.entries())
-      .sort((a, b) => b[1].total_code_acceptances - a[1].total_code_acceptances)
-  );
-};
-
-const groupEditorMetrics = (data: CopilotUsageResponse) => {
-  const metrics = new Map<string, {
-    total_engaged_users: number;
-    total_code_acceptances: number;
-    total_code_suggestions: number;
-    total_code_lines_accepted: number;
-    total_code_lines_suggested: number;
-  }>();
-
-  data.forEach(day => {
-    day.copilot_ide_code_completions?.editors?.forEach(editor => {
-      const existing = metrics.get(editor.name || 'unknown') || {
-        total_engaged_users: 0,
-        total_code_acceptances: 0,
-        total_code_suggestions: 0,
-        total_code_lines_accepted: 0,
-        total_code_lines_suggested: 0
-      };
-
-      let dailyAcceptances = 0;
-      let dailySuggestions = 0;
-      let dailyLinesAccepted = 0;
-      let dailyLinesSuggested = 0;
-
-      editor.models?.forEach(model => {
-        model.languages?.forEach(lang => {
-          dailyAcceptances += lang.total_code_acceptances || 0;
-          dailySuggestions += lang.total_code_suggestions || 0;
-          dailyLinesAccepted += lang.total_code_lines_accepted || 0;
-          dailyLinesSuggested += lang.total_code_lines_suggested || 0;
-        });
-      });
-
-      metrics.set(editor.name || 'unknown', {
-        total_engaged_users: Math.max(existing.total_engaged_users, editor.total_engaged_users || 0),
-        total_code_acceptances: existing.total_code_acceptances + dailyAcceptances,
-        total_code_suggestions: existing.total_code_suggestions + dailySuggestions,
-        total_code_lines_accepted: existing.total_code_lines_accepted + dailyLinesAccepted,
-        total_code_lines_suggested: existing.total_code_lines_suggested + dailyLinesSuggested
-      });
-    });
-  });
-
-  return Object.fromEntries(
-    Array.from(metrics.entries())
-      .sort((a, b) => b[1].total_code_acceptances - a[1].total_code_acceptances)
-  );
-};
+// Core utility functions
+const getEmptyBaseMetrics = (): BaseMetrics => ({
+  total_engaged_users: 0,
+  total_code_acceptances: 0,
+  total_code_suggestions: 0,
+  total_code_lines_accepted: 0,
+  total_code_lines_suggested: 0
+});
 
 const dateFormat = (date: string, options: Intl.DateTimeFormatOptions = { 
-  month: 'numeric', 
-  day: 'numeric', 
-  year: 'numeric' 
+  month: 'numeric', day: 'numeric', year: 'numeric' 
 }): string => {
   options.timeZone = process.env.TZ || 'UTC';
   return new Date(date).toLocaleDateString('en-US', options);
 };
 
-// Add these functions before createJobSummaryUsage
-const getPieChartLanguageUsage = (languageMetrics: Record<string, {
-  total_code_suggestions: number;
-  total_code_acceptances: number;
-  total_code_lines_suggested: number;
-  total_code_lines_accepted: number;
-  total_engaged_users: number;
-}>) => {
-  return `\n\`\`\`mermaid
-pie showData
-title Language Usage
-    ${Object.entries(languageMetrics)
-      .sort((a, b) => b[1].total_code_suggestions - a[1].total_code_suggestions)
-      .slice(0, 20)
-      .map(([language, metrics]) => 
-        `"${language}" : ${metrics.total_code_suggestions}`)
-      .join('\n')}
-\`\`\`\n`;
+// Enhanced data aggregation utilities
+const sumNestedValue = <T extends object>(data: T[], path: string[]): number => {
+  return data.reduce((sum, obj) => {
+    let current: Record<string, unknown> = obj as Record<string, unknown>;
+    for (const key of path) {
+      if (!current?.[key]) return sum;
+      current = current[key] as Record<string, unknown>;
+    }
+    return sum + (typeof current === 'number' ? current : 0);
+  }, 0);
 };
 
-const getPieChartEditorUsage = (editorMetrics: Record<string, {
-  total_code_suggestions: number;
-  total_code_acceptances: number;
-  total_code_lines_suggested: number;
-  total_code_lines_accepted: number;
-  total_engaged_users: number;
-}>) => {
-  return `\n\`\`\`mermaid
-pie showData
-title Editor Usage
-    ${Object.entries(editorMetrics)
-      .sort((a, b) => b[1].total_code_suggestions - a[1].total_code_suggestions)
-      .map(([editor, metrics]) => 
-        `"${editor}" : ${metrics.total_code_suggestions}`)
-      .join('\n')}
-\`\`\`\n`;
-};
-
-// Add these functions after getPieChartEditorUsage function
-const getPieChartChatEditorUsage = (data: CopilotUsageResponse) => {
-  const editorMetrics = new Map<string, number>();
-
-  data.forEach(day => {
-    day.copilot_ide_chat?.editors?.forEach(editor => {
-      const existingCount = editorMetrics.get(editor.name || 'unknown') || 0;
-      const dailyChatCount = editor.models?.reduce((sum, model) => 
-        sum + (model.total_chats || 0), 0) || 0;
-      
-      editorMetrics.set(editor.name || 'unknown', existingCount + dailyChatCount);
+const aggregateMetricsBy = (data: CopilotUsageResponse, groupFn: (day: CopilotUsageResponse[0]) => Record<string, BaseMetrics>): Record<string, BaseMetrics> => {
+  return data.reduce((acc, day) => {
+    const dayMetrics = groupFn(day);
+    Object.entries(dayMetrics).forEach(([key, metrics]) => {
+      acc[key] = acc[key] || getEmptyBaseMetrics();
+      Object.entries(metrics).forEach(([metric, value]) => {
+        if (metric === 'total_engaged_users') {
+          acc[key][metric] = Math.max(acc[key][metric], value);
+        } else {
+          acc[key][metric] += value;
+        }
+      });
     });
-  });
-
-  return `\n\`\`\`mermaid
-pie showData
-title Chat Usage by Editor
-    ${Array.from(editorMetrics.entries())
-      .sort((a, b) => b[1] - a[1])
-      .map(([editor, chatCount]) => 
-        `"${editor}" : ${chatCount}`)
-      .join('\n')}
-\`\`\`\n`;
+    return acc;
+  }, {} as Record<string, BaseMetrics>);
 };
 
-const getBarChartChatVsCodeUsage = (data: CopilotUsageResponse) => {
-  const totalChatTurns = data.reduce((sum, day) => 
-    sum + (day.copilot_ide_chat?.editors?.reduce((edSum, ed) => 
-      edSum + (ed.models?.reduce((modSum, mod) => 
-        modSum + (mod.total_chats || 0), 0) ?? 0), 0) ?? 0), 0);
-
-  const totalCodeSuggestions = data.reduce((sum, day) =>
-    sum + (day.copilot_ide_code_completions?.editors?.reduce((edSum, ed) =>
-      edSum + (ed.models?.reduce((mSum, model) =>
-        mSum + (model.languages?.reduce((lSum, lang) =>
-          lSum + (lang.total_code_suggestions || 0), 0) || 0), 0) || 0), 0) || 0), 0);
-
-  const totalChatCopyEvents = data.reduce((sum, day) => 
-    sum + (day.copilot_ide_chat?.editors?.reduce((edSum, ed) => 
-      edSum + (ed.models?.reduce((modSum, mod) => 
-        modSum + (mod.total_chat_copy_events || 0), 0) ?? 0), 0) ?? 0), 0);
-
-  const totalChatInsertionEvents = data.reduce((sum, day) => 
-    sum + (day.copilot_ide_chat?.editors?.reduce((edSum, ed) => 
-      edSum + (ed.models?.reduce((modSum, mod) => 
-        modSum + (mod.total_chat_insertion_events || 0), 0) ?? 0), 0) ?? 0), 0);
-
-  return `\n\`\`\`mermaid
----
+// Chart generation utilities
+const createMermaidChart = (type: 'pie' | 'xychart-beta', config: ChartConfig, content: string) => {
+  const chartConfig = `---
 config:
-    xyChart:
-        width: 500
-        height: 400
-    themeVariables:
-        xyChart:
-            backgroundColor: "transparent"
----
-xychart-beta
-  title "Chat vs. Code Completion Usage"
-  x-axis ["Chat Turns", "Code Suggestions", "Chat Copy Events", "Chat Insertion Events"]
-  y-axis "Count" 0 --> ${Math.max(totalChatTurns, totalCodeSuggestions, totalChatCopyEvents, totalChatInsertionEvents) + 10}
-  bar [${totalChatTurns}, ${totalCodeSuggestions}, ${totalChatCopyEvents}, ${totalChatInsertionEvents}]
-\`\`\`\n`;
-};
-
-const getBarChartChatCopyVsInsert = (data: CopilotUsageResponse) => {
-  const dailyChatMetrics = data.map(day => {
-    const copyEvents = day.copilot_ide_chat?.editors?.reduce((edSum, ed) => 
-      edSum + (ed.models?.reduce((modSum, mod) => 
-        modSum + (mod.total_chat_copy_events || 0), 0) ?? 0), 0) ?? 0;
-        
-    const insertEvents = day.copilot_ide_chat?.editors?.reduce((edSum, ed) => 
-      edSum + (ed.models?.reduce((modSum, mod) => 
-        modSum + (mod.total_chat_insertion_events || 0), 0) ?? 0), 0) ?? 0;
-        
-    return { date: day.date, copyEvents, insertEvents };
-  });
-
-  const maxValue = Math.max(
-    ...dailyChatMetrics.map(d => Math.max(d.copyEvents, d.insertEvents))
-  ) + 5;
-
-  return `\n\`\`\`mermaid
----
-config:
-    xyChart:
-        width: ${dailyChatMetrics.length * 45}
-        height: 400
+    ${type === 'xychart-beta' ? `xyChart:
+        width: ${config.width || 500}
+        height: ${config.height || 400}
         xAxis:
             labelPadding: 20
     themeVariables:
         xyChart:
-            backgroundColor: "transparent"
+            backgroundColor: "transparent"` : ''}
 ---
-xychart-beta
-  title "Chat Copy vs. Insertion Events"
-  x-axis [${dailyChatMetrics.map(day => `"${dateFormat(day.date, { month: '2-digit', day: '2-digit' })}"`).join(', ')}]
-  y-axis "Events" 0 --> ${maxValue}
-  bar [${dailyChatMetrics.map(day => day.copyEvents).join(', ')}]
-  line [${dailyChatMetrics.map(day => day.insertEvents).join(', ')}]
-\`\`\`\n`;
+${type}
+  title "${config.title}"
+${content}`;
+
+  return `\n\`\`\`mermaid\n${chartConfig}\n\`\`\`\n`;
 };
 
-const getXyChartAcceptanceRate = (data: CopilotUsageResponse) => {
-  const dailyRates = data.map(day => {
-    // Calculate daily suggestions and acceptances from the code completions data
-    const suggestions = day.copilot_ide_code_completions?.editors?.reduce((edSum, ed) => 
-      edSum + (ed.models?.reduce((mSum, model) => 
-        mSum + (model.languages?.reduce((lSum, lang) => 
-          lSum + (lang.total_code_suggestions || 0), 0) || 0), 0) || 0), 0) || 0;
-        
-    const acceptances = day.copilot_ide_code_completions?.editors?.reduce((edSum, ed) => 
-      edSum + (ed.models?.reduce((mSum, model) => 
-        mSum + (model.languages?.reduce((lSum, lang) => 
-          lSum + (lang.total_code_acceptances || 0), 0) || 0), 0) || 0), 0) || 0;
-        
-    // Calculate rate - avoid division by zero
-    const rate = suggestions > 0 ? (acceptances / suggestions) * 100 : 0;
-    
-    return { 
-      date: day.date, 
-      rate, 
-      acceptances,
-      suggestions
-    };
+const createPieChart = (title: string, data: Record<string, number>, limit = 20) => {
+  const content = Object.entries(data)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([label, value]) => `"${label}" : ${value}`)
+    .join('\n');
+
+  return createMermaidChart('pie', { title }, content);
+};
+
+const createTimeSeriesChart = (config: ChartConfig & { 
+  data: { date: string; values: number[] }[],
+  labels: string[],
+  types?: ('bar' | 'line')[]
+}) => {
+  const dates = config.data.map(d => `"${dateFormat(d.date, { month: '2-digit', day: '2-digit' })}"`);
+  const maxValue = Math.max(...config.data.flatMap(d => d.values)) + 10;
+  
+  const series = config.data[0].values.map((_, i) => {
+    const type = config.types?.[i] || 'line';
+    const values = config.data.map(d => d.values[i]);
+    return `${type} [${values.join(', ')}]`;
   });
 
-  const maxAcceptances = Math.max(...dailyRates.map(d => d.acceptances)) + 10;
-  const maxSuggestions = Math.max(...dailyRates.map(d => d.suggestions)) + 10;
-  const yAxisMax = Math.max(maxAcceptances, maxSuggestions);
-
-  return `\n\`\`\`mermaid
----
-config:
-    xyChart:
-        width: ${data.length * 45}
-        height: 400
-        xAxis:
-            labelPadding: 20
-    themeVariables:
-        xyChart:
-            backgroundColor: "transparent"
----
-xychart-beta
-  title "Completion Accepts & Acceptance Rate"
-  x-axis [${dailyRates.map(day => `"${dateFormat(day.date, { month: '2-digit', day: '2-digit' })}"`).join(', ')}]
-  y-axis "Count" 0 --> ${yAxisMax}
-  y-axis2 "Rate (%)" 0 --> 100
-  bar [${dailyRates.map(day => day.acceptances).join(', ')}]
-  line2 [${dailyRates.map(day => day.rate.toFixed(1)).join(', ')}]
-\`\`\`\n`;
+  return createMermaidChart('xychart-beta', config, 
+    `  x-axis [${dates.join(', ')}]\n` +
+    `  y-axis "${config.labels[0]}" 0 --> ${maxValue}\n` +
+    series.join('\n'));
 };
 
-const getXyChartDailyActiveChatUsers = (data: CopilotUsageResponse) => {
-  // Extract daily chat users from each day's data
-  const chatUsers = data.map(day => {
-    // Sum up chat users across all editors for this day
-    const activeChatUsers = day.copilot_ide_chat?.editors?.reduce((sum, editor) => 
-      sum + (editor.total_engaged_users || 0), 0) || 0;
-    return { date: day.date, users: activeChatUsers };
-  });
+// Metric collection functions
+const groupLanguageMetrics = (day: CopilotUsageResponse[0]): Record<string, BaseMetrics> => {
+  const metrics: Record<string, BaseMetrics> = {};
   
-  const maxActiveUsers = Math.max(...chatUsers.map(day => day.users)) + 5;
-  
-  return `\n\`\`\`mermaid
----
-config:
-    xyChart:
-        width: ${data.length * 45}
-        height: 400
-        xAxis:
-            labelPadding: 20
-    themeVariables:
-        xyChart:
-            backgroundColor: "transparent"
----
-xychart-beta
-  title "Daily Active Chat Users"
-  x-axis [${chatUsers.map(day => `"${dateFormat(day.date, { month: '2-digit', day: '2-digit' })}"`).join(', ')}]
-  y-axis "Chat Users" 0 --> ${maxActiveUsers}
-  line [${chatUsers.map(day => day.users).join(', ')}]
-\`\`\`\n`;
-};
-
-// Helper function to get total engaged users for a day - move this up before it's used
-const getTotalEngagedUsers = (day: CopilotUsageResponse[0]): number => {
-  const codeUsers = day.copilot_ide_code_completions?.editors?.reduce((sum, editor) => 
-    sum + (editor.total_engaged_users ?? 0), 0) || 0;
-  
-  const chatUsers = day.copilot_ide_chat?.editors?.reduce((sum, editor) => 
-    sum + (editor.total_engaged_users ?? 0), 0) || 0;
-    
-  return Math.max(codeUsers, chatUsers, day.total_active_users || 0);
-};
-
-const getXyChartDailyActiveUsers = (data: CopilotUsageResponse) => {
-  const activeUsers = data.map(day => {
-    return getTotalEngagedUsers(day);
-  });
-  
-  const maxActiveUsers = Math.max(...activeUsers) + 5;
-  
-  return `\n\`\`\`mermaid
----
-config:
-    xyChart:
-        width: ${data.length * 45}
-        height: 400
-        xAxis:
-            labelPadding: 20
-    themeVariables:
-        xyChart:
-            backgroundColor: "transparent"
----
-xychart-beta
-  title "Daily Active Users"
-  x-axis [${data.map(day => `"${dateFormat(day.date || '', { month: '2-digit', day: '2-digit' })}"`).join(', ')}]
-  y-axis "Active Users" 0 --> ${maxActiveUsers}
-  line [${activeUsers.join(', ')}]
-\`\`\`\n`;
-};
-
-const getChatModelDistribution = (data: CopilotUsageResponse) => {
-  const modelMetrics = new Map<string, number>();
-
-  data.forEach(day => {
-    day.copilot_ide_chat?.editors?.forEach(editor => {
-      editor.models?.forEach(model => {
-        const modelName = model.name || 'unknown';
-        const isCustom = model.is_custom_model ? ' (custom)' : '';
-        const key = `${modelName}${isCustom}`;
-        const existingCount = modelMetrics.get(key) || 0;
-        
-        modelMetrics.set(key, existingCount + (model.total_chats || 0));
+  day.copilot_ide_code_completions?.editors?.forEach(editor => {
+    editor.models?.forEach(model => {
+      model.languages?.forEach(lang => {
+        const language = lang.name || 'unknown';
+        metrics[language] = metrics[language] || getEmptyBaseMetrics();
+        Object.entries(lang).forEach(([key, value]) => {
+          if (key in metrics[language] && typeof value === 'number') {
+            metrics[language][key as keyof BaseMetrics] += value;
+          }
+        });
       });
     });
   });
-
-  return `\n\`\`\`mermaid
-pie showData
-title Chat Model Distribution
-    ${Array.from(modelMetrics.entries())
-      .sort((a, b) => b[1] - a[1])
-      .map(([model, count]) => 
-        `"${model}" : ${count}`)
-      .join('\n')}
-\`\`\`\n`;
+  
+  return metrics;
 };
+
+const groupEditorMetrics = (day: CopilotUsageResponse[0]): Record<string, BaseMetrics> => {
+  const metrics: Record<string, BaseMetrics> = {};
+  
+  day.copilot_ide_code_completions?.editors?.forEach(editor => {
+    const editorName = editor.name || 'unknown';
+    metrics[editorName] = metrics[editorName] || getEmptyBaseMetrics();
+    metrics[editorName].total_engaged_users = editor.total_engaged_users || 0;
+    
+    editor.models?.forEach(model => {
+      model.languages?.forEach(lang => {
+        Object.entries(lang).forEach(([key, value]) => {
+          if (key in metrics[editorName] && typeof value === 'number') {
+            metrics[editorName][key as keyof BaseMetrics] += value;
+          }
+        });
+      });
+    });
+  });
+  
+  return metrics;
+};
+
+const getChatMetrics = (data: CopilotUsageResponse) => ({
+  totalChats: sumNestedValue(data, ['copilot_ide_chat', 'editors', 'models', 'total_chats']),
+  totalCopyEvents: sumNestedValue(data, ['copilot_ide_chat', 'editors', 'models', 'total_chat_copy_events']),
+  totalInsertEvents: sumNestedValue(data, ['copilot_ide_chat', 'editors', 'models', 'total_chat_insertion_events'])
+});
+
+const getDailyChatMetrics = (data: CopilotUsageResponse) => 
+  data.map(day => ({
+    date: day.date,
+    copyEvents: sumNestedValue([day], ['copilot_ide_chat', 'editors', 'models', 'total_chat_copy_events']),
+    insertEvents: sumNestedValue([day], ['copilot_ide_chat', 'editors', 'models', 'total_chat_insertion_events'])
+  }));
+
 export const createJobSummaryUsage = (data: CopilotUsageResponse, name: string) => {
-  const languageMetrics = groupLanguageMetrics(data);
-  const editorMetrics = groupEditorMetrics(data);
+  const languageMetrics = aggregateMetricsBy(data, groupLanguageMetrics);
+  const editorMetrics = aggregateMetricsBy(data, groupEditorMetrics);
+  const chatMetrics = getChatMetrics(data);
 
-  const totalCodeAcceptances = Object.values(languageMetrics)
-    .reduce((sum, lang) => sum + lang.total_code_acceptances, 0);
-  const totalCodeSuggestions = Object.values(languageMetrics)
-    .reduce((sum, lang) => sum + lang.total_code_suggestions, 0);
-  const totalLinesAccepted = Object.values(languageMetrics)
-    .reduce((sum, lang) => sum + lang.total_code_lines_accepted, 0);
+  const totalMetrics = Object.values(languageMetrics).reduce((acc, curr) => ({
+    totalCodeAcceptances: acc.totalCodeAcceptances + curr.total_code_acceptances,
+    totalCodeSuggestions: acc.totalCodeSuggestions + curr.total_code_suggestions,
+    totalLinesAccepted: acc.totalLinesAccepted + curr.total_code_lines_accepted
+  }), { totalCodeAcceptances: 0, totalCodeSuggestions: 0, totalLinesAccepted: 0 });
 
-  const totalChatTurns = data.reduce((sum, day) => 
-    sum + (day.copilot_ide_chat?.editors?.reduce((edSum, ed) => 
-      edSum + (ed.models?.reduce((modSum, mod) => 
-        modSum + (mod.total_chats || 0), 0) ?? 0), 0) ?? 0), 0);
-      
-  const totalChatCopyEvents = data.reduce((sum, day) => 
-    sum + (day.copilot_ide_chat?.editors?.reduce((edSum, ed) => 
-      edSum + (ed.models?.reduce((modSum, mod) => 
-        modSum + (mod.total_chat_copy_events || 0), 0) ?? 0), 0) ?? 0), 0);
-        
-  const totalChatInsertEvents = data.reduce((sum, day) => 
-    sum + (day.copilot_ide_chat?.editors?.reduce((edSum, ed) => 
-      edSum + (ed.models?.reduce((modSum, mod) => 
-        modSum + (mod.total_chat_insertion_events || 0), 0) ?? 0), 0) ?? 0), 0);
-        
-  const totalActiveChatUsers = data.reduce((max, day) => {
-    const dailyChatUsers = day.copilot_ide_chat?.editors?.reduce((sum, editor) => 
-      sum + (editor.total_engaged_users || 0), 0) || 0;
-    return Math.max(max, dailyChatUsers);
-  }, 0);
-
-  const mostActiveDay = data.reduce((a, b) => 
-    getTotalEngagedUsers(a) > getTotalEngagedUsers(b) ? a : b);
+  const dailyMetrics = data.map(day => ({
+    date: day.date,
+    values: [
+      sumNestedValue([day], ['copilot_ide_code_completions', 'editors', 'models', 'languages', 'total_code_acceptances']),
+      sumNestedValue([day], ['copilot_ide_chat', 'editors', 'total_engaged_users'])
+    ]
+  }));
 
   return summary
     .addHeading(`Copilot Usage for ${name}<br>${dateFormat(data[0].date)} - ${dateFormat(data[data.length-1].date)}`)
     .addHeading('Usage Summary')
     .addList([
-      `Total Code Suggestions: ${totalCodeSuggestions.toLocaleString()}`,
-      `Total Code Acceptances: ${totalCodeAcceptances.toLocaleString()}`,
-      `Acceptance Rate: ${((totalCodeAcceptances / totalCodeSuggestions) * 100).toFixed(2)}%`,
-      `Total Lines of Code Accepted: ${totalLinesAccepted.toLocaleString()}`,
-      `Total Chat Interactions: ${totalChatTurns.toLocaleString()}`,
-      `Total Chat Copy Events: ${totalChatCopyEvents.toLocaleString()}`,
-      `Total Chat Insertion Events: ${totalChatInsertEvents.toLocaleString()}`,
-      `Max Active Chat Users (single day): ${totalActiveChatUsers}`,
-      `Most Active Day: ${dateFormat(mostActiveDay.date)} (${getTotalEngagedUsers(mostActiveDay)} active users)`
+      `Total Code Suggestions: ${totalMetrics.totalCodeSuggestions.toLocaleString()}`,
+      `Total Code Acceptances: ${totalMetrics.totalCodeAcceptances.toLocaleString()}`,
+      `Acceptance Rate: ${((totalMetrics.totalCodeAcceptances / totalMetrics.totalCodeSuggestions) * 100).toFixed(2)}%`,
+      `Total Lines of Code Accepted: ${totalMetrics.totalLinesAccepted.toLocaleString()}`,
+      `Total Chat Interactions: ${chatMetrics.totalChats.toLocaleString()}`,
+      `Total Chat Copy Events: ${chatMetrics.totalCopyEvents.toLocaleString()}`,
+      `Total Chat Insertion Events: ${chatMetrics.totalInsertEvents.toLocaleString()}`
     ])
-    .addRaw(getXyChartAcceptanceRate(data))
-    .addRaw(getXyChartDailyActiveUsers(data))
+    .addRaw(createTimeSeriesChart({
+      title: 'Daily Activity',
+      height: 400,
+      data: dailyMetrics,
+      labels: ['Count'],
+      types: ['bar', 'line']
+    }))
     .addHeading('Language Usage')
-    .addRaw(getPieChartLanguageUsage(languageMetrics))
+    .addRaw(createPieChart('Language Usage', 
+      Object.fromEntries(Object.entries(languageMetrics)
+        .map(([lang, metrics]) => [lang, metrics.total_code_suggestions]))
+    ))
     .addHeading('Editor Usage')
-    .addRaw(getPieChartEditorUsage(editorMetrics))
-    .addHeading('Chat Usage')
-    .addRaw(getPieChartChatEditorUsage(data))
-    .addRaw(getBarChartChatVsCodeUsage(data))
-    .addRaw(getBarChartChatCopyVsInsert(data))
-    .addRaw(getXyChartDailyActiveChatUsers(data))
-    .addRaw(getChatModelDistribution(data))
+    .addRaw(createPieChart('Editor Usage',
+      Object.fromEntries(Object.entries(editorMetrics)
+        .map(([editor, metrics]) => [editor, metrics.total_code_suggestions]))
+    ))
+    .addHeading('Chat Activity')
+    .addRaw(createTimeSeriesChart({
+      title: 'Chat Copy vs Insertion Events',
+      height: 400,
+      data: getDailyChatMetrics(data).map(m => ({
+        date: m.date,
+        values: [m.copyEvents, m.insertEvents]
+      })),
+      labels: ['Events'],
+      types: ['bar', 'line']
+    }));
 };
 
 export const setJobSummaryTimeZone = (timeZone: string) => process.env.TZ = timeZone;
