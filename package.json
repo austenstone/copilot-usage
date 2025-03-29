@@ -5,7 +5,7 @@
   "private": false,
   "scripts": {
     "build": "tsc && ncc build src/index.ts -o dist --source-map --license LICENSE",
-    "test": "vitest",
+    "test": "vitest run",
     "lint": "eslint src/**/*.ts"
   },
   "keywords": [

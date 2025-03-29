@@ -27,6 +27,7 @@ const exampleResponseEnterprise = JSON.parse(sample);
 test('createJobSummaryUsage(enterpriseUsage)', async () => {
   const summary = await createJobSummaryUsage(exampleResponseEnterprise, 'enterprise');
   writeFileSync('./__tests__/mock/sample-output.md', summary.stringify());
+  console.log('Summary:', summary.stringify());
   expect(summary).toBeDefined();
 });
 
@@ -76,6 +77,29 @@ test('sumNestedValue with completely missing path', () => {
     { x: { y: 20 } }
   ];
   expect(sumNestedValue(data, ['a', 'b'])).toBe(0); // Path doesn't exist at all
+});
+
+// New test for array traversal
+test('sumNestedValue with array traversal', () => {
+  const data = [
+    { 
+      a: { 
+        items: [
+          { value: 5 },
+          { value: 10 }
+        ] 
+      } 
+    },
+    { 
+      a: { 
+        items: [
+          { value: 15 },
+          { value: 20 }
+        ] 
+      } 
+    }
+  ];
+  expect(sumNestedValue(data, ['a', 'items', 'value'])).toBe(50); // Should sum all values in the arrays
 });
 
 test('sumNestedValue with exampleResponseEnterprise data', () => {

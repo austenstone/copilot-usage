@@ -39,13 +39,36 @@ const dateFormat = (date: string, options: Intl.DateTimeFormatOptions = {
 // Enhanced data aggregation utilities
 export const sumNestedValue = <T extends object>(data: T[], path: string[]): number => {
   return data.reduce((sum, obj) => {
-    let current: Record<string, unknown> = obj as Record<string, unknown>;
-    for (const key of path) {
-      console.log(`Checking key: ${key}, current value: ${current}`);
-      if (!current?.[key]) return sum;
-      current = current[key] as Record<string, unknown>;
-    }
-    return sum + (typeof current === 'number' ? current : 0);
+    let result = 0;
+    
+    // Helper function to recursively traverse the object/array
+    const traverse = (current: any, pathIndex: number) => {
+      // Return if we've reached an invalid path
+      if (current === undefined || current === null) return;
+      
+      if (pathIndex >= path.length) {
+        // We've reached the end of the path, add the value if it's a number
+        if (typeof current === 'number') {
+          result += current;
+        }
+        return;
+      }
+      
+      const key = path[pathIndex];
+      
+      if (Array.isArray(current)) {
+        // If current is an array, traverse each element
+        current.forEach(item => traverse(item, pathIndex));
+      } else if (typeof current === 'object') {
+        // If current has the key, traverse deeper
+        if (key in current) {
+          traverse(current[key], pathIndex + 1);
+        }
+      }
+    };
+    
+    traverse(obj, 0);
+    return sum + result;
   }, 0);
 };
 
