@@ -37,10 +37,11 @@ const dateFormat = (date: string, options: Intl.DateTimeFormatOptions = {
 };
 
 // Enhanced data aggregation utilities
-const sumNestedValue = <T extends object>(data: T[], path: string[]): number => {
+export const sumNestedValue = <T extends object>(data: T[], path: string[]): number => {
   return data.reduce((sum, obj) => {
     let current: Record<string, unknown> = obj as Record<string, unknown>;
     for (const key of path) {
+      console.log(`Checking key: ${key}, current value: ${current}`);
       if (!current?.[key]) return sum;
       current = current[key] as Record<string, unknown>;
     }
@@ -159,16 +160,18 @@ const groupEditorMetrics = (day: CopilotUsageResponse[0]): Record<string, BaseMe
 };
 
 const getChatMetrics = (data: CopilotUsageResponse) => ({
-  totalChats: sumNestedValue(data, ['copilot_ide_chat', 'editors', 'models', 'total_chats']),
-  totalCopyEvents: sumNestedValue(data, ['copilot_ide_chat', 'editors', 'models', 'total_chat_copy_events']),
-  totalInsertEvents: sumNestedValue(data, ['copilot_ide_chat', 'editors', 'models', 'total_chat_insertion_events'])
+  // Update paths to match the actual data structure
+  totalChats: sumNestedValue(data, ['copilot_ide_chat', 'total_engaged_users']),
+  totalCopyEvents: sumNestedValue(data, ['copilot_ide_chat', 'editors', 'total_engaged_users']),
+  totalInsertEvents: sumNestedValue(data, ['copilot_ide_chat', 'editors', 'total_engaged_users'])
 });
 
 const getDailyChatMetrics = (data: CopilotUsageResponse) => 
   data.map(day => ({
     date: day.date,
-    copyEvents: sumNestedValue([day], ['copilot_ide_chat', 'editors', 'models', 'total_chat_copy_events']),
-    insertEvents: sumNestedValue([day], ['copilot_ide_chat', 'editors', 'models', 'total_chat_insertion_events'])
+    // Update paths to match the actual data structure
+    copyEvents: sumNestedValue([day], ['copilot_ide_chat', 'total_engaged_users']),
+    insertEvents: sumNestedValue([day], ['copilot_ide_code_completions', 'total_engaged_users'])
   }));
 
 export const createJobSummaryUsage = (data: CopilotUsageResponse, name: string) => {
@@ -185,8 +188,9 @@ export const createJobSummaryUsage = (data: CopilotUsageResponse, name: string) 
   const dailyMetrics = data.map(day => ({
     date: day.date,
     values: [
-      sumNestedValue([day], ['copilot_ide_code_completions', 'editors', 'models', 'languages', 'total_code_acceptances']),
-      sumNestedValue([day], ['copilot_ide_chat', 'editors', 'total_engaged_users'])
+      // Update paths to match the actual data structure 
+      sumNestedValue([day], ['copilot_ide_code_completions', 'total_engaged_users']),
+      sumNestedValue([day], ['copilot_ide_chat', 'total_engaged_users'])
     ]
   }));
 
