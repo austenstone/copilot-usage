@@ -12,15 +12,30 @@ const dateFormat = (date, options = {
     options.timeZone = process.env.TZ || 'UTC';
     return new Date(date).toLocaleDateString('en-US', options);
 };
-const sumNestedValue = (data, path) => {
+export const sumNestedValue = (data, path) => {
     return data.reduce((sum, obj) => {
-        let current = obj;
-        for (const key of path) {
-            if (!current?.[key])
-                return sum;
-            current = current[key];
-        }
-        return sum + (typeof current === 'number' ? current : 0);
+        let result = 0;
+        const traverse = (current, pathIndex) => {
+            if (current === undefined || current === null)
+                return;
+            if (pathIndex >= path.length) {
+                if (typeof current === 'number') {
+                    result += current;
+                }
+                return;
+            }
+            const key = path[pathIndex];
+            if (Array.isArray(current)) {
+                current.forEach(item => traverse(item, pathIndex));
+            }
+            else if (typeof current === 'object') {
+                if (key in current) {
+                    traverse(current[key], pathIndex + 1);
+                }
+            }
+        };
+        traverse(obj, 0);
+        return sum + result;
     }, 0);
 };
 const aggregateMetricsBy = (data, groupFn) => {
@@ -113,14 +128,14 @@ const groupEditorMetrics = (day) => {
     return metrics;
 };
 const getChatMetrics = (data) => ({
-    totalChats: sumNestedValue(data, ['copilot_ide_chat', 'editors', 'models', 'total_chats']),
-    totalCopyEvents: sumNestedValue(data, ['copilot_ide_chat', 'editors', 'models', 'total_chat_copy_events']),
-    totalInsertEvents: sumNestedValue(data, ['copilot_ide_chat', 'editors', 'models', 'total_chat_insertion_events'])
+    totalChats: sumNestedValue(data, ['copilot_ide_chat', 'total_engaged_users']),
+    totalCopyEvents: sumNestedValue(data, ['copilot_ide_chat', 'editors', 'total_engaged_users']),
+    totalInsertEvents: sumNestedValue(data, ['copilot_ide_chat', 'editors', 'total_engaged_users'])
 });
 const getDailyChatMetrics = (data) => data.map(day => ({
     date: day.date,
-    copyEvents: sumNestedValue([day], ['copilot_ide_chat', 'editors', 'models', 'total_chat_copy_events']),
-    insertEvents: sumNestedValue([day], ['copilot_ide_chat', 'editors', 'models', 'total_chat_insertion_events'])
+    copyEvents: sumNestedValue([day], ['copilot_ide_chat', 'total_engaged_users']),
+    insertEvents: sumNestedValue([day], ['copilot_ide_code_completions', 'total_engaged_users'])
 }));
 export const createJobSummaryUsage = (data, name) => {
     const languageMetrics = aggregateMetricsBy(data, groupLanguageMetrics);
@@ -134,8 +149,8 @@ export const createJobSummaryUsage = (data, name) => {
     const dailyMetrics = data.map(day => ({
         date: day.date,
         values: [
-            sumNestedValue([day], ['copilot_ide_code_completions', 'editors', 'models', 'languages', 'total_code_acceptances']),
-            sumNestedValue([day], ['copilot_ide_chat', 'editors', 'total_engaged_users'])
+            sumNestedValue([day], ['copilot_ide_code_completions', 'total_engaged_users']),
+            sumNestedValue([day], ['copilot_ide_chat', 'total_engaged_users'])
         ]
     }));
     return summary
