@@ -121,7 +121,12 @@ export const createJobSummarySeatInfo = (data) => {
     return summary
         .addHeading('Seat Info')
         .addList([
-        `Seat Management Setting: ${data.seat_management_setting}`,
+        `Seat Management Setting: ${{
+            'assign_all': 'Assign All',
+            'assign_selected': 'Assign Selected',
+            'disabled': 'Disabled',
+            'unconfigured': 'Unconfigured',
+        }[data.seat_management_setting] || 'Unknown'}`,
         `Public Code Suggestions Enabled: ${data.public_code_suggestions}`,
         `IDE Chat Enabled: ${data.ide_chat}`,
         `Platform IDE Enabled: ${data.platform_ide || 'disabled'}`,
