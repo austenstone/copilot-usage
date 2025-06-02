@@ -27,7 +27,6 @@ const exampleResponseEnterprise = JSON.parse(sample);
 test('createJobSummaryUsage(enterpriseUsage)', async () => {
   const summary = await createJobSummaryUsage(exampleResponseEnterprise, 'enterprise');
   writeFileSync('./__tests__/mock/sample-output.md', summary.stringify());
-  console.log('Summary:', summary.stringify());
   expect(summary).toBeDefined();
 });
 

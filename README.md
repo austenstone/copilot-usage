@@ -44,6 +44,7 @@ jobs:
           github-token: ${{ secrets.TOKEN }}
           time-zone: 'EST'
 ```
+
 #### Example get team usage
 
 ```yml
