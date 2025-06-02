@@ -137,24 +137,35 @@ const run = async (): Promise<void> => {
         writeFileSync('copilot-organization-details.json', JSON.stringify(orgCopilotDetails, null, 2));
         await summary
           .addHeading('Seat Info')
+          .addHeading('Organization Copilot Details', 3)
           .addTable([
+            ['Plan Type', orgCopilotDetails.plan_type?.toLocaleUpperCase() || 'Unknown'],
             ['Seat Management Setting', {
               'assign_all': 'Assign All',
               'assign_selected': 'Assign Selected',
               'disabled': 'Disabled',
               'unconfigured': 'Unconfigured',
             }[orgCopilotDetails.seat_management_setting] || 'Unknown'],
-            ['Public Code Suggestions Enabled', orgCopilotDetails.public_code_suggestions ? 'Yes' : 'No'],
-            ['IDE Chat Enabled', orgCopilotDetails.ide_chat ? 'Yes' : 'No'],
-            ['Platform IDE Enabled', orgCopilotDetails.platform_ide ? 'Yes' : 'No'], // TODO: Remove this line when platform_ide is available in the response
-            ['Platform Chat Enabled', orgCopilotDetails.platform_chat ? 'Yes' : 'No'],
-            ['CLI Enabled', orgCopilotDetails.cli ? 'Yes' : 'No'],
+          ])
+          .addHeading('Seat Breakdown', 3)
+          .addTable([
             ['Total Seats', (orgCopilotDetails.seat_breakdown.total || 0).toString()],
             ['Added this cycle', (orgCopilotDetails.seat_breakdown.added_this_cycle || 0).toString()],
             ['Pending invites', (orgCopilotDetails.seat_breakdown.pending_invitation || 0).toString()],
             ['Pending cancellations', (orgCopilotDetails.seat_breakdown.pending_cancellation || 0).toString()],
             ['Active this cycle', (orgCopilotDetails.seat_breakdown.active_this_cycle || 0).toString()],
             ['Inactive this cycle', (orgCopilotDetails.seat_breakdown.inactive_this_cycle || 0).toString()]
+          ])
+          .addHeading('Policies', 3)
+          .addTable([
+            ['Public Code Suggestions Enabled', {
+              'allowed': 'Allowed',
+              'block': 'Blocked',
+              'unconfigured': 'Unconfigured',
+            }[orgCopilotDetails.public_code_suggestions] || 'Unknown'],
+            ['IDE Chat Enabled', orgCopilotDetails.ide_chat?.toLocaleUpperCase()],
+            ['Platform Chat Enabled', orgCopilotDetails.platform_chat?.toLocaleUpperCase()],
+            ['CLI Enabled', orgCopilotDetails.cli?.toLocaleUpperCase()],
           ]).write()
       }
 
