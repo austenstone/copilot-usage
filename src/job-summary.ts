@@ -39,7 +39,7 @@ export const sumNestedValue = <T extends object>(data: T[], path: string[]): num
     let result = 0;
 
     // Helper function to recursively traverse the object/array
-    const traverse = (current: any, pathIndex: number) => {
+    const traverse = (current: object | number | null | undefined | unknown[], pathIndex: number) => {
       // Return if we've reached an invalid path
       if (current === undefined || current === null) return;
 
@@ -204,21 +204,21 @@ const groupEditorMetrics = (day: CopilotUsageResponse[0]): Record<string, BaseMe
   return metrics;
 };
 
-const groupModelMetrics = (day: CopilotUsageResponse[0]): Record<string, BaseMetrics> => {
-  const metrics: Record<string, BaseMetrics> = {};
-  day.copilot_ide_code_completions?.editors?.forEach(editor => {
-    editor.models?.forEach(model => {
-      const modelName = model.name || 'unknown';
-      metrics[modelName] = metrics[modelName] || getEmptyBaseMetrics();
-      Object.entries(model).forEach(([key, value]) => {
-        if (key in metrics[modelName] && typeof value === 'number') {
-          metrics[modelName][key as keyof BaseMetrics] += value;
-        }
-      });
-    });
-  });
-  return metrics;
-};
+// const groupModelMetrics = (day: CopilotUsageResponse[0]): Record<string, BaseMetrics> => {
+//   const metrics: Record<string, BaseMetrics> = {};
+//   day.copilot_ide_code_completions?.editors?.forEach(editor => {
+//     editor.models?.forEach(model => {
+//       const modelName = model.name || 'unknown';
+//       metrics[modelName] = metrics[modelName] || getEmptyBaseMetrics();
+//       Object.entries(model).forEach(([key, value]) => {
+//         if (key in metrics[modelName] && typeof value === 'number') {
+//           metrics[modelName][key as keyof BaseMetrics] += value;
+//         }
+//       });
+//     });
+//   });
+//   return metrics;
+// };
 
 const getChatMetrics = (data: CopilotUsageResponse) => ({
   // Update paths to match the actual data structure
@@ -230,7 +230,7 @@ const getChatMetrics = (data: CopilotUsageResponse) => ({
 export const createJobSummaryUsage = (data: CopilotUsageResponse, name: string) => {
   const languageMetrics = aggregateMetricsBy(data, groupLanguageMetrics);
   const editorMetrics = aggregateMetricsBy(data, groupEditorMetrics);
-  const modelMetrics = aggregateMetricsBy(data, groupModelMetrics);
+  // const modelMetrics = aggregateMetricsBy(data, groupModelMetrics);
   const chatMetrics = getChatMetrics(data);
   const dailyTotals = data.map(day => ({
     date: day.date,
