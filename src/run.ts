@@ -1,10 +1,10 @@
-import { debug, getBooleanInput, getInput, info, setOutput } from "@actions/core";
+import { debug, getBooleanInput, getInput, info, setOutput, summary } from "@actions/core";
 import { Octokit, RestEndpointMethodTypes } from '@octokit/rest'
 import { DefaultArtifactClient } from "@actions/artifact";
 import { writeFileSync } from "fs";
 import { Json2CsvOptions, json2csv } from "json-2-csv";
 import { toXML } from 'jstoxml';
-import { createJobSummaryFooter, createJobSummarySeatAssignments, createJobSummarySeatInfo, setJobSummaryTimeZone } from "./deprecated-job-summary";
+import { createJobSummaryFooter, createJobSummarySeatAssignments, setJobSummaryTimeZone } from "./deprecated-job-summary";
 import { createJobSummaryUsage } from "./job-summary";
 import { warn } from "console";
 
@@ -133,7 +133,27 @@ const run = async (): Promise<void> => {
         org: input.organization
       }).then(response => response.data);
       if (orgCopilotDetails) {
-        await createJobSummarySeatInfo(orgCopilotDetails).write();
+        await summary
+          .addHeading('Seat Info')
+          .addTable([
+            ['Seat Management Setting', {
+              'assign_all': 'Assign All',
+              'assign_selected': 'Assign Selected',
+              'disabled': 'Disabled',
+              'unconfigured': 'Unconfigured',
+            }[orgCopilotDetails.seat_management_setting] || 'Unknown'],
+            ['Public Code Suggestions Enabled', orgCopilotDetails.public_code_suggestions ? 'Yes' : 'No'],
+            ['IDE Chat Enabled', orgCopilotDetails.ide_chat ? 'Yes' : 'No'],
+            ['Platform IDE Enabled', orgCopilotDetails.platform_ide ? 'Yes' : 'No'], // TODO: Remove this line when platform_ide is available in the response
+            ['Platform Chat Enabled', orgCopilotDetails.platform_chat ? 'Yes' : 'No'],
+            ['CLI Enabled', orgCopilotDetails.cli ? 'Yes' : 'No'],
+            ['Total Seats', (orgCopilotDetails.seat_breakdown.total || 0).toString()],
+            ['Added this cycle', (orgCopilotDetails.seat_breakdown.added_this_cycle || 0).toString()],
+            ['Pending invites', (orgCopilotDetails.seat_breakdown.pending_invitation || 0).toString()],
+            ['Pending cancellations', (orgCopilotDetails.seat_breakdown.pending_cancellation || 0).toString()],
+            ['Active this cycle', (orgCopilotDetails.seat_breakdown.active_this_cycle || 0).toString()],
+            ['Inactive this cycle', (orgCopilotDetails.seat_breakdown.inactive_this_cycle || 0).toString()]
+          ]).write()
       }
 
       info(`Fetching Copilot seat assignments for organization ${input.organization}`);
