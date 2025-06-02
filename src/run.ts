@@ -133,6 +133,8 @@ const run = async (): Promise<void> => {
         org: input.organization
       }).then(response => response.data);
       if (orgCopilotDetails) {
+        console.log(JSON.stringify(orgCopilotDetails, null, 2));
+        writeFileSync('copilot-organization-details.json', JSON.stringify(orgCopilotDetails, null, 2));
         await summary
           .addHeading('Seat Info')
           .addTable([
@@ -168,6 +170,7 @@ const run = async (): Promise<void> => {
       };
       if (_orgSeatAssignments.total_seats > 0 && _orgSeatAssignments?.seats) {
         _orgSeatAssignments.seats = _orgSeatAssignments.seats.sort((a, b) => new Date(b.last_activity_at).getTime() - new Date(a.last_activity_at).getTime());
+        console.log(JSON.stringify(_orgSeatAssignments, null, 2));
         await createJobSummarySeatAssignments(_orgSeatAssignments?.seats)?.write();
       }
     }
