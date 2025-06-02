@@ -39,7 +39,7 @@ export const sumNestedValue = <T extends object>(data: T[], path: string[]): num
     let result = 0;
 
     // Helper function to recursively traverse the object/array
-    const traverse = (current: object | number | null | undefined | unknown[], pathIndex: number) => {
+    const traverse = (current: unknown, pathIndex: number) => {
       // Return if we've reached an invalid path
       if (current === undefined || current === null) return;
 
