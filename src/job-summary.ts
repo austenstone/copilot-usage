@@ -1,5 +1,7 @@
 import { summary } from "@actions/core";
 import { Endpoints } from "@octokit/types";
+import { createPieChart, createXYChart, DEFAULT_CHART_CONFIGS } from "./mermaid";
+import { dateFormat } from "./utility";
 
 type CopilotUsageResponse = Endpoints["GET /orgs/{org}/copilot/metrics"]["response"]["data"];
 
@@ -11,13 +13,7 @@ interface BaseMetrics {
   total_code_lines_suggested: number;
 }
 
-interface ChartConfig {
-  width?: number;
-  height?: number;
-  title?: string;
-}
 
-// Core utility functions
 const getEmptyBaseMetrics = (): BaseMetrics => ({
   total_engaged_users: 0,
   total_code_acceptances: 0,
@@ -26,14 +22,6 @@ const getEmptyBaseMetrics = (): BaseMetrics => ({
   total_code_lines_suggested: 0
 });
 
-const dateFormat = (date: string, options: Intl.DateTimeFormatOptions = {
-  month: 'numeric', day: 'numeric'
-}): string => {
-  options.timeZone = process.env.TZ || 'UTC';
-  return new Date(date).toLocaleDateString('en-US', options);
-};
-
-// Enhanced data aggregation utilities
 export const sumNestedValue = <T extends object>(data: T[], path: string[]): number => {
   return data.reduce((sum, obj) => {
     let result = 0;
@@ -86,82 +74,6 @@ const aggregateMetricsBy = (data: CopilotUsageResponse, groupFn: (day: CopilotUs
   }, {} as Record<string, BaseMetrics>);
 };
 
-// Chart generation utilities
-const createMermaidChart = (type: 'pie' | 'xychart-beta', config: ChartConfig, content: string) => {
-  const chartConfig = `---
-config:
-    ${type === 'xychart-beta' ? `xyChart:
-        width: ${config.width || 900}
-        height: ${config.height || 500}
-        xAxis:
-            labelPadding: 20
-        yAxis:
-            labelPadding: 20
-    themeVariables:
-        xyChart:
-            backgroundColor: "transparent"` : ''}
----
-${type}
-${config.title ? `  title "${config.title}"` : ''}
-${content}`;
-
-  return `\n\`\`\`mermaid\n${chartConfig}\n\`\`\`\n`;
-};
-
-const createPieChart = (data: Record<string, number>, limit = 20) => {
-  const content = Object.entries(data)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, limit)
-    .map(([label, value]) => `"${label}" : ${value}`)
-    .join('\n');
-
-  return createMermaidChart('pie', {}, content);
-};
-
-export function generateLegend(categories: string[]): string {
-  const colors = ["#3498db", "#2ecc71", "#e74c3c", "#f1c40f", "#bdc3c7", "#ffffff", "#34495e", "#9b59b6", "#1abc9c", "#e67e22"];
-  return categories.map((category, i) =>
-    `![](https://placehold.co/11x11/${colors[i % colors.length].replace('#', '')}/${colors[i % colors.length]
-      .replace('#', '')}.png) ${category}`)
-    .join('&nbsp;&nbsp;');
-}
-
-const createXYChart = (config: ChartConfig & {
-  series: {
-    type: 'bar' | 'line',
-    category?: string,
-    values: number[],
-  }[],
-  xAxis: {
-    title?: string,
-    categories: string[],
-  },
-  yAxis: {
-    title?: string,
-    min?: number,
-    max?: number,
-  },
-  legend?: string[],
-}) => {
-
-  const {
-    min, max
-  } = config.series.reduce((acc, series) => {
-    series.values.forEach(value => {
-      if (value < acc.min || acc.min === undefined) acc.min = value;
-      if (value > acc.max || acc.max === undefined) acc.max = value;
-    });
-    return acc;
-  }, { min: config.yAxis.min || 0, max: config.yAxis.max || 100 });
-
-  return createMermaidChart('xychart-beta', config,
-    `  x-axis ${config.xAxis.title ? "\"" + config.xAxis.title + "\"" : ''} [${config.xAxis.categories.join(', ')}]\n` +
-    `  y-axis ${config.yAxis.title ? "\"" + config.yAxis.title + "\"" : ''} ${min || 0} --> ${max || 100}\n` +
-    config.series.map(series => {
-      return `${series.type} ${series.category ? "\"" + series.category + "\"" : ''} [${series.values.join(', ')}]`;
-    }).join('\n')) + (config.legend ? `\n${generateLegend(config.legend)}` : '');
-};
-
 const groupLanguageMetrics = (day: CopilotUsageResponse[0]): Record<string, BaseMetrics> => {
   const metrics: Record<string, BaseMetrics> = {};
 
@@ -204,34 +116,16 @@ const groupEditorMetrics = (day: CopilotUsageResponse[0]): Record<string, BaseMe
   return metrics;
 };
 
-// const groupModelMetrics = (day: CopilotUsageResponse[0]): Record<string, BaseMetrics> => {
-//   const metrics: Record<string, BaseMetrics> = {};
-//   day.copilot_ide_code_completions?.editors?.forEach(editor => {
-//     editor.models?.forEach(model => {
-//       const modelName = model.name || 'unknown';
-//       metrics[modelName] = metrics[modelName] || getEmptyBaseMetrics();
-//       Object.entries(model).forEach(([key, value]) => {
-//         if (key in metrics[modelName] && typeof value === 'number') {
-//           metrics[modelName][key as keyof BaseMetrics] += value;
-//         }
-//       });
-//     });
-//   });
-//   return metrics;
-// };
-
-const getChatMetrics = (data: CopilotUsageResponse) => ({
-  // Update paths to match the actual data structure
-  totalChats: sumNestedValue(data, ['copilot_ide_chat', 'total_engaged_users']),
-  totalCopyEvents: sumNestedValue(data, ['copilot_ide_chat', 'editors', 'total_engaged_users']),
-  totalInsertEvents: sumNestedValue(data, ['copilot_ide_chat', 'editors', 'total_engaged_users'])
+const getChatMetrics = (dailyTotals: Array<{total_chats?: number, total_chat_copy_events?: number, total_chat_insert_events?: number}>) => ({
+  totalChats: dailyTotals.reduce((sum, day) => sum + (day.total_chats || 0), 0),
+  totalCopyEvents: dailyTotals.reduce((sum, day) => sum + (day.total_chat_copy_events || 0), 0),
+  totalInsertEvents: dailyTotals.reduce((sum, day) => sum + (day.total_chat_insert_events || 0), 0)
 });
 
 export const createJobSummaryUsage = (data: CopilotUsageResponse, name: string) => {
   const languageMetrics = aggregateMetricsBy(data, groupLanguageMetrics);
   const editorMetrics = aggregateMetricsBy(data, groupEditorMetrics);
   // const modelMetrics = aggregateMetricsBy(data, groupModelMetrics);
-  const chatMetrics = getChatMetrics(data);
   const dailyTotals = data.map(day => ({
     date: day.date,
     total_active_users: day.total_active_users || 0,
@@ -246,8 +140,7 @@ export const createJobSummaryUsage = (data: CopilotUsageResponse, name: string) 
     total_dotcom_chat_chats: sumNestedValue([day], ['copilot_dotcom_chat', 'models', 'total_chats']),
     total_dotcom_pr_summaries_created: sumNestedValue([day], ['copilot_dotcom_pull_requests', 'repositories', 'models', 'total_pr_summaries_created']),
   }));
-
-  console.log(dailyTotals)
+  const chatMetrics = getChatMetrics(dailyTotals);
 
   const topLanguages = Object.entries(languageMetrics)
     .sort((a, b) => b[1].total_code_suggestions - a[1].total_code_suggestions)
@@ -275,9 +168,8 @@ export const createJobSummaryUsage = (data: CopilotUsageResponse, name: string) 
     ])
     .addHeading('Daily Engaged Users', 3)
     .addRaw(createXYChart({
-      height: 400,
       xAxis: {
-        categories: data.map(day => dateFormat(day.date, { day: 'numeric' }))
+        categories: DEFAULT_CHART_CONFIGS.dailyCategories(data)
       },
       yAxis: {
       },
@@ -295,9 +187,8 @@ export const createJobSummaryUsage = (data: CopilotUsageResponse, name: string) 
     }))
     .addHeading('Daily Engaged Users by Product', 3)
     .addRaw(createXYChart({
-      height: 400,
       xAxis: {
-        categories: data.map(day => dateFormat(day.date, { day: 'numeric' }))
+        categories: DEFAULT_CHART_CONFIGS.dailyCategories(data)
       },
       yAxis: {
       },
@@ -324,12 +215,8 @@ export const createJobSummaryUsage = (data: CopilotUsageResponse, name: string) 
     .addHeading('IDE Completion', 2)
     .addHeading('Suggestions vs. Acceptances', 3)
     .addRaw(createXYChart({
-      height: 400,
-      xAxis: {
-        categories: data.map(day => dateFormat(day.date, { day: 'numeric' }))
-      },
-      yAxis: {
-      },
+      xAxis: { categories: DEFAULT_CHART_CONFIGS.dailyCategories(data) },
+      yAxis: {},
       series: [
         {
           type: 'bar',
@@ -344,12 +231,8 @@ export const createJobSummaryUsage = (data: CopilotUsageResponse, name: string) 
     }))
     .addHeading('Lines Suggested vs. Accepted', 3)
     .addRaw(createXYChart({
-      height: 400,
-      xAxis: {
-        categories: data.map(day => dateFormat(day.date, { day: 'numeric' }))
-      },
-      yAxis: {
-      },
+      xAxis: { categories: DEFAULT_CHART_CONFIGS.dailyCategories(data) },
+      yAxis: {},
       series: [
         {
           type: 'bar',
@@ -360,13 +243,12 @@ export const createJobSummaryUsage = (data: CopilotUsageResponse, name: string) 
           values: dailyTotals.map(day => day.total_code_lines_accepted || 0)
         },
       ],
-      legend: ['Suggestions', 'Acceptances']
+      legend: ['Lines Suggested', 'Lines Accepted']
     }))
     .addHeading('Acceptance Rate', 3)
     .addRaw(createXYChart({
-      height: 400,
       xAxis: {
-        categories: data.map(day => dateFormat(day.date, { day: 'numeric' }))
+        categories: DEFAULT_CHART_CONFIGS.dailyCategories(data)
       },
       yAxis: {
         min: 0,
@@ -385,9 +267,8 @@ export const createJobSummaryUsage = (data: CopilotUsageResponse, name: string) 
     }))
     .addHeading('Acceptance Rate by Language', 3)
     .addRaw(createXYChart({
-      height: 400,
       xAxis: {
-        categories: data.map(day => dateFormat(day.date, { day: 'numeric' }))
+        categories: DEFAULT_CHART_CONFIGS.dailyCategories(data)
       },
       yAxis: {
         min: 0,
@@ -429,9 +310,8 @@ export const createJobSummaryUsage = (data: CopilotUsageResponse, name: string) 
     // ))
     .addHeading('IDE Copilot Chat', 2)
     .addRaw(createXYChart({
-      height: 400,
       xAxis: {
-        categories: data.map(day => dateFormat(day.date, { day: 'numeric' }))
+        categories: DEFAULT_CHART_CONFIGS.dailyCategories(data)
       },
       yAxis: {
       },
@@ -454,9 +334,8 @@ export const createJobSummaryUsage = (data: CopilotUsageResponse, name: string) 
     .addHeading('Copilot .COM Chat', 2)
     .addHeading('Total Chats', 3)
     .addRaw(createXYChart({
-      height: 400,
       xAxis: {
-        categories: data.map(day => dateFormat(day.date, { day: 'numeric' }))
+        categories: DEFAULT_CHART_CONFIGS.dailyCategories(data)
       },
       yAxis: {
       },
@@ -471,9 +350,8 @@ export const createJobSummaryUsage = (data: CopilotUsageResponse, name: string) 
     .addHeading('Copilot .COM Pull Request', 2)
     .addHeading('Summaries Created', 3)
     .addRaw(createXYChart({
-      height: 400,
       xAxis: {
-        categories: data.map(day => dateFormat(day.date, { day: 'numeric' }))
+        categories: DEFAULT_CHART_CONFIGS.dailyCategories(data)
       },
       yAxis: {
       },
@@ -486,5 +364,66 @@ export const createJobSummaryUsage = (data: CopilotUsageResponse, name: string) 
       legend: ['Total PR Summaries Created']
     }))
 };
+
+export const createJobSummaryCopilotDetails = (orgCopilotDetails: Endpoints["GET /orgs/{org}/copilot/billing"]["response"]["data"]) => {
+  return summary
+    .addHeading('Seat Info')
+    .addHeading('Organization Copilot Details', 3)
+    .addTable([
+      ['Plan Type', orgCopilotDetails.plan_type?.toLocaleUpperCase() || 'Unknown'],
+      ['Seat Management Setting', {
+        'assign_all': 'Assign All',
+        'assign_selected': 'Assign Selected',
+        'disabled': 'Disabled',
+        'unconfigured': 'Unconfigured',
+      }[orgCopilotDetails.seat_management_setting] || 'Unknown'],
+    ])
+    .addHeading('Seat Breakdown', 3)
+    .addTable([
+      ['Total Seats', (orgCopilotDetails.seat_breakdown.total || 0).toString()],
+      ['Added this cycle', (orgCopilotDetails.seat_breakdown.added_this_cycle || 0).toString()],
+      ['Pending invites', (orgCopilotDetails.seat_breakdown.pending_invitation || 0).toString()],
+      ['Pending cancellations', (orgCopilotDetails.seat_breakdown.pending_cancellation || 0).toString()],
+      ['Active this cycle', (orgCopilotDetails.seat_breakdown.active_this_cycle || 0).toString()],
+      ['Inactive this cycle', (orgCopilotDetails.seat_breakdown.inactive_this_cycle || 0).toString()]
+    ])
+    .addHeading('Policies', 3)
+    .addTable([
+      ['Public Code Suggestions Enabled', {
+        'allow': 'Allowed',
+        'block': 'Blocked',
+        'unconfigured': 'Unconfigured',
+      }[orgCopilotDetails.public_code_suggestions] || 'Unknown'],
+      ['IDE Chat Enabled', orgCopilotDetails.ide_chat?.toLocaleUpperCase() || 'Unknown'],
+      ['Platform Chat Enabled', orgCopilotDetails.platform_chat?.toLocaleUpperCase() || 'Unknown'],
+      ['CLI Enabled', orgCopilotDetails.cli?.toLocaleUpperCase() || 'Unknown'],
+    ])
+};
+
+export const createJobSummarySeatAssignments = (data: Endpoints["GET /orgs/{org}/copilot/billing/seats"]["response"]["data"]["seats"]) => {
+  if (!data) data = [];
+  return summary
+    .addHeading('Seat Assignments')
+    .addTable([
+      [
+        { data: 'Avatar', header: true },
+        { data: 'Login', header: true },
+        { data: `Last Activity (${process.env.TZ || 'UTC'})`, header: true },
+        { data: 'Last Editor Used', header: true },
+        { data: 'Created At', header: true },
+        { data: 'Pending Cancellation Date', header: true },
+        { data: 'Team', header: true },
+      ],
+      ...data.map(seat => [
+        `<img src="${seat.assignee?.avatar_url}" width="33" />`,
+        seat.assignee?.login,
+        seat.last_activity_at ? dateFormat(seat.last_activity_at, { month: 'numeric', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric' }) : 'No Activity',
+        seat.last_activity_editor || 'N/A',
+        dateFormat(seat.created_at),
+        dateFormat(seat.pending_cancellation_date || ''),
+        String(seat.assigning_team?.name || ' '),
+      ] as string[])
+    ])
+}
 
 export const setJobSummaryTimeZone = (timeZone: string) => process.env.TZ = timeZone;

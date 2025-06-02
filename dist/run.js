@@ -4,8 +4,7 @@ import { DefaultArtifactClient } from "@actions/artifact";
 import { writeFileSync } from "fs";
 import { json2csv } from "json-2-csv";
 import { toXML } from 'jstoxml';
-import { createJobSummaryFooter, createJobSummarySeatAssignments, setJobSummaryTimeZone } from "./deprecated-job-summary";
-import { createJobSummaryUsage } from "./job-summary";
+import { createJobSummaryCopilotDetails, createJobSummarySeatAssignments, createJobSummaryUsage, setJobSummaryTimeZone } from "./job-summary";
 import { warn } from "console";
 const getInputs = () => {
     const result = {};
@@ -84,41 +83,9 @@ const run = async () => {
                 org: input.organization
             }).then(response => response.data);
             if (orgCopilotDetails) {
-                console.log(JSON.stringify(orgCopilotDetails, null, 2));
-                writeFileSync('copilot-organization-details.json', JSON.stringify(orgCopilotDetails, null, 2));
-                await summary
-                    .addHeading('Seat Info')
-                    .addHeading('Organization Copilot Details', 3)
-                    .addTable([
-                    ['Plan Type', orgCopilotDetails.plan_type?.toLocaleUpperCase() || 'Unknown'],
-                    ['Seat Management Setting', {
-                            'assign_all': 'Assign All',
-                            'assign_selected': 'Assign Selected',
-                            'disabled': 'Disabled',
-                            'unconfigured': 'Unconfigured',
-                        }[orgCopilotDetails.seat_management_setting] || 'Unknown'],
-                ])
-                    .addHeading('Seat Breakdown', 3)
-                    .addTable([
-                    ['Total Seats', (orgCopilotDetails.seat_breakdown.total || 0).toString()],
-                    ['Added this cycle', (orgCopilotDetails.seat_breakdown.added_this_cycle || 0).toString()],
-                    ['Pending invites', (orgCopilotDetails.seat_breakdown.pending_invitation || 0).toString()],
-                    ['Pending cancellations', (orgCopilotDetails.seat_breakdown.pending_cancellation || 0).toString()],
-                    ['Active this cycle', (orgCopilotDetails.seat_breakdown.active_this_cycle || 0).toString()],
-                    ['Inactive this cycle', (orgCopilotDetails.seat_breakdown.inactive_this_cycle || 0).toString()]
-                ])
-                    .addHeading('Policies', 3)
-                    .addTable([
-                    ['Public Code Suggestions Enabled', {
-                            'allowed': 'Allowed',
-                            'block': 'Blocked',
-                            'unconfigured': 'Unconfigured',
-                        }[orgCopilotDetails.public_code_suggestions] || 'Unknown'],
-                    ['IDE Chat Enabled', orgCopilotDetails.ide_chat?.toLocaleUpperCase()],
-                    ['Platform Chat Enabled', orgCopilotDetails.platform_chat?.toLocaleUpperCase()],
-                    ['CLI Enabled', orgCopilotDetails.cli?.toLocaleUpperCase()],
-                ]).write();
+                await createJobSummaryCopilotDetails(orgCopilotDetails).write();
             }
+            setOutput("result-org-details", JSON.stringify(orgCopilotDetails));
             info(`Fetching Copilot seat assignments for organization ${input.organization}`);
             const orgSeatAssignments = await octokit.paginate(octokit.rest.copilot.listCopilotSeats, {
                 org: input.organization
@@ -129,12 +96,13 @@ const run = async () => {
             };
             if (_orgSeatAssignments.total_seats > 0 && _orgSeatAssignments?.seats) {
                 _orgSeatAssignments.seats = _orgSeatAssignments.seats.sort((a, b) => new Date(b.last_activity_at).getTime() - new Date(a.last_activity_at).getTime());
-                console.log(JSON.stringify(_orgSeatAssignments, null, 2));
                 await createJobSummarySeatAssignments(_orgSeatAssignments?.seats)?.write();
             }
+            setOutput("result-seats", JSON.stringify(_orgSeatAssignments));
         }
         if (input.organization) {
-            (await createJobSummaryFooter(input.organization)).write();
+            await summary.addLink(`Manage Access for ${input.organization}`, `https://github.com/organizations/${input.organization}/settings/copilot/seat_management`)
+                .write();
         }
     }
     if (input.csv || input.xml || input.json) {

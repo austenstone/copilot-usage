@@ -1,6 +1,6 @@
 <h1>Copilot Usage for enterprise<br>5/6 - 6/1</h1>
 Metrics for the last 27 days<h2>Totals</h2>
-<table><tr><td>Code Suggestions</td><td>208,069</td></tr><tr><td>Code Acceptances</td><td>36,847</td></tr><tr><td>Acceptance Rate</td><td>17.71%</td></tr><tr><td>Lines of Code Accepted</td><td>48,359</td></tr><tr><td>Chat Interactions</td><td>2,597</td></tr><tr><td>Chat Copy Events</td><td>2,661</td></tr><tr><td>Chat Insertion Events</td><td>2,661</td></tr></table>
+<table><tr><td>Code Suggestions</td><td>208,069</td></tr><tr><td>Code Acceptances</td><td>36,847</td></tr><tr><td>Acceptance Rate</td><td>17.71%</td></tr><tr><td>Lines of Code Accepted</td><td>48,359</td></tr><tr><td>Chat Interactions</td><td>78,458</td></tr><tr><td>Chat Copy Events</td><td>2,131</td></tr><tr><td>Chat Insertion Events</td><td>480</td></tr></table>
 <h3>Daily Engaged Users</h3>
 
 ```mermaid
@@ -8,7 +8,7 @@ Metrics for the last 27 days<h2>Totals</h2>
 config:
     xyChart:
         width: 900
-        height: 400
+        height: 500
         xAxis:
             labelPadding: 20
         yAxis:
@@ -32,7 +32,7 @@ bar  [16, 16, 11, 12, 3, 1, 309, 336, 350, 339, 303, 89, 100, 307, 342, 347, 344
 config:
     xyChart:
         width: 900
-        height: 400
+        height: 500
         xAxis:
             labelPadding: 20
         yAxis:
@@ -59,7 +59,7 @@ line  [6, 4, 4, 4, 0, 0, 20, 21, 21, 23, 13, 1, 5, 22, 26, 19, 21, 14, 1, 1, 12,
 config:
     xyChart:
         width: 900
-        height: 400
+        height: 500
         xAxis:
             labelPadding: 20
         yAxis:
@@ -83,7 +83,7 @@ bar  [290, 138, 48, 49, 0, 0, 2129, 2866, 2854, 2359, 2997, 648, 1167, 1867, 193
 config:
     xyChart:
         width: 900
-        height: 400
+        height: 500
         xAxis:
             labelPadding: 20
         yAxis:
@@ -100,14 +100,14 @@ bar  [2182, 1417, 596, 1448, 39, 0, 22232, 20908, 21717, 18932, 23212, 5175, 110
 bar  [428, 186, 56, 96, 0, 0, 3144, 3624, 4018, 2970, 3272, 785, 1540, 2401, 2594, 3850, 3258, 2266, 413, 404, 1822, 2888, 2534, 2059, 1976, 969, 806]
 ```
 
-![](https://placehold.co/11x11/3498db/3498db.png) Suggestions&nbsp;&nbsp;![](https://placehold.co/11x11/2ecc71/2ecc71.png) Acceptances<h3>Acceptance Rate</h3>
+![](https://placehold.co/11x11/3498db/3498db.png) Lines Suggested&nbsp;&nbsp;![](https://placehold.co/11x11/2ecc71/2ecc71.png) Lines Accepted<h3>Acceptance Rate</h3>
 
 ```mermaid
 ---
 config:
     xyChart:
         width: 900
-        height: 400
+        height: 500
         xAxis:
             labelPadding: 20
         yAxis:
@@ -129,7 +129,7 @@ line  [22, 18, 17, 5, 0, 0, 16, 21, 20, 19, 20, 17, 19, 15, 17, 18, 16, 16, 17, 
 config:
     xyChart:
         width: 900
-        height: 400
+        height: 500
         xAxis:
             labelPadding: 20
         yAxis:
@@ -204,7 +204,7 @@ pie
 config:
     xyChart:
         width: 900
-        height: 400
+        height: 500
         xAxis:
             labelPadding: 20
         yAxis:
@@ -230,7 +230,7 @@ line  [3, 4, 2, 0, 0, 0, 25, 57, 46, 36, 36, 16, 10, 29, 24, 37, 26, 18, 4, 8, 6
 config:
     xyChart:
         width: 900
-        height: 400
+        height: 500
         xAxis:
             labelPadding: 20
         yAxis:
@@ -254,7 +254,7 @@ bar  [34, 60, 38, 68, 7, 15, 1235, 1045, 1293, 1235, 1522, 297, 313, 1264, 1524,
 config:
     xyChart:
         width: 900
-        height: 400
+        height: 500
         xAxis:
             labelPadding: 20
         yAxis:

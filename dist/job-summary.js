@@ -162,7 +162,6 @@ export const createJobSummaryUsage = (data, name) => {
         total_dotcom_chat_chats: sumNestedValue([day], ['copilot_dotcom_chat', 'models', 'total_chats']),
         total_dotcom_pr_summaries_created: sumNestedValue([day], ['copilot_dotcom_pull_requests', 'repositories', 'models', 'total_pr_summaries_created']),
     }));
-    console.log(dailyTotals);
     const topLanguages = Object.entries(languageMetrics)
         .sort((a, b) => b[1].total_code_suggestions - a[1].total_code_suggestions)
         .slice(0, 5)
@@ -382,6 +381,66 @@ export const createJobSummaryUsage = (data, name) => {
         ],
         legend: ['Total PR Summaries Created']
     }));
+};
+export const createJobSummaryCopilotDetails = (orgCopilotDetails) => {
+    return summary
+        .addHeading('Seat Info')
+        .addHeading('Organization Copilot Details', 3)
+        .addTable([
+        ['Plan Type', orgCopilotDetails.plan_type?.toLocaleUpperCase() || 'Unknown'],
+        ['Seat Management Setting', {
+                'assign_all': 'Assign All',
+                'assign_selected': 'Assign Selected',
+                'disabled': 'Disabled',
+                'unconfigured': 'Unconfigured',
+            }[orgCopilotDetails.seat_management_setting] || 'Unknown'],
+    ])
+        .addHeading('Seat Breakdown', 3)
+        .addTable([
+        ['Total Seats', (orgCopilotDetails.seat_breakdown.total || 0).toString()],
+        ['Added this cycle', (orgCopilotDetails.seat_breakdown.added_this_cycle || 0).toString()],
+        ['Pending invites', (orgCopilotDetails.seat_breakdown.pending_invitation || 0).toString()],
+        ['Pending cancellations', (orgCopilotDetails.seat_breakdown.pending_cancellation || 0).toString()],
+        ['Active this cycle', (orgCopilotDetails.seat_breakdown.active_this_cycle || 0).toString()],
+        ['Inactive this cycle', (orgCopilotDetails.seat_breakdown.inactive_this_cycle || 0).toString()]
+    ])
+        .addHeading('Policies', 3)
+        .addTable([
+        ['Public Code Suggestions Enabled', {
+                'allow': 'Allowed',
+                'block': 'Blocked',
+                'unconfigured': 'Unconfigured',
+            }[orgCopilotDetails.public_code_suggestions] || 'Unknown'],
+        ['IDE Chat Enabled', orgCopilotDetails.ide_chat?.toLocaleUpperCase() || 'Unknown'],
+        ['Platform Chat Enabled', orgCopilotDetails.platform_chat?.toLocaleUpperCase() || 'Unknown'],
+        ['CLI Enabled', orgCopilotDetails.cli?.toLocaleUpperCase() || 'Unknown'],
+    ]);
+};
+export const createJobSummarySeatAssignments = (data) => {
+    if (!data)
+        data = [];
+    return summary
+        .addHeading('Seat Assignments')
+        .addTable([
+        [
+            { data: 'Avatar', header: true },
+            { data: 'Login', header: true },
+            { data: `Last Activity (${process.env.TZ || 'UTC'})`, header: true },
+            { data: 'Last Editor Used', header: true },
+            { data: 'Created At', header: true },
+            { data: 'Pending Cancellation Date', header: true },
+            { data: 'Team', header: true },
+        ],
+        ...data.map(seat => [
+            `<img src="${seat.assignee?.avatar_url}" width="33" />`,
+            seat.assignee?.login,
+            seat.last_activity_at ? dateFormat(seat.last_activity_at, { month: 'numeric', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric' }) : 'No Activity',
+            seat.last_activity_editor || 'N/A',
+            dateFormat(seat.created_at),
+            dateFormat(seat.pending_cancellation_date || ''),
+            String(seat.assigning_team?.name || ' '),
+        ])
+    ]);
 };
 export const setJobSummaryTimeZone = (timeZone) => process.env.TZ = timeZone;
 //# sourceMappingURL=job-summary.js.map
