@@ -106,18 +106,20 @@ const run = async () => {
     }
     if (input.csv || input.xml || input.json) {
         const artifact = new DefaultArtifactClient();
+        const files = [];
         if (input.json) {
             writeFileSync('copilot-usage.json', JSON.stringify(data, null, 2));
-            await artifact.uploadArtifact(input.artifactName, ['copilot-usage.json'], '.');
+            files.push('copilot-usage.json');
         }
         if (input.csv) {
             writeFileSync('copilot-usage.csv', await json2csv(data, input.csvOptions));
-            await artifact.uploadArtifact(input.artifactName, ['copilot-usage.csv'], '.');
+            files.push('copilot-usage.csv');
         }
         if (input.xml) {
             writeFileSync('copilot-usage.xml', await toXML(data, input.xmlOptions));
-            await artifact.uploadArtifact(input.artifactName, ['copilot-usage.xml'], '.');
+            files.push('copilot-usage.xml');
         }
+        await artifact.uploadArtifact(input.artifactName, files, '.');
     }
     setOutput("result", JSON.stringify(data));
     setOutput("since", data[0].date);
