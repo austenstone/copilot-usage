@@ -1,5 +1,7 @@
 # Copilot Usage Action
 
+https://github.com/user-attachments/assets/23bfb179-6e12-4db5-9ec6-be0019a692f8
+
 Get Copilot usage data as:
 * Md Job Summary
 * CSV
