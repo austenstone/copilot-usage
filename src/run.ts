@@ -1,12 +1,10 @@
-import { debug, getBooleanInput, getInput, info, setOutput } from "@actions/core";
+import { debug, getBooleanInput, getInput, info, setOutput, summary, warning } from "@actions/core";
 import { Octokit, RestEndpointMethodTypes } from '@octokit/rest'
 import { DefaultArtifactClient } from "@actions/artifact";
 import { writeFileSync } from "fs";
 import { Json2CsvOptions, json2csv } from "json-2-csv";
 import { toXML } from 'jstoxml';
-import { createJobSummaryFooter, createJobSummarySeatAssignments, createJobSummarySeatInfo, setJobSummaryTimeZone } from "./deprecated-job-summary";
-import { createJobSummaryUsage } from "./job-summary";
-import { warn } from "console";
+import { createJobSummaryCopilotDetails, createJobSummarySeatAssignments, createJobSummaryUsage, setJobSummaryTimeZone } from "./job-summary";
 
 export type CopilotUsageBreakdown = {
   language: string;
@@ -117,7 +115,7 @@ const run = async (): Promise<void> => {
 
   const data = await req;
   if (!data || data.length === 0) {
-    return warn("No Copilot usage data found");
+    return warning("No Copilot usage data found");
   }
   debug(JSON.stringify(data, null, 2));
   info(`Fetched Copilot usage data for ${data.length} days (${data[0].date} to ${data[data.length - 1].date})`);
@@ -133,8 +131,9 @@ const run = async (): Promise<void> => {
         org: input.organization
       }).then(response => response.data);
       if (orgCopilotDetails) {
-        await createJobSummarySeatInfo(orgCopilotDetails).write();
+        await createJobSummaryCopilotDetails(orgCopilotDetails).write();
       }
+      setOutput("result-org-details", JSON.stringify(orgCopilotDetails));
 
       info(`Fetching Copilot seat assignments for organization ${input.organization}`);
       const orgSeatAssignments = await octokit.paginate(octokit.rest.copilot.listCopilotSeats, {
@@ -150,10 +149,12 @@ const run = async (): Promise<void> => {
         _orgSeatAssignments.seats = _orgSeatAssignments.seats.sort((a, b) => new Date(b.last_activity_at).getTime() - new Date(a.last_activity_at).getTime());
         await createJobSummarySeatAssignments(_orgSeatAssignments?.seats)?.write();
       }
+      setOutput("result-seats", JSON.stringify(_orgSeatAssignments));
     }
 
     if (input.organization) {
-      (await createJobSummaryFooter(input.organization)).write();
+      await summary.addLink(`Manage Access for ${input.organization}`, `https://github.com/organizations/${input.organization}/settings/copilot/seat_management`)
+        .write();
     }
   }
 

@@ -1,7 +1,7 @@
 import { test, beforeAll, beforeEach, expect } from 'vitest';
 import dotenv from 'dotenv'
 dotenv.config({ override: true })
-import { createJobSummaryUsage } from '../src/job-summary';
+import { createJobSummaryCopilotDetails, createJobSummarySeatAssignments, createJobSummaryUsage } from '../src/job-summary';
 import { sumNestedValue } from '../src/job-summary'; // Import sumNestedValue function
 import { summary } from '@actions/core/lib/summary';
 import { read, readFileSync, writeFileSync } from 'fs';
@@ -23,13 +23,29 @@ beforeEach(() => {
 
 const sample = readFileSync('./__tests__/mock/sample.json', 'utf-8');
 const exampleResponseEnterprise = JSON.parse(sample);
+const sampleCopilotDetails = readFileSync('./__tests__/mock/sample-copilot-details.json', 'utf-8');
+const exampleResponseCopilotDetails = JSON.parse(sampleCopilotDetails);
+const sampleCopilotSeats = readFileSync('./__tests__/mock/sample-copilot-seats.json', 'utf-8');
+const exampleResponseCopilotSeats = JSON.parse(sampleCopilotSeats);
 
 test('createJobSummaryUsage(enterpriseUsage)', async () => {
   const summary = await createJobSummaryUsage(exampleResponseEnterprise, 'enterprise');
   writeFileSync('./__tests__/mock/sample-output.md', summary.stringify());
-  console.log('Summary:', summary.stringify());
   expect(summary).toBeDefined();
 });
+
+test('createJobSummaryCopilotDetails(enterpriseUsage)', async () => {
+  const summary = await createJobSummaryCopilotDetails(exampleResponseCopilotDetails);
+  writeFileSync('./__tests__/mock/sample-copilot-details-output.md', summary.stringify());
+  expect(summary).toBeDefined();
+});
+
+test('createJobSummaryCopilotSeats(enterpriseUsage)', async () => {
+  const summary = await createJobSummarySeatAssignments(exampleResponseCopilotSeats.seats);
+  writeFileSync('./__tests__/mock/sample-copilot-seats-output.md', summary.stringify());
+  expect(summary).toBeDefined();
+});
+
 
 // Tests for sumNestedValue function
 test('sumNestedValue with simple objects', () => {
