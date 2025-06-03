@@ -1,11 +1,10 @@
-import { debug, getBooleanInput, getInput, info, setOutput, summary } from "@actions/core";
+import { debug, getBooleanInput, getInput, info, setOutput, summary, warning } from "@actions/core";
 import { Octokit } from '@octokit/rest';
 import { DefaultArtifactClient } from "@actions/artifact";
 import { writeFileSync } from "fs";
 import { json2csv } from "json-2-csv";
 import { toXML } from 'jstoxml';
 import { createJobSummaryCopilotDetails, createJobSummarySeatAssignments, createJobSummaryUsage, setJobSummaryTimeZone } from "./job-summary";
-import { warn } from "console";
 const getInputs = () => {
     const result = {};
     result.token = getInput("github-token").trim();
@@ -69,7 +68,7 @@ const run = async () => {
     }
     const data = await req;
     if (!data || data.length === 0) {
-        return warn("No Copilot usage data found");
+        return warning("No Copilot usage data found");
     }
     debug(JSON.stringify(data, null, 2));
     info(`Fetched Copilot usage data for ${data.length} days (${data[0].date} to ${data[data.length - 1].date})`);
