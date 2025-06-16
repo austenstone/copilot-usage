@@ -32,7 +32,7 @@
     "octokit": "^5.0.3"
   },
   "devDependencies": {
-    "@eslint/js": "^9.28.0",
+    "@eslint/js": "^9.29.0",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.15.29",
     "@vercel/ncc": "^0.38.3",
