@@ -58,13 +58,20 @@ inputs:
     description: The name of the artifact to create
     required: false
     default: "copilot-usage"
+  
 outputs:
   result:
     description: The copilot usage as a JSON string
+  result-org-details:
+    description: The copilot organization details
+  result-seats:
+    description: The copilot seat details
   since:
     description: The date since which the usage metrics are shown
   until:
     description: The date until which the usage metrics are shown
+  days:
+    description: The number of days for which usage metrics are shown
 runs:
   using: "node20"
   main: "dist/index.js"
