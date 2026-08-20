@@ -1,4 +1,3 @@
-import { dateFormat } from "./utility";
 export const createMermaidChart = (type, config, content) => {
     const chartConfig = `---
 config:
@@ -51,6 +50,5 @@ export function generateLegend(categories) {
 const DEFAULT_CHART_HEIGHT = 400;
 export const DEFAULT_CHART_CONFIGS = {
     standardHeight: { height: DEFAULT_CHART_HEIGHT },
-    dailyCategories: (data) => data.map(day => dateFormat(day.date, { day: 'numeric' })),
 };
 //# sourceMappingURL=mermaid.js.map

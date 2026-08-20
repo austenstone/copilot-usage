@@ -1,5 +1,3 @@
-import { Endpoints } from "@octokit/types";
-import { dateFormat } from "./utility";
 
 interface ChartConfig {
   width?: number;
@@ -85,6 +83,4 @@ export function generateLegend(categories: string[]): string {
 const DEFAULT_CHART_HEIGHT = 400;
 export const DEFAULT_CHART_CONFIGS = {
   standardHeight: { height: DEFAULT_CHART_HEIGHT },
-  dailyCategories: (data: Endpoints["GET /orgs/{org}/copilot/metrics"]["response"]["data"]) => 
-    data.map(day => dateFormat(day.date, { day: 'numeric' })),
 } as const;

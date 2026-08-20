@@ -130770,16 +130770,7 @@ const toXML = (obj = {}, config = {}) => {
     toXML
 });
 
-;// CONCATENATED MODULE: ./src/utility.ts
-const dateFormat = (date, options = {
-    month: 'numeric', day: 'numeric'
-}) => {
-    options.timeZone = process.env.TZ || 'UTC';
-    return new Date(date).toLocaleDateString('en-US', options);
-};
-
 ;// CONCATENATED MODULE: ./src/mermaid.ts
-
 const createMermaidChart = (type, config, content) => {
     const chartConfig = `---
 config:
@@ -130832,327 +130823,169 @@ function generateLegend(categories) {
 const DEFAULT_CHART_HEIGHT = 400;
 const DEFAULT_CHART_CONFIGS = {
     standardHeight: { height: DEFAULT_CHART_HEIGHT },
-    dailyCategories: (data) => data.map(day => dateFormat(day.date, { day: 'numeric' })),
+};
+
+;// CONCATENATED MODULE: ./src/utility.ts
+const dateFormat = (date, options = {
+    month: 'numeric', day: 'numeric'
+}) => {
+    options.timeZone = process.env.TZ || 'UTC';
+    return new Date(date).toLocaleDateString('en-US', options);
 };
 
 ;// CONCATENATED MODULE: ./src/job-summary.ts
 
 
 
-const getEmptyBaseMetrics = () => ({
-    total_engaged_users: 0,
-    total_code_acceptances: 0,
-    total_code_suggestions: 0,
-    total_code_lines_accepted: 0,
-    total_code_lines_suggested: 0
-});
-const sumNestedValue = (data, path) => {
-    return data.reduce((sum, obj) => {
-        let result = 0;
-        const traverse = (current, pathIndex) => {
-            if (current === undefined || current === null)
-                return;
-            if (pathIndex >= path.length) {
-                if (typeof current === 'number') {
-                    result += current;
-                }
-                return;
-            }
-            const key = path[pathIndex];
-            if (Array.isArray(current)) {
-                current.forEach(item => traverse(item, pathIndex));
-            }
-            else if (typeof current === 'object') {
-                if (key in current) {
-                    traverse(current[key], pathIndex + 1);
-                }
-            }
-        };
-        traverse(obj, 0);
-        return sum + result;
-    }, 0);
-};
-const aggregateMetricsBy = (data, groupFn) => {
-    return data.reduce((acc, day) => {
-        const dayMetrics = groupFn(day);
-        Object.entries(dayMetrics).forEach(([key, metrics]) => {
-            acc[key] = acc[key] || getEmptyBaseMetrics();
-            Object.entries(metrics).forEach(([metric, value]) => {
-                if (metric === 'total_engaged_users') {
-                    acc[key][metric] = Math.max(acc[key][metric], value);
-                }
-                else {
-                    acc[key][metric] += value;
-                }
-            });
-        });
-        return acc;
-    }, {});
-};
-const groupLanguageMetrics = (day) => {
-    const metrics = {};
-    day.copilot_ide_code_completions?.editors?.forEach(editor => {
-        editor.models?.forEach(model => {
-            model.languages?.forEach(lang => {
-                const language = lang.name || 'unknown';
-                metrics[language] = metrics[language] || getEmptyBaseMetrics();
-                Object.entries(lang).forEach(([key, value]) => {
-                    if (key in metrics[language] && typeof value === 'number') {
-                        metrics[language][key] += value;
-                    }
-                });
-            });
-        });
-    });
-    return metrics;
-};
-const groupEditorMetrics = (day) => {
-    const metrics = {};
-    day.copilot_ide_code_completions?.editors?.forEach(editor => {
-        const editorName = editor.name || 'unknown';
-        metrics[editorName] = metrics[editorName] || getEmptyBaseMetrics();
-        metrics[editorName].total_engaged_users = editor.total_engaged_users || 0;
-        editor.models?.forEach(model => {
-            model.languages?.forEach(lang => {
-                Object.entries(lang).forEach(([key, value]) => {
-                    if (key in metrics[editorName] && typeof value === 'number') {
-                        metrics[editorName][key] += value;
-                    }
-                });
-            });
-        });
-    });
-    return metrics;
-};
-const getChatMetrics = (dailyTotals) => ({
-    totalChats: dailyTotals.reduce((sum, day) => sum + (day.total_chats || 0), 0),
-    totalCopyEvents: dailyTotals.reduce((sum, day) => sum + (day.total_chat_copy_events || 0), 0),
-    totalInsertEvents: dailyTotals.reduce((sum, day) => sum + (day.total_chat_insert_events || 0), 0)
-});
-const createJobSummaryUsage = (data, name) => {
-    const languageMetrics = aggregateMetricsBy(data, groupLanguageMetrics);
-    const editorMetrics = aggregateMetricsBy(data, groupEditorMetrics);
-    const dailyTotals = data.map(day => ({
-        date: day.date,
-        total_active_users: day.total_active_users || 0,
-        total_engaged_users: day.total_engaged_users || 0,
-        total_code_acceptances: sumNestedValue([day], ['copilot_ide_code_completions', 'editors', 'models', 'languages', 'total_code_acceptances']),
-        total_code_suggestions: sumNestedValue([day], ['copilot_ide_code_completions', 'editors', 'models', 'languages', 'total_code_suggestions']),
-        total_code_lines_accepted: sumNestedValue([day], ['copilot_ide_code_completions', 'editors', 'models', 'languages', 'total_code_lines_accepted']),
-        total_code_lines_suggested: sumNestedValue([day], ['copilot_ide_code_completions', 'editors', 'models', 'languages', 'total_code_lines_suggested']),
-        total_chats: sumNestedValue([day], ['copilot_ide_chat', 'editors', 'models', 'total_chats']),
-        total_chat_copy_events: sumNestedValue([day], ['copilot_ide_chat', 'editors', 'models', 'total_chat_copy_events']),
-        total_chat_insert_events: sumNestedValue([day], ['copilot_ide_chat', 'editors', 'models', 'total_chat_insertion_events']),
-        total_dotcom_chat_chats: sumNestedValue([day], ['copilot_dotcom_chat', 'models', 'total_chats']),
-        total_dotcom_pr_summaries_created: sumNestedValue([day], ['copilot_dotcom_pull_requests', 'repositories', 'models', 'total_pr_summaries_created']),
-    }));
-    const chatMetrics = getChatMetrics(dailyTotals);
-    const topLanguages = Object.entries(languageMetrics)
-        .sort((a, b) => b[1].total_code_suggestions - a[1].total_code_suggestions)
-        .slice(0, 5)
-        .map(([lang]) => lang);
-    const totalMetrics = Object.values(languageMetrics).reduce((acc, curr) => ({
-        totalCodeAcceptances: acc.totalCodeAcceptances + curr.total_code_acceptances,
-        totalCodeSuggestions: acc.totalCodeSuggestions + curr.total_code_suggestions,
-        totalLinesAccepted: acc.totalLinesAccepted + curr.total_code_lines_accepted
-    }), { totalCodeAcceptances: 0, totalCodeSuggestions: 0, totalLinesAccepted: 0 });
-    return core.summary
-        .addHeading(`Copilot Usage for ${name}<br>${dateFormat(data[0].date)} - ${dateFormat(data[data.length - 1].date)}`)
-        .addRaw(`Metrics for the last ${data.length} days`)
-        .addHeading('Totals', 2)
+const sum = (values) => values.reduce((a, b) => a + b, 0);
+const sumActivity = (days, key) => sum(days.map(day => Number(day[key]) || 0));
+const groupTotals = (rows, keyOf, metric = "code_generation_activity_count") => rows.reduce((acc, row) => {
+    const key = keyOf(row) || "unknown";
+    acc[key] = (acc[key] || 0) + (Number(row[metric]) || 0);
+    return acc;
+}, {});
+const flatten = (days, key) => days.flatMap(day => day[key] || []);
+const isVersionLabel = (label) => /^[\d.]+:?$/.test(label);
+const cleanLabel = (label) => (!label || isVersionLabel(label) ? "unknown" : label);
+const withoutZeroes = (totals) => Object.fromEntries(Object.entries(totals).filter(([, value]) => value > 0));
+const percent = (numerator, denominator) => denominator > 0 ? `${((numerator / denominator) * 100).toFixed(2)}%` : "N/A";
+const sumPullRequests = (days, key) => sum(days.map(day => Number(day.pull_requests?.[key]) || 0));
+const dailyCategories = (days) => days.map(day => dateFormat(day.day, { day: "numeric" }));
+const createJobSummaryUsage = (days, name) => {
+    const sorted = [...days].sort((a, b) => a.day.localeCompare(b.day));
+    const latest = sorted[sorted.length - 1];
+    const generations = sumActivity(sorted, "code_generation_activity_count");
+    const acceptances = sumActivity(sorted, "code_acceptance_activity_count");
+    const interactions = sumActivity(sorted, "user_initiated_interaction_count");
+    const locAdded = sumActivity(sorted, "loc_added_sum");
+    const locDeleted = sumActivity(sorted, "loc_deleted_sum");
+    const categories = dailyCategories(sorted);
+    const ideTotals = withoutZeroes(groupTotals(flatten(sorted, "totals_by_ide"), row => cleanLabel(row.ide)));
+    const featureTotals = withoutZeroes(groupTotals(flatten(sorted, "totals_by_feature"), row => row.feature));
+    const languageTotals = withoutZeroes(groupTotals(flatten(sorted, "totals_by_language_feature"), row => row.language));
+    const modelTotals = withoutZeroes(groupTotals(flatten(sorted, "totals_by_model_feature"), row => row.model));
+    const cliSessions = sum(sorted.map(day => day.totals_by_cli?.session_count || 0));
+    const appSessions = sum(sorted.map(day => day.totals_by_copilot_app?.session_count || 0));
+    let report = core.summary
+        .addHeading(`Copilot Usage for ${name}<br>${dateFormat(sorted[0].day)} - ${dateFormat(latest.day)}`)
+        .addRaw(`Metrics for the last ${sorted.length} days`)
+        .addHeading("Totals", 2)
         .addTable([
-        ['Code Suggestions', totalMetrics.totalCodeSuggestions.toLocaleString()],
-        ['Code Acceptances', totalMetrics.totalCodeAcceptances.toLocaleString()],
-        ['Acceptance Rate', `${((totalMetrics.totalCodeAcceptances / totalMetrics.totalCodeSuggestions) * 100).toFixed(2)}%`],
-        ['Lines of Code Accepted', totalMetrics.totalLinesAccepted.toLocaleString()],
-        ['Chat Interactions', chatMetrics.totalChats.toLocaleString()],
-        ['Chat Copy Events', chatMetrics.totalCopyEvents.toLocaleString()],
-        ['Chat Insertion Events', chatMetrics.totalInsertEvents.toLocaleString()]
+        ["Active Users (latest day)", (latest.daily_active_users || 0).toLocaleString()],
+        ["Active Users (28 day)", (latest.monthly_active_users || 0).toLocaleString()],
+        ["User Initiated Interactions", interactions.toLocaleString()],
+        ["Code Generation Activities", generations.toLocaleString()],
+        ["Code Acceptance Activities", acceptances.toLocaleString()],
+        ["Acceptance Rate", percent(acceptances, generations)],
+        ["Lines of Code Added", locAdded.toLocaleString()],
+        ["Lines of Code Deleted", locDeleted.toLocaleString()],
+        ["CLI Sessions", cliSessions.toLocaleString()],
+        ["Copilot App Sessions", appSessions.toLocaleString()]
     ])
-        .addHeading('Daily Engaged Users', 3)
+        .addHeading("Daily Active Users", 3)
         .addRaw(createXYChart({
-        xAxis: {
-            categories: DEFAULT_CHART_CONFIGS.dailyCategories(data)
-        },
+        xAxis: { categories },
         yAxis: {},
         series: [
-            {
-                type: 'bar',
-                values: data.map(day => day.total_active_users || 0)
-            },
-            {
-                type: 'bar',
-                values: data.map(day => day.total_engaged_users || 0)
-            },
+            { type: "bar", values: sorted.map(day => day.daily_active_users || 0) },
+            { type: "line", values: sorted.map(day => day.weekly_active_users || 0) }
         ],
-        legend: ['Active', 'Engaged']
+        legend: ["Daily Active", "Weekly Active"]
     }))
-        .addHeading('Daily Engaged Users by Product', 3)
+        .addHeading("Daily Active Users by Surface", 3)
         .addRaw(createXYChart({
-        xAxis: {
-            categories: DEFAULT_CHART_CONFIGS.dailyCategories(data)
-        },
+        xAxis: { categories },
         yAxis: {},
         series: [
-            {
-                type: 'line',
-                values: data.map(day => sumNestedValue([day], ['copilot_ide_code_completions', 'total_engaged_users']))
-            },
-            {
-                type: 'line',
-                values: data.map(day => sumNestedValue([day], ['copilot_ide_chat', 'total_engaged_users']))
-            },
-            {
-                type: 'line',
-                values: data.map(day => sumNestedValue([day], ['copilot_dotcom_chat', 'total_engaged_users']))
-            },
-            {
-                type: 'line',
-                values: data.map(day => sumNestedValue([day], ['copilot_dotcom_pull_requests', 'total_engaged_users']))
-            }
+            { type: "line", values: sorted.map(day => day.daily_active_copilot_app_users || 0) },
+            { type: "line", values: sorted.map(day => day.daily_active_cli_users || 0) },
+            { type: "line", values: sorted.map(day => day.daily_active_copilot_cloud_agent_users || 0) },
+            { type: "line", values: sorted.map(day => day.daily_active_copilot_code_review_users || 0) }
         ],
-        legend: ['IDE Code Completions', 'IDE Chat', 'Dotcom Chat', 'Dotcom Pull Requests']
+        legend: ["Copilot App", "CLI", "Cloud Agent", "Code Review"]
     }))
-        .addHeading('IDE Completion', 2)
-        .addHeading('Suggestions vs. Acceptances', 3)
+        .addHeading("Code Activity", 2)
+        .addHeading("Generations vs. Acceptances", 3)
         .addRaw(createXYChart({
-        xAxis: { categories: DEFAULT_CHART_CONFIGS.dailyCategories(data) },
+        xAxis: { categories },
         yAxis: {},
         series: [
-            {
-                type: 'bar',
-                values: dailyTotals.map(day => day.total_code_suggestions || 0)
-            },
-            {
-                type: 'bar',
-                values: dailyTotals.map(day => day.total_code_acceptances || 0)
-            },
+            { type: "bar", values: sorted.map(day => day.code_generation_activity_count || 0) },
+            { type: "bar", values: sorted.map(day => day.code_acceptance_activity_count || 0) }
         ],
-        legend: ['Suggestions', 'Acceptances']
+        legend: ["Generations", "Acceptances"]
     }))
-        .addHeading('Lines Suggested vs. Accepted', 3)
+        .addHeading("Lines of Code", 3)
         .addRaw(createXYChart({
-        xAxis: { categories: DEFAULT_CHART_CONFIGS.dailyCategories(data) },
+        xAxis: { categories },
         yAxis: {},
         series: [
-            {
-                type: 'bar',
-                values: dailyTotals.map(day => day.total_code_lines_suggested || 0)
-            },
-            {
-                type: 'bar',
-                values: dailyTotals.map(day => day.total_code_lines_accepted || 0)
-            },
+            { type: "bar", values: sorted.map(day => day.loc_added_sum || 0) },
+            { type: "bar", values: sorted.map(day => day.loc_deleted_sum || 0) }
         ],
-        legend: ['Lines Suggested', 'Lines Accepted']
+        legend: ["Lines Added", "Lines Deleted"]
     }))
-        .addHeading('Acceptance Rate', 3)
+        .addHeading("Acceptance Rate", 3)
         .addRaw(createXYChart({
-        xAxis: {
-            categories: DEFAULT_CHART_CONFIGS.dailyCategories(data)
-        },
-        yAxis: {
-            min: 0,
-            max: 100
-        },
-        series: [
-            {
-                type: 'line',
-                values: data.map(day => {
-                    const acceptances = sumNestedValue([day], ['copilot_ide_code_completions', 'editors', 'models', 'languages', 'total_code_acceptances']);
-                    const suggestions = sumNestedValue([day], ['copilot_ide_code_completions', 'editors', 'models', 'languages', 'total_code_suggestions']);
-                    return suggestions > 0 ? Math.round((acceptances / suggestions) * 100) : 0;
+        xAxis: { categories },
+        yAxis: { min: 0, max: 100 },
+        series: [{
+                type: "line",
+                values: sorted.map(day => {
+                    const generated = day.code_generation_activity_count || 0;
+                    const accepted = day.code_acceptance_activity_count || 0;
+                    return generated > 0 ? Math.round((accepted / generated) * 100) : 0;
                 })
-            }
-        ]
-    }))
-        .addHeading('Acceptance Rate by Language', 3)
-        .addRaw(createXYChart({
-        xAxis: {
-            categories: DEFAULT_CHART_CONFIGS.dailyCategories(data)
-        },
-        yAxis: {
-            min: 0,
-            max: 100
-        },
-        series: topLanguages.map(language => ({
-            type: 'line',
-            values: data.map(day => {
-                let acceptances = 0;
-                let suggestions = 0;
-                day.copilot_ide_code_completions?.editors?.forEach(editor => {
-                    editor.models?.forEach(model => {
-                        model.languages?.forEach(lang => {
-                            if (lang.name === language) {
-                                acceptances += lang.total_code_acceptances || 0;
-                                suggestions += lang.total_code_suggestions || 0;
-                            }
-                        });
-                    });
-                });
-                return suggestions > 0 ? Math.round((acceptances / suggestions) * 100) : 0;
-            })
-        })),
-        legend: topLanguages
-    }))
-        .addHeading('Language Usage by Engaged Users', 3)
-        .addRaw(createPieChart(Object.fromEntries(Object.entries(languageMetrics)
-        .map(([lang, metrics]) => [lang, metrics.total_engaged_users]))))
-        .addHeading('Editor Usage by Engaged Users', 3)
-        .addRaw(createPieChart(Object.fromEntries(Object.entries(editorMetrics)
-        .map(([editor, metrics]) => [editor, metrics.total_engaged_users]))))
-        .addHeading('IDE Copilot Chat', 2)
-        .addRaw(createXYChart({
-        xAxis: {
-            categories: DEFAULT_CHART_CONFIGS.dailyCategories(data)
-        },
-        yAxis: {},
-        series: [
-            {
-                type: 'bar',
-                values: dailyTotals.map(day => day.total_chats || 0)
-            },
-            {
-                type: 'line',
-                values: dailyTotals.map(day => day.total_chat_copy_events || 0)
-            },
-            {
-                type: 'line',
-                values: dailyTotals.map(day => day.total_chat_insert_events || 0)
-            },
-        ],
-        legend: ['Total Chats', 'Copy Events', 'Insert Events']
-    }))
-        .addHeading('Copilot .COM Chat', 2)
-        .addHeading('Total Chats', 3)
-        .addRaw(createXYChart({
-        xAxis: {
-            categories: DEFAULT_CHART_CONFIGS.dailyCategories(data)
-        },
-        yAxis: {},
-        series: [
-            {
-                type: 'bar',
-                values: dailyTotals.map(day => day.total_dotcom_chat_chats || 0)
-            }
-        ],
-        legend: ['Total Chats']
-    }))
-        .addHeading('Copilot .COM Pull Request', 2)
-        .addHeading('Summaries Created', 3)
-        .addRaw(createXYChart({
-        xAxis: {
-            categories: DEFAULT_CHART_CONFIGS.dailyCategories(data)
-        },
-        yAxis: {},
-        series: [
-            {
-                type: 'bar',
-                values: dailyTotals.map(day => day.total_dotcom_pr_summaries_created || 0)
-            }
-        ],
-        legend: ['Total PR Summaries Created']
+            }]
     }));
+    if (Object.keys(languageTotals).length) {
+        report = report.addHeading("Language Usage", 3).addRaw(createPieChart(languageTotals));
+    }
+    if (Object.keys(ideTotals).length) {
+        report = report.addHeading("IDE Usage", 3).addRaw(createPieChart(ideTotals));
+    }
+    if (Object.keys(featureTotals).length) {
+        report = report.addHeading("Feature Usage", 3).addRaw(createPieChart(featureTotals));
+    }
+    if (Object.keys(modelTotals).length) {
+        report = report.addHeading("Model Usage", 3).addRaw(createPieChart(modelTotals));
+    }
+    const prCreated = sumPullRequests(sorted, "total_created");
+    if (prCreated > 0 || sumPullRequests(sorted, "total_reviewed") > 0) {
+        report = report
+            .addHeading("Pull Requests", 2)
+            .addTable([
+            ["Created", prCreated.toLocaleString()],
+            ["Created by Copilot", sumPullRequests(sorted, "total_created_by_copilot").toLocaleString()],
+            ["Reviewed", sumPullRequests(sorted, "total_reviewed").toLocaleString()],
+            ["Reviewed by Copilot", sumPullRequests(sorted, "total_reviewed_by_copilot").toLocaleString()],
+            ["Merged", sumPullRequests(sorted, "total_merged").toLocaleString()],
+            ["Copilot Suggestions", sumPullRequests(sorted, "total_copilot_suggestions").toLocaleString()],
+            ["Copilot Suggestions Applied", sumPullRequests(sorted, "total_copilot_applied_suggestions").toLocaleString()]
+        ]);
+    }
+    const phases = latest.totals_by_ai_adoption_phase || [];
+    if (phases.length) {
+        report = report
+            .addHeading("AI Adoption Phases", 2)
+            .addTable([
+            [
+                { data: "Phase", header: true },
+                { data: "Engaged Users", header: true },
+                { data: "Avg Interactions", header: true },
+                { data: "Avg Generations", header: true },
+                { data: "Avg Acceptances", header: true }
+            ],
+            ...phases.map(phase => [
+                phase.phase,
+                (phase.total_engaged_users || 0).toLocaleString(),
+                String(phase.avg_user_initiated_interactions ?? 0),
+                String(phase.avg_code_generation_activities ?? 0),
+                String(phase.avg_code_acceptance_activities ?? 0)
+            ])
+        ]);
+    }
+    return report;
 };
 const createJobSummaryCopilotDetails = (orgCopilotDetails) => {
     return core.summary
@@ -131216,7 +131049,54 @@ const createJobSummarySeatAssignments = (data) => {
 };
 const setJobSummaryTimeZone = (timeZone) => process.env.TZ = timeZone;
 
+;// CONCATENATED MODULE: ./src/report.ts
+
+const parseNdjson = (body) => body
+    .split("\n")
+    .map(line => line.trim())
+    .filter(Boolean)
+    .map(line => JSON.parse(line));
+const downloadReport = async (links) => {
+    const results = [];
+    for (const link of links) {
+        const response = await fetch(link);
+        if (!response.ok) {
+            throw new Error(`Failed to download Copilot metrics report (${response.status} ${response.statusText})`);
+        }
+        results.push(...parseNdjson(await response.text()));
+    }
+    return results;
+};
+const fetchReport = async (octokit, route, params = {}) => {
+    (0,core.debug)(`Requesting report ${route} ${JSON.stringify(params)}`);
+    const { data } = await octokit.request(`GET ${route}`, params);
+    if (!data?.download_links?.length)
+        return [];
+    (0,core.info)(`Downloading ${data.download_links.length} report file(s) for ${route}`);
+    return downloadReport(data.download_links);
+};
+const scope = (enterprise, org) => enterprise
+    ? { base: "/enterprises/{enterprise}", params: { enterprise }, prefix: "enterprise" }
+    : { base: "/orgs/{org}", params: { org: org }, prefix: "organization" };
+const fetchMetricsReport = async (octokit, { enterprise, organization, day }) => {
+    const { base, params, prefix } = scope(enterprise, organization);
+    return day
+        ? fetchReport(octokit, `${base}/copilot/metrics/reports/${prefix}-1-day`, { ...params, day })
+        : fetchReport(octokit, `${base}/copilot/metrics/reports/${prefix}-28-day/latest`, params);
+};
+const fetchUserReport = async (octokit, { enterprise, organization, day }) => {
+    const { base, params } = scope(enterprise, organization);
+    return day
+        ? fetchReport(octokit, `${base}/copilot/metrics/reports/users-1-day`, { ...params, day })
+        : fetchReport(octokit, `${base}/copilot/metrics/reports/users-28-day/latest`, params);
+};
+const fetchUserTeams = async (octokit, { enterprise, organization, day }) => {
+    const { base, params } = scope(enterprise, organization);
+    return fetchReport(octokit, `${base}/copilot/metrics/reports/user-teams-1-day`, { ...params, day });
+};
+
 ;// CONCATENATED MODULE: ./src/run.ts
+
 
 
 
@@ -131227,10 +131107,12 @@ const setJobSummaryTimeZone = (timeZone) => process.env.TZ = timeZone;
 const getInputs = () => {
     const result = {};
     result.token = (0,core.getInput)("github-token").trim();
+    result.enterprise = (0,core.getInput)("enterprise").trim();
     result.organization = (0,core.getInput)("organization").trim();
     result.team = (0,core.getInput)("team").trim();
     result.jobSummary = (0,core.getBooleanInput)("job-summary");
-    result.days = parseInt((0,core.getInput)("days"));
+    const days = parseInt((0,core.getInput)("days"));
+    result.days = Number.isNaN(days) ? undefined : days;
     result.since = (0,core.getInput)("since");
     result.until = (0,core.getInput)("until");
     result.json = (0,core.getBooleanInput)("json");
@@ -131246,54 +131128,99 @@ const getInputs = () => {
     if (!result.token) {
         throw new Error("github-token is required");
     }
+    if (!result.enterprise && !result.organization) {
+        throw new Error("enterprise or organization input is required");
+    }
+    if (result.enterprise && result.team) {
+        throw new Error("team is only supported with the organization input");
+    }
     return result;
+};
+const withinRange = (day, since, until) => (!since || day >= since) && (!until || day <= until);
+const filterDays = (days, input) => {
+    let since = input.since || undefined;
+    const until = input.until || undefined;
+    if (input.days) {
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - input.days);
+        since = cutoff.toISOString().split("T")[0];
+    }
+    const filtered = days.filter(day => withinRange(day.day, since, until));
+    if (!filtered.length) {
+        (0,core.warning)("No days matched the requested range; returning the full report instead");
+        return days;
+    }
+    return filtered;
+};
+const aggregateUsersToDays = (users) => {
+    const byDay = new Map();
+    const activeUsers = new Map();
+    for (const user of users) {
+        const day = byDay.get(user.day) || { day: user.day };
+        day.user_initiated_interaction_count = (day.user_initiated_interaction_count || 0) + (user.user_initiated_interaction_count || 0);
+        day.code_generation_activity_count = (day.code_generation_activity_count || 0) + (user.code_generation_activity_count || 0);
+        day.code_acceptance_activity_count = (day.code_acceptance_activity_count || 0) + (user.code_acceptance_activity_count || 0);
+        day.loc_added_sum = (day.loc_added_sum || 0) + (user.loc_added_sum || 0);
+        day.loc_deleted_sum = (day.loc_deleted_sum || 0) + (user.loc_deleted_sum || 0);
+        day.loc_suggested_to_add_sum = (day.loc_suggested_to_add_sum || 0) + (user.loc_suggested_to_add_sum || 0);
+        day.loc_suggested_to_delete_sum = (day.loc_suggested_to_delete_sum || 0) + (user.loc_suggested_to_delete_sum || 0);
+        day.totals_by_ide = [...(day.totals_by_ide || []), ...(user.totals_by_ide || [])];
+        day.totals_by_feature = [...(day.totals_by_feature || []), ...(user.totals_by_feature || [])];
+        day.totals_by_language_feature = [...(day.totals_by_language_feature || []), ...(user.totals_by_language_feature || [])];
+        day.totals_by_model_feature = [...(day.totals_by_model_feature || []), ...(user.totals_by_model_feature || [])];
+        const seen = activeUsers.get(user.day) || new Set();
+        seen.add(user.user_id);
+        activeUsers.set(user.day, seen);
+        day.daily_active_users = seen.size;
+        byDay.set(user.day, day);
+    }
+    return [...byDay.values()].sort((a, b) => a.day.localeCompare(b.day));
+};
+const getTeamMetrics = async (octokit, input) => {
+    const organization = input.organization;
+    const users = await fetchUserReport(octokit, { organization });
+    if (!users.length)
+        return [];
+    const latestDay = users.reduce((latest, user) => user.day > latest ? user.day : latest, users[0].day);
+    const memberships = await fetchUserTeams(octokit, { organization, day: latestDay });
+    const teamMembers = new Set(memberships.filter(member => member.slug === input.team).map(member => member.user_id));
+    if (!teamMembers.size) {
+        (0,core.warning)(`No members found for team ${input.team} on ${latestDay}`);
+        return [];
+    }
+    (0,core.info)(`Team ${input.team} has ${teamMembers.size} member(s) with Copilot activity data`);
+    return aggregateUsersToDays(users.filter(user => teamMembers.has(user.user_id)));
 };
 const run = async () => {
     const input = getInputs();
     const octokit = new dist_src_Octokit({
         auth: input.token
     });
-    const params = {};
-    if (input.days) {
-        params.since = new Date(new Date().setDate(new Date().getDate() - input.days)).toISOString().split('T')[0];
-    }
-    else if (input.since || input.until) {
-        if (input.since)
-            params.since = input.since;
-        if (input.until)
-            params.until = input.until;
-    }
-    let req;
+    let days;
     if (input.team) {
-        if (!input.organization) {
-            throw new Error("organization is required when team is provided");
-        }
-        (0,core.info)(`Fetching Copilot usage for team ${input.team} inside organization ${input.organization}`);
-        req = octokit.rest.copilot.copilotMetricsForTeam({
-            org: input.organization,
-            team_slug: input.team,
-            ...params
-        }).then(response => response.data);
-    }
-    else if (input.organization) {
-        (0,core.info)(`Fetching Copilot usage for organization ${input.organization}`);
-        req = octokit.rest.copilot.copilotMetricsForOrganization({
-            org: input.organization,
-            ...params
-        }).then(response => response.data);
+        (0,core.info)(`Fetching Copilot metrics for team ${input.team} inside organization ${input.organization}`);
+        days = await getTeamMetrics(octokit, input);
     }
     else {
-        throw new Error("organization, enterprise or team input is required");
+        const target = input.enterprise ? `enterprise ${input.enterprise}` : `organization ${input.organization}`;
+        (0,core.info)(`Fetching Copilot metrics for ${target}`);
+        const reports = await fetchMetricsReport(octokit, {
+            enterprise: input.enterprise || undefined,
+            organization: input.organization || undefined
+        });
+        days = reports.flatMap(report => report.day_totals || []);
     }
-    const data = await req;
-    if (!data || data.length === 0) {
+    if (!days.length) {
         return (0,core.warning)("No Copilot usage data found");
     }
+    const data = filterDays(days, input).sort((a, b) => a.day.localeCompare(b.day));
     (0,core.debug)(JSON.stringify(data, null, 2));
-    (0,core.info)(`Fetched Copilot usage data for ${data.length} days (${data[0].date} to ${data[data.length - 1].date})`);
+    (0,core.info)(`Fetched Copilot usage data for ${data.length} days (${data[0].day} to ${data[data.length - 1].day})`);
     if (input.jobSummary) {
         setJobSummaryTimeZone(input.timeZone);
-        const name = (input.team && input.organization) ? `${input.organization} / ${input.team}` : input.organization;
+        const name = input.enterprise
+            ? input.enterprise
+            : (input.team ? `${input.organization} / ${input.team}` : input.organization);
         await createJobSummaryUsage(data, name).write();
         if (input.organization && !input.team) {
             (0,core.info)(`Fetching Copilot details for organization ${input.organization}`);
@@ -131341,8 +131268,8 @@ const run = async () => {
         await artifact.uploadArtifact(input.artifactName, files, '.');
     }
     (0,core.setOutput)("result", JSON.stringify(data));
-    (0,core.setOutput)("since", data[0].date);
-    (0,core.setOutput)("until", data[data.length - 1].date);
+    (0,core.setOutput)("since", data[0].day);
+    (0,core.setOutput)("until", data[data.length - 1].day);
     (0,core.setOutput)("days", data.length.toString());
 };
 /* harmony default export */ const src_run = (run);
@@ -131353,10 +131280,7 @@ var dist_node = __nccwpck_require__(93708);
 
 
 
-try {
-    src_run();
-}
-catch (err) {
+src_run().catch((err) => {
     if (err instanceof dist_node.RequestError) {
         (0,core.setFailed)(`Request failed: (${err.status}) ${err.message}`);
     }
@@ -131366,8 +131290,7 @@ catch (err) {
     else {
         (0,core.setFailed)(JSON.stringify(err, null, 2));
     }
-    throw err;
-}
+});
 
 })();
 
