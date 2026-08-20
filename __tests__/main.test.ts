@@ -5,7 +5,7 @@ import { createJobSummaryCopilotDetails, createJobSummarySeatAssignments, create
 import { parseNdjson } from '../src/report';
 import { aggregateUsersToDays } from '../src/run';
 import { DayTotals, MetricsReport, UserReportRecord } from '../src/types';
-import { summary } from '@actions/core/lib/summary';
+import { summary } from '@actions/core';
 import { readFileSync, writeFileSync } from 'fs';
 
 beforeEach(() => {
