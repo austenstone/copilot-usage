@@ -251,6 +251,14 @@ What changes for you:
 * **`team` needs a token that can read user-level metrics**, because the new API has no team
   endpoint and team figures are derived from the user report.
 
+### Versioning
+
+Pin to a major tag such as `@v6` to pick up fixes automatically, or to a full `@v6.0.0` for exact
+reproducibility. The major tag moves to each new release.
+
+There is no `v5` tag. `v5.0` through `v5.2` were released without one, and backfilling it now would
+point consumers at code the API sunset already broke. Use `@v6`.
+
 ## Example Job Summary
 
 [View latest reports](https://github.com/austenstone/copilot-usage/actions/workflows/usage.yml)
