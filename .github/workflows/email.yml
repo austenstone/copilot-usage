@@ -10,17 +10,18 @@ jobs:
   run:
     name: Copilot Usage
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: austenstone/copilot-usage@main
         id: usage
         with:
           organization: ${{ vars.ORG }}
           github-token: ${{ secrets.TOKEN }}
-      - uses: austenstone/job-summary@v2.0
+      - uses: austenstone/job-summary@67b7e1f68ee55e44d073ab7354e7b580cd09567c # v2.0
         id: pdf
         with:
           name: copilot-usage
-      - uses: dawidd6/action-send-mail@v5
+      - uses: dawidd6/action-send-mail@94de994a9f6fffee200243214e17002e2920bb59 # v18
         with:
           server_address: smtp.gmail.com
           server_port: 465

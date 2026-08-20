@@ -1,368 +1,187 @@
 import { summary } from "@actions/core";
 import { Endpoints } from "@octokit/types";
-import { createPieChart, createXYChart, DEFAULT_CHART_CONFIGS } from "./mermaid";
+import { createPieChart, createXYChart } from "./mermaid";
 import { dateFormat } from "./utility";
+import { ActivityTotals, DayTotals, FeatureTotals, IdeTotals, LanguageFeatureTotals, ModelFeatureTotals, PullRequestTotals } from "./types";
 
-type CopilotUsageResponse = Endpoints["GET /orgs/{org}/copilot/metrics"]["response"]["data"];
+const sum = (values: number[]) => values.reduce((a, b) => a + b, 0);
 
-interface BaseMetrics {
-  total_engaged_users: number;
-  total_code_acceptances: number;
-  total_code_suggestions: number;
-  total_code_lines_accepted: number;
-  total_code_lines_suggested: number;
-}
+export const sumActivity = (days: DayTotals[], key: keyof ActivityTotals): number =>
+  sum(days.map(day => Number(day[key]) || 0));
 
-
-const getEmptyBaseMetrics = (): BaseMetrics => ({
-  total_engaged_users: 0,
-  total_code_acceptances: 0,
-  total_code_suggestions: 0,
-  total_code_lines_accepted: 0,
-  total_code_lines_suggested: 0
-});
-
-export const sumNestedValue = <T extends object>(data: T[], path: string[]): number => {
-  return data.reduce((sum, obj) => {
-    let result = 0;
-
-    // Helper function to recursively traverse the object/array
-    const traverse = (current: unknown, pathIndex: number) => {
-      // Return if we've reached an invalid path
-      if (current === undefined || current === null) return;
-
-      if (pathIndex >= path.length) {
-        // We've reached the end of the path, add the value if it's a number
-        if (typeof current === 'number') {
-          result += current;
-        }
-        return;
-      }
-
-      const key = path[pathIndex];
-
-      if (Array.isArray(current)) {
-        // If current is an array, traverse each element
-        current.forEach(item => traverse(item, pathIndex));
-      } else if (typeof current === 'object') {
-        // If current has the key, traverse deeper
-        if (key in current) {
-          traverse(current[key], pathIndex + 1);
-        }
-      }
-    };
-
-    traverse(obj, 0);
-    return sum + result;
-  }, 0);
-};
-
-const aggregateMetricsBy = (data: CopilotUsageResponse, groupFn: (day: CopilotUsageResponse[0]) => Record<string, BaseMetrics>): Record<string, BaseMetrics> => {
-  return data.reduce((acc, day) => {
-    const dayMetrics = groupFn(day);
-    Object.entries(dayMetrics).forEach(([key, metrics]) => {
-      acc[key] = acc[key] || getEmptyBaseMetrics();
-      Object.entries(metrics).forEach(([metric, value]) => {
-        if (metric === 'total_engaged_users') {
-          acc[key][metric] = Math.max(acc[key][metric], value);
-        } else {
-          acc[key][metric] += value;
-        }
-      });
-    });
+export const groupTotals = <T extends ActivityTotals>(
+  rows: T[],
+  keyOf: (row: T) => string,
+  metric: keyof ActivityTotals = "code_generation_activity_count"
+): Record<string, number> =>
+  rows.reduce((acc, row) => {
+    const key = keyOf(row) || "unknown";
+    acc[key] = (acc[key] || 0) + (Number(row[metric]) || 0);
     return acc;
-  }, {} as Record<string, BaseMetrics>);
-};
+  }, {} as Record<string, number>);
 
-const groupLanguageMetrics = (day: CopilotUsageResponse[0]): Record<string, BaseMetrics> => {
-  const metrics: Record<string, BaseMetrics> = {};
+const flatten = <T>(days: DayTotals[], key: keyof DayTotals): T[] =>
+  days.flatMap(day => (day[key] as unknown as T[] | undefined) || []);
 
-  day.copilot_ide_code_completions?.editors?.forEach(editor => {
-    editor.models?.forEach(model => {
-      model.languages?.forEach(lang => {
-        const language = lang.name || 'unknown';
-        metrics[language] = metrics[language] || getEmptyBaseMetrics();
-        Object.entries(lang).forEach(([key, value]) => {
-          if (key in metrics[language] && typeof value === 'number') {
-            metrics[language][key as keyof BaseMetrics] += value;
-          }
-        });
-      });
-    });
-  });
+// GitHub occasionally returns an editor version string in place of the IDE name
+const isVersionLabel = (label: string) => /^[\d.]+:?$/.test(label);
 
-  return metrics;
-};
+const cleanLabel = (label: string) => (!label || isVersionLabel(label) ? "unknown" : label);
 
-const groupEditorMetrics = (day: CopilotUsageResponse[0]): Record<string, BaseMetrics> => {
-  const metrics: Record<string, BaseMetrics> = {};
+const withoutZeroes = (totals: Record<string, number>): Record<string, number> =>
+  Object.fromEntries(Object.entries(totals).filter(([, value]) => value > 0));
 
-  day.copilot_ide_code_completions?.editors?.forEach(editor => {
-    const editorName = editor.name || 'unknown';
-    metrics[editorName] = metrics[editorName] || getEmptyBaseMetrics();
-    metrics[editorName].total_engaged_users = editor.total_engaged_users || 0;
+const percent = (numerator: number, denominator: number) =>
+  denominator > 0 ? `${((numerator / denominator) * 100).toFixed(2)}%` : "N/A";
 
-    editor.models?.forEach(model => {
-      model.languages?.forEach(lang => {
-        Object.entries(lang).forEach(([key, value]) => {
-          if (key in metrics[editorName] && typeof value === 'number') {
-            metrics[editorName][key as keyof BaseMetrics] += value;
-          }
-        });
-      });
-    });
-  });
+const sumPullRequests = (days: DayTotals[], key: keyof PullRequestTotals): number =>
+  sum(days.map(day => Number(day.pull_requests?.[key]) || 0));
 
-  return metrics;
-};
+const dailyCategories = (days: DayTotals[]) => days.map(day => dateFormat(day.day, { day: "numeric" }));
 
-const getChatMetrics = (dailyTotals: Array<{total_chats?: number, total_chat_copy_events?: number, total_chat_insert_events?: number}>) => ({
-  totalChats: dailyTotals.reduce((sum, day) => sum + (day.total_chats || 0), 0),
-  totalCopyEvents: dailyTotals.reduce((sum, day) => sum + (day.total_chat_copy_events || 0), 0),
-  totalInsertEvents: dailyTotals.reduce((sum, day) => sum + (day.total_chat_insert_events || 0), 0)
-});
+export const createJobSummaryUsage = (days: DayTotals[], name: string) => {
+  const sorted = [...days].sort((a, b) => a.day.localeCompare(b.day));
+  const latest = sorted[sorted.length - 1];
 
-export const createJobSummaryUsage = (data: CopilotUsageResponse, name: string) => {
-  const languageMetrics = aggregateMetricsBy(data, groupLanguageMetrics);
-  const editorMetrics = aggregateMetricsBy(data, groupEditorMetrics);
-  // const modelMetrics = aggregateMetricsBy(data, groupModelMetrics);
-  const dailyTotals = data.map(day => ({
-    date: day.date,
-    total_active_users: day.total_active_users || 0,
-    total_engaged_users: day.total_engaged_users || 0,
-    total_code_acceptances: sumNestedValue([day], ['copilot_ide_code_completions', 'editors', 'models', 'languages', 'total_code_acceptances']),
-    total_code_suggestions: sumNestedValue([day], ['copilot_ide_code_completions', 'editors', 'models', 'languages', 'total_code_suggestions']),
-    total_code_lines_accepted: sumNestedValue([day], ['copilot_ide_code_completions', 'editors', 'models', 'languages', 'total_code_lines_accepted']),
-    total_code_lines_suggested: sumNestedValue([day], ['copilot_ide_code_completions', 'editors', 'models', 'languages', 'total_code_lines_suggested']),
-    total_chats: sumNestedValue([day], ['copilot_ide_chat', 'editors', 'models', 'total_chats']),
-    total_chat_copy_events: sumNestedValue([day], ['copilot_ide_chat', 'editors', 'models', 'total_chat_copy_events']),
-    total_chat_insert_events: sumNestedValue([day], ['copilot_ide_chat', 'editors', 'models', 'total_chat_insertion_events']),
-    total_dotcom_chat_chats: sumNestedValue([day], ['copilot_dotcom_chat', 'models', 'total_chats']),
-    total_dotcom_pr_summaries_created: sumNestedValue([day], ['copilot_dotcom_pull_requests', 'repositories', 'models', 'total_pr_summaries_created']),
-  }));
-  const chatMetrics = getChatMetrics(dailyTotals);
+  const generations = sumActivity(sorted, "code_generation_activity_count");
+  const acceptances = sumActivity(sorted, "code_acceptance_activity_count");
+  const interactions = sumActivity(sorted, "user_initiated_interaction_count");
+  const locAdded = sumActivity(sorted, "loc_added_sum");
+  const locDeleted = sumActivity(sorted, "loc_deleted_sum");
 
-  const topLanguages = Object.entries(languageMetrics)
-    .sort((a, b) => b[1].total_code_suggestions - a[1].total_code_suggestions)
-    .slice(0, 5)
-    .map(([lang]) => lang);
+  const categories = dailyCategories(sorted);
+  const ideTotals = withoutZeroes(groupTotals(flatten<IdeTotals>(sorted, "totals_by_ide"), row => cleanLabel(row.ide)));
+  const featureTotals = withoutZeroes(groupTotals(flatten<FeatureTotals>(sorted, "totals_by_feature"), row => row.feature));
+  const languageTotals = withoutZeroes(groupTotals(flatten<LanguageFeatureTotals>(sorted, "totals_by_language_feature"), row => row.language));
+  const modelTotals = withoutZeroes(groupTotals(flatten<ModelFeatureTotals>(sorted, "totals_by_model_feature"), row => row.model));
 
-  const totalMetrics = Object.values(languageMetrics).reduce((acc, curr) => ({
-    totalCodeAcceptances: acc.totalCodeAcceptances + curr.total_code_acceptances,
-    totalCodeSuggestions: acc.totalCodeSuggestions + curr.total_code_suggestions,
-    totalLinesAccepted: acc.totalLinesAccepted + curr.total_code_lines_accepted
-  }), { totalCodeAcceptances: 0, totalCodeSuggestions: 0, totalLinesAccepted: 0 });
+  const cliSessions = sum(sorted.map(day => day.totals_by_cli?.session_count || 0));
+  const appSessions = sum(sorted.map(day => day.totals_by_copilot_app?.session_count || 0));
 
-  return summary
-    .addHeading(`Copilot Usage for ${name}<br>${dateFormat(data[0].date)} - ${dateFormat(data[data.length - 1].date)}`)
-    .addRaw(`Metrics for the last ${data.length} days`)
-    .addHeading('Totals', 2)
+  let report = summary
+    .addHeading(`Copilot Usage for ${name}<br>${dateFormat(sorted[0].day)} - ${dateFormat(latest.day)}`)
+    .addRaw(`Metrics for the last ${sorted.length} days`)
+    .addHeading("Totals", 2)
     .addTable([
-      ['Code Suggestions', totalMetrics.totalCodeSuggestions.toLocaleString()],
-      ['Code Acceptances', totalMetrics.totalCodeAcceptances.toLocaleString()],
-      ['Acceptance Rate', `${((totalMetrics.totalCodeAcceptances / totalMetrics.totalCodeSuggestions) * 100).toFixed(2)}%`],
-      ['Lines of Code Accepted', totalMetrics.totalLinesAccepted.toLocaleString()],
-      ['Chat Interactions', chatMetrics.totalChats.toLocaleString()],
-      ['Chat Copy Events', chatMetrics.totalCopyEvents.toLocaleString()],
-      ['Chat Insertion Events', chatMetrics.totalInsertEvents.toLocaleString()]
+      ["Active Users (latest day)", (latest.daily_active_users || 0).toLocaleString()],
+      ["Active Users (28 day)", (latest.monthly_active_users || 0).toLocaleString()],
+      ["User Initiated Interactions", interactions.toLocaleString()],
+      ["Code Generation Activities", generations.toLocaleString()],
+      ["Code Acceptance Activities", acceptances.toLocaleString()],
+      ["Acceptance Rate", percent(acceptances, generations)],
+      ["Lines of Code Added", locAdded.toLocaleString()],
+      ["Lines of Code Deleted", locDeleted.toLocaleString()],
+      ["CLI Sessions", cliSessions.toLocaleString()],
+      ["Copilot App Sessions", appSessions.toLocaleString()]
     ])
-    .addHeading('Daily Engaged Users', 3)
+    .addHeading("Daily Active Users", 3)
     .addRaw(createXYChart({
-      xAxis: {
-        categories: DEFAULT_CHART_CONFIGS.dailyCategories(data)
-      },
-      yAxis: {
-      },
-      series: [
-        {
-          type: 'bar',
-          values: data.map(day => day.total_active_users || 0)
-        },
-        {
-          type: 'bar',
-          values: data.map(day => day.total_engaged_users || 0)
-        },
-      ],
-      legend: ['Active', 'Engaged']
-    }))
-    .addHeading('Daily Engaged Users by Product', 3)
-    .addRaw(createXYChart({
-      xAxis: {
-        categories: DEFAULT_CHART_CONFIGS.dailyCategories(data)
-      },
-      yAxis: {
-      },
-      series: [
-        {
-          type: 'line',
-          values: data.map(day => sumNestedValue([day], ['copilot_ide_code_completions', 'total_engaged_users']))
-        },
-        {
-          type: 'line',
-          values: data.map(day => sumNestedValue([day], ['copilot_ide_chat', 'total_engaged_users']))
-        },
-        {
-          type: 'line',
-          values: data.map(day => sumNestedValue([day], ['copilot_dotcom_chat', 'total_engaged_users']))
-        },
-        {
-          type: 'line',
-          values: data.map(day => sumNestedValue([day], ['copilot_dotcom_pull_requests', 'total_engaged_users']))
-        }
-      ],
-      legend: ['IDE Code Completions', 'IDE Chat', 'Dotcom Chat', 'Dotcom Pull Requests']
-    }))
-    .addHeading('IDE Completion', 2)
-    .addHeading('Suggestions vs. Acceptances', 3)
-    .addRaw(createXYChart({
-      xAxis: { categories: DEFAULT_CHART_CONFIGS.dailyCategories(data) },
+      xAxis: { categories },
       yAxis: {},
       series: [
-        {
-          type: 'bar',
-          values: dailyTotals.map(day => day.total_code_suggestions || 0)
-        },
-        {
-          type: 'bar',
-          values: dailyTotals.map(day => day.total_code_acceptances || 0)
-        },
+        { type: "bar", values: sorted.map(day => day.daily_active_users || 0) },
+        { type: "line", values: sorted.map(day => day.weekly_active_users || 0) }
       ],
-      legend: ['Suggestions', 'Acceptances']
+      legend: ["Daily Active", "Weekly Active"]
     }))
-    .addHeading('Lines Suggested vs. Accepted', 3)
+    .addHeading("Daily Active Users by Surface", 3)
     .addRaw(createXYChart({
-      xAxis: { categories: DEFAULT_CHART_CONFIGS.dailyCategories(data) },
+      xAxis: { categories },
       yAxis: {},
       series: [
-        {
-          type: 'bar',
-          values: dailyTotals.map(day => day.total_code_lines_suggested || 0)
-        },
-        {
-          type: 'bar',
-          values: dailyTotals.map(day => day.total_code_lines_accepted || 0)
-        },
+        { type: "line", values: sorted.map(day => day.daily_active_copilot_app_users || 0) },
+        { type: "line", values: sorted.map(day => day.daily_active_cli_users || 0) },
+        { type: "line", values: sorted.map(day => day.daily_active_copilot_cloud_agent_users || 0) },
+        { type: "line", values: sorted.map(day => day.daily_active_copilot_code_review_users || 0) }
       ],
-      legend: ['Lines Suggested', 'Lines Accepted']
+      legend: ["Copilot App", "CLI", "Cloud Agent", "Code Review"]
     }))
-    .addHeading('Acceptance Rate', 3)
+    .addHeading("Code Activity", 2)
+    .addHeading("Generations vs. Acceptances", 3)
     .addRaw(createXYChart({
-      xAxis: {
-        categories: DEFAULT_CHART_CONFIGS.dailyCategories(data)
-      },
-      yAxis: {
-        min: 0,
-        max: 100
-      },
+      xAxis: { categories },
+      yAxis: {},
       series: [
-        {
-          type: 'line',
-          values: data.map(day => {
-            const acceptances = sumNestedValue([day], ['copilot_ide_code_completions', 'editors', 'models', 'languages', 'total_code_acceptances']);
-            const suggestions = sumNestedValue([day], ['copilot_ide_code_completions', 'editors', 'models', 'languages', 'total_code_suggestions']);
-            return suggestions > 0 ? Math.round((acceptances / suggestions) * 100) : 0;
-          })
-        }
-      ]
+        { type: "bar", values: sorted.map(day => day.code_generation_activity_count || 0) },
+        { type: "bar", values: sorted.map(day => day.code_acceptance_activity_count || 0) }
+      ],
+      legend: ["Generations", "Acceptances"]
     }))
-    .addHeading('Acceptance Rate by Language', 3)
+    .addHeading("Lines of Code", 3)
     .addRaw(createXYChart({
-      xAxis: {
-        categories: DEFAULT_CHART_CONFIGS.dailyCategories(data)
-      },
-      yAxis: {
-        min: 0,
-        max: 100
-      },
-      series: topLanguages.map(language => ({
-        type: 'line',
-        values: data.map(day => {
-          let acceptances = 0;
-          let suggestions = 0;
-
-          day.copilot_ide_code_completions?.editors?.forEach(editor => {
-            editor.models?.forEach(model => {
-              model.languages?.forEach(lang => {
-                if (lang.name === language) {
-                  acceptances += lang.total_code_acceptances || 0;
-                  suggestions += lang.total_code_suggestions || 0;
-                }
-              });
-            });
-          });
-
-          return suggestions > 0 ? Math.round((acceptances / suggestions) * 100) : 0;
+      xAxis: { categories },
+      yAxis: {},
+      series: [
+        { type: "bar", values: sorted.map(day => day.loc_added_sum || 0) },
+        { type: "bar", values: sorted.map(day => day.loc_deleted_sum || 0) }
+      ],
+      legend: ["Lines Added", "Lines Deleted"]
+    }))
+    .addHeading("Acceptance Rate", 3)
+    .addRaw(createXYChart({
+      xAxis: { categories },
+      yAxis: { min: 0, max: 100 },
+      series: [{
+        type: "line",
+        values: sorted.map(day => {
+          const generated = day.code_generation_activity_count || 0;
+          const accepted = day.code_acceptance_activity_count || 0;
+          return generated > 0 ? Math.round((accepted / generated) * 100) : 0;
         })
-      })),
-      legend: topLanguages
-    }))
-    .addHeading('Language Usage by Engaged Users', 3)
-    .addRaw(createPieChart(Object.fromEntries(Object.entries(languageMetrics)
-      .map(([lang, metrics]) => [lang, metrics.total_engaged_users]))
-    ))
-    .addHeading('Editor Usage by Engaged Users', 3)
-    .addRaw(createPieChart(Object.fromEntries(Object.entries(editorMetrics)
-      .map(([editor, metrics]) => [editor, metrics.total_engaged_users]))
-    ))
-    // .addHeading('Model Usage')
-    // .addRaw(createPieChart(Object.fromEntries(Object.entries(modelMetrics)
-    //     .map(([model, metrics]) => [model, metrics.total_engaged_users]))
-    // ))
-    .addHeading('IDE Copilot Chat', 2)
-    .addRaw(createXYChart({
-      xAxis: {
-        categories: DEFAULT_CHART_CONFIGS.dailyCategories(data)
-      },
-      yAxis: {
-      },
-      series: [
-        {
-          type: 'bar',
-          values: dailyTotals.map(day => day.total_chats || 0)
-        },
-        {
-          type: 'line',
-          values: dailyTotals.map(day => day.total_chat_copy_events || 0)
-        },
-        {
-          type: 'line',
-          values: dailyTotals.map(day => day.total_chat_insert_events || 0)
-        },
-      ],
-      legend: ['Total Chats', 'Copy Events', 'Insert Events']
-    }))
-    .addHeading('Copilot .COM Chat', 2)
-    .addHeading('Total Chats', 3)
-    .addRaw(createXYChart({
-      xAxis: {
-        categories: DEFAULT_CHART_CONFIGS.dailyCategories(data)
-      },
-      yAxis: {
-      },
-      series: [
-        {
-          type: 'bar',
-          values: dailyTotals.map(day => day.total_dotcom_chat_chats || 0)
-        }
-      ],
-      legend: ['Total Chats']
-    }))
-    .addHeading('Copilot .COM Pull Request', 2)
-    .addHeading('Summaries Created', 3)
-    .addRaw(createXYChart({
-      xAxis: {
-        categories: DEFAULT_CHART_CONFIGS.dailyCategories(data)
-      },
-      yAxis: {
-      },
-      series: [
-        {
-          type: 'bar',
-          values: dailyTotals.map(day => day.total_dotcom_pr_summaries_created || 0)
-        }
-      ],
-      legend: ['Total PR Summaries Created']
-    }))
+      }]
+    }));
+
+  if (Object.keys(languageTotals).length) {
+    report = report.addHeading("Language Usage", 3).addRaw(createPieChart(languageTotals));
+  }
+  if (Object.keys(ideTotals).length) {
+    report = report.addHeading("IDE Usage", 3).addRaw(createPieChart(ideTotals));
+  }
+  if (Object.keys(featureTotals).length) {
+    report = report.addHeading("Feature Usage", 3).addRaw(createPieChart(featureTotals));
+  }
+  if (Object.keys(modelTotals).length) {
+    report = report.addHeading("Model Usage", 3).addRaw(createPieChart(modelTotals));
+  }
+
+  const prCreated = sumPullRequests(sorted, "total_created");
+  if (prCreated > 0 || sumPullRequests(sorted, "total_reviewed") > 0) {
+    report = report
+      .addHeading("Pull Requests", 2)
+      .addTable([
+        ["Created", prCreated.toLocaleString()],
+        ["Created by Copilot", sumPullRequests(sorted, "total_created_by_copilot").toLocaleString()],
+        ["Reviewed", sumPullRequests(sorted, "total_reviewed").toLocaleString()],
+        ["Reviewed by Copilot", sumPullRequests(sorted, "total_reviewed_by_copilot").toLocaleString()],
+        ["Merged", sumPullRequests(sorted, "total_merged").toLocaleString()],
+        ["Copilot Suggestions", sumPullRequests(sorted, "total_copilot_suggestions").toLocaleString()],
+        ["Copilot Suggestions Applied", sumPullRequests(sorted, "total_copilot_applied_suggestions").toLocaleString()]
+      ]);
+  }
+
+  const phases = latest.totals_by_ai_adoption_phase || [];
+  if (phases.length) {
+    report = report
+      .addHeading("AI Adoption Phases", 2)
+      .addTable([
+        [
+          { data: "Phase", header: true },
+          { data: "Engaged Users", header: true },
+          { data: "Avg Interactions", header: true },
+          { data: "Avg Generations", header: true },
+          { data: "Avg Acceptances", header: true }
+        ],
+        ...phases.map(phase => [
+          phase.phase,
+          (phase.total_engaged_users || 0).toLocaleString(),
+          String(phase.avg_user_initiated_interactions ?? 0),
+          String(phase.avg_code_generation_activities ?? 0),
+          String(phase.avg_code_acceptance_activities ?? 0)
+        ])
+      ]);
+  }
+
+  return report;
 };
 
 export const createJobSummaryCopilotDetails = (orgCopilotDetails: Endpoints["GET /orgs/{org}/copilot/billing"]["response"]["data"]) => {
@@ -400,9 +219,14 @@ export const createJobSummaryCopilotDetails = (orgCopilotDetails: Endpoints["GET
     ])
 };
 
+// GitHub rejects job summaries over 1MiB, and a large seat table can single-handedly
+// blow that budget and take the usage report down with it
+const MAX_SEAT_ROWS = 1000;
+
 export const createJobSummarySeatAssignments = (data: Endpoints["GET /orgs/{org}/copilot/billing/seats"]["response"]["data"]["seats"]) => {
   if (!data) data = [];
-  return summary
+  const seats = data.slice(0, MAX_SEAT_ROWS);
+  const report = summary
     .addHeading('Seat Assignments')
     .addTable([
       [
@@ -414,7 +238,7 @@ export const createJobSummarySeatAssignments = (data: Endpoints["GET /orgs/{org}
         { data: 'Pending Cancellation Date', header: true },
         { data: 'Team', header: true },
       ],
-      ...data.map(seat => [
+      ...seats.map(seat => [
         `<img src="${seat.assignee?.avatar_url}" width="33" />`,
         seat.assignee?.login,
         seat.last_activity_at ? dateFormat(seat.last_activity_at, { month: 'numeric', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric' }) : 'No Activity',
@@ -423,7 +247,10 @@ export const createJobSummarySeatAssignments = (data: Endpoints["GET /orgs/{org}
         dateFormat(seat.pending_cancellation_date || ''),
         String(seat.assigning_team?.name || ' '),
       ] as string[])
-    ])
+    ]);
+  return data.length > seats.length
+    ? report.addRaw(`Showing the ${seats.length.toLocaleString()} most recently active seats of ${data.length.toLocaleString()}. Enable the <code>json</code> input to export them all.`)
+    : report;
 }
 
 export const setJobSummaryTimeZone = (timeZone: string) => process.env.TZ = timeZone;

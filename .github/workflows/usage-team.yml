@@ -13,6 +13,7 @@ jobs:
     if: ${{ github.actor != 'dependabot[bot]' }}
     name: Copilot Usage
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       matrix:
         # Add your teams here
@@ -20,7 +21,7 @@ jobs:
           - corporate-solutions-eng
           - bookstore-developers
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./
         with:
           # Add your organization here
@@ -30,7 +31,7 @@ jobs:
           github-token: ${{ secrets.TOKEN }}
           time-zone: "EST"
           artifact-name: ${{ matrix.team }}-copilot-usage
-      - uses: austenstone/job-summary@main
+      - uses: austenstone/job-summary@3988550c1b6e3154d85ac5fdeee15ac877cae5a4 # main
         with:
           name: ${{ matrix.team }}-copilot-usage
           artifact-name: ${{ matrix.team }}

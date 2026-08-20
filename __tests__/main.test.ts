@@ -1,137 +1,156 @@
-import { test, beforeAll, beforeEach, expect } from 'vitest';
+import { test, describe, it, beforeEach, expect } from 'vitest';
 import dotenv from 'dotenv'
 dotenv.config({ override: true })
-import { createJobSummaryCopilotDetails, createJobSummarySeatAssignments, createJobSummaryUsage } from '../src/job-summary';
-import { sumNestedValue } from '../src/job-summary'; // Import sumNestedValue function
-import { summary } from '@actions/core/lib/summary';
-import { read, readFileSync, writeFileSync } from 'fs';
-
-const getSummaryBuffer = (_summary: typeof summary): string => {
-  return (_summary as unknown as {
-    _buffer: string,
-    _filePath?: string;
-  })._buffer
-}
-
-beforeAll(async () => {
-  // await createMockData();
-});
+import { createJobSummaryCopilotDetails, createJobSummarySeatAssignments, createJobSummaryUsage, groupTotals, sumActivity } from '../src/job-summary';
+import { parseNdjson, fetchReport } from '../src/report';
+import { aggregateUsersToDays } from '../src/run';
+import { DayTotals, MetricsReport, UserReportRecord } from '../src/types';
+import { summary } from '@actions/core';
+import { readFileSync, writeFileSync } from 'fs';
 
 beforeEach(() => {
   summary.emptyBuffer();
 });
 
-const sample = readFileSync('./__tests__/mock/sample.json', 'utf-8');
-const exampleResponseEnterprise = JSON.parse(sample);
-const sampleCopilotDetails = readFileSync('./__tests__/mock/sample-copilot-details.json', 'utf-8');
-const exampleResponseCopilotDetails = JSON.parse(sampleCopilotDetails);
-const sampleCopilotSeats = readFileSync('./__tests__/mock/sample-copilot-seats.json', 'utf-8');
-const exampleResponseCopilotSeats = JSON.parse(sampleCopilotSeats);
+const report = parseNdjson<MetricsReport>(
+  readFileSync('./__tests__/mock/sample-metrics-report.ndjson', 'utf-8')
+);
+const days: DayTotals[] = report.flatMap(entry => entry.day_totals || []);
+const exampleResponseCopilotDetails = JSON.parse(readFileSync('./__tests__/mock/sample-copilot-details.json', 'utf-8'));
+const exampleResponseCopilotSeats = JSON.parse(readFileSync('./__tests__/mock/sample-copilot-seats.json', 'utf-8'));
 
-test('createJobSummaryUsage(enterpriseUsage)', async () => {
-  const summary = await createJobSummaryUsage(exampleResponseEnterprise, 'enterprise');
-  writeFileSync('./__tests__/mock/sample-output.md', summary.stringify());
-  expect(summary).toBeDefined();
+test('parseNdjson yields one report with day totals', () => {
+  expect(report.length).toBeGreaterThan(0);
+  expect(days.length).toBeGreaterThan(0);
+  expect(days[0].day).toMatch(/^\d{4}-\d{2}-\d{2}$/);
 });
 
-test('createJobSummaryCopilotDetails(enterpriseUsage)', async () => {
-  const summary = await createJobSummaryCopilotDetails(exampleResponseCopilotDetails);
-  writeFileSync('./__tests__/mock/sample-copilot-details-output.md', summary.stringify());
-  expect(summary).toBeDefined();
+test('createJobSummaryUsage(orgUsage)', async () => {
+  const result = createJobSummaryUsage(days, 'octodemo');
+  writeFileSync('./__tests__/mock/sample-output.md', result.stringify());
+  expect(result.stringify()).toContain('Copilot Usage');
+  expect(result.stringify()).toContain('octodemo');
 });
 
-test('createJobSummaryCopilotSeats(enterpriseUsage)', async () => {
-  const summary = await createJobSummarySeatAssignments(exampleResponseCopilotSeats.seats);
-  writeFileSync('./__tests__/mock/sample-copilot-seats-output.md', summary.stringify());
-  expect(summary).toBeDefined();
+test('createJobSummaryUsage renders totals and charts', () => {
+  const output = createJobSummaryUsage(days, 'octodemo').stringify();
+  expect(output).toContain('xychart-beta');
+  expect(output).toContain('Acceptance Rate');
 });
 
-
-// Tests for sumNestedValue function
-test('sumNestedValue with simple objects', () => {
-  const data = [
-    { a: { b: 10 } },
-    { a: { b: 20 } },
-    { a: { b: 30 } }
-  ];
-  expect(sumNestedValue(data, ['a', 'b'])).toBe(60);
+test('createJobSummaryUsage handles a single day', () => {
+  const output = createJobSummaryUsage(days.slice(0, 1), 'octodemo').stringify();
+  expect(output).toContain('Copilot Usage');
 });
 
-test('sumNestedValue with missing paths', () => {
-  const data = [
-    { a: { b: 10 } },
-    { a: { c: 20 } }, // Missing 'b' key
-    { a: { b: 30 } }
-  ];
-  expect(sumNestedValue(data, ['a', 'b'])).toBe(40); // Should skip the object with missing path
+test('createJobSummaryCopilotDetails(orgDetails)', () => {
+  const result = createJobSummaryCopilotDetails(exampleResponseCopilotDetails);
+  writeFileSync('./__tests__/mock/sample-copilot-details-output.md', result.stringify());
+  expect(result).toBeDefined();
 });
 
-test('sumNestedValue with deeply nested objects', () => {
-  const data = [
-    { level1: { level2: { level3: 100 } } },
-    { level1: { level2: { level3: 200 } } }
-  ];
-  expect(sumNestedValue(data, ['level1', 'level2', 'level3'])).toBe(300);
+test('createJobSummaryCopilotSeats(orgSeats)', () => {
+  const result = createJobSummarySeatAssignments(exampleResponseCopilotSeats.seats);
+  writeFileSync('./__tests__/mock/sample-copilot-seats-output.md', result.stringify());
+  expect(result).toBeDefined();
 });
 
-test('sumNestedValue with non-numeric values', () => {
-  const data = [
-    { a: { b: 10 } },
-    { a: { b: "20" } }, // String value instead of number
-    { a: { b: 30 } }
-  ];
-  expect(sumNestedValue(data, ['a', 'b'])).toBe(40); // Should only sum numeric values
+test('sumActivity totals a numeric field across days', () => {
+  const input = [
+    { day: '2026-01-01', user_initiated_interaction_count: 10 },
+    { day: '2026-01-02', user_initiated_interaction_count: 5 },
+    { day: '2026-01-03' }
+  ] as DayTotals[];
+  expect(sumActivity(input, 'user_initiated_interaction_count')).toBe(15);
 });
 
-test('sumNestedValue with empty data array', () => {
-  expect(sumNestedValue([], ['a', 'b'])).toBe(0); // Should return 0 for empty array
+test('sumActivity returns 0 for an empty list', () => {
+  expect(sumActivity([], 'code_generation_activity_count')).toBe(0);
 });
 
-test('sumNestedValue with completely missing path', () => {
-  const data = [
-    { x: { y: 10 } },
-    { x: { y: 20 } }
-  ];
-  expect(sumNestedValue(data, ['a', 'b'])).toBe(0); // Path doesn't exist at all
+test('sumActivity matches the fixture', () => {
+  expect(sumActivity(days, 'user_initiated_interaction_count')).toBeGreaterThan(0);
+  expect(sumActivity(days, 'code_generation_activity_count')).toBeGreaterThan(0);
 });
 
-// New test for array traversal
-test('sumNestedValue with array traversal', () => {
-  const data = [
-    { 
-      a: { 
-        items: [
-          { value: 5 },
-          { value: 10 }
-        ] 
-      } 
-    },
-    { 
-      a: { 
-        items: [
-          { value: 15 },
-          { value: 20 }
-        ] 
-      } 
-    }
-  ];
-  expect(sumNestedValue(data, ['a', 'items', 'value'])).toBe(50); // Should sum all values in the arrays
+test('groupTotals merges rows sharing a key', () => {
+  const grouped = groupTotals([
+    { ide: 'vscode', user_initiated_interaction_count: 5, code_generation_activity_count: 2 },
+    { ide: 'vscode', user_initiated_interaction_count: 3, code_generation_activity_count: 1 },
+    { ide: 'jetbrains', user_initiated_interaction_count: 4, code_generation_activity_count: 0 }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ] as any[], row => row.ide);
+  expect(grouped['vscode']).toBe(2 + 1);
+  expect(grouped['jetbrains']).toBe(0);
 });
 
-test('sumNestedValue with exampleResponseEnterprise data', () => {
-  // Test with real data paths
-  const totalChatEngagedUsers = sumNestedValue(exampleResponseEnterprise, ['copilot_ide_chat', 'total_engaged_users']);
-  expect(totalChatEngagedUsers).toBeGreaterThan(0);
-  
-  // Calculate total active users across all days
-  const totalActiveUsers = sumNestedValue(exampleResponseEnterprise, ['total_active_users']);
-  expect(totalActiveUsers).toBeGreaterThan(0);
-  
-  // Test with a more specific path - this needed to be adjusted to match the actual data structure
-  const totalEngagedUsers = sumNestedValue(exampleResponseEnterprise, ['total_engaged_users']);
-  expect(totalEngagedUsers).toBeGreaterThan(0);
-  
-  // Test a path that should return 0 (non-existent path)
-  const nonExistentPath = sumNestedValue(exampleResponseEnterprise, ['non', 'existent', 'path']);
-  expect(nonExistentPath).toBe(0);
+test('groupTotals buckets rows with a missing key under "unknown"', () => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const grouped = groupTotals([{ code_generation_activity_count: 5 }] as any[], row => (row as { ide?: string }).ide as string);
+  expect(grouped['unknown']).toBe(5);
+});
+
+test('aggregateUsersToDays rolls user records into day totals', () => {
+  const users = [
+    { day: '2026-01-01', user_id: 1, user_initiated_interaction_count: 4, loc_added_sum: 10 },
+    { day: '2026-01-01', user_id: 2, user_initiated_interaction_count: 6, loc_added_sum: 5 },
+    { day: '2026-01-02', user_id: 1, user_initiated_interaction_count: 2, loc_added_sum: 1 }
+  ] as UserReportRecord[];
+  const aggregated = aggregateUsersToDays(users);
+  expect(aggregated).toHaveLength(2);
+  expect(aggregated[0].user_initiated_interaction_count).toBe(10);
+  expect(aggregated[0].daily_active_users).toBe(2);
+  expect(aggregated[0].loc_added_sum).toBe(15);
+  expect(aggregated[1].daily_active_users).toBe(1);
+});
+
+test('aggregateUsersToDays returns an empty array for no users', () => {
+  expect(aggregateUsersToDays([])).toEqual([]);
+});
+
+test('aggregateUsersToDays counts weekly and monthly actives over trailing windows', () => {
+  const users = [
+    { day: '2026-01-01', user_id: 1 },
+    { day: '2026-01-02', user_id: 2 },
+    { day: '2026-01-20', user_id: 3 }
+  ] as UserReportRecord[];
+  const [first, second, third] = aggregateUsersToDays(users);
+
+  expect(first.weekly_active_users).toBe(1);
+  expect(second.daily_active_users).toBe(1);
+  expect(second.weekly_active_users).toBe(2);
+  expect(second.monthly_active_users).toBe(2);
+
+  expect(third.weekly_active_users).toBe(1);
+  expect(third.monthly_active_users).toBe(3);
+});
+
+test('aggregateUsersToDays drops users outside the trailing monthly window', () => {
+  const users = [
+    { day: '2026-01-01', user_id: 1 },
+    { day: '2026-03-01', user_id: 2 }
+  ] as UserReportRecord[];
+  const [, later] = aggregateUsersToDays(users);
+  expect(later.monthly_active_users).toBe(1);
+});
+
+describe('error messages', () => {
+  const failing = (status: number, message: string) => ({
+    request: () => Promise.reject(Object.assign(new Error(message), { status }))
+  }) as never;
+
+  it('explains an expired token', async () => {
+    await expect(fetchReport(failing(401, 'Bad credentials'), '/orgs/{org}/x'))
+      .rejects.toThrow(/read:org/);
+  });
+
+  it('explains a disabled metrics policy', async () => {
+    await expect(fetchReport(failing(403, "The 'Copilot usage metrics' policy must be enabled"), '/orgs/{org}/x'))
+      .rejects.toThrow(/policy is disabled/);
+  });
+
+  it('explains a missing slug', async () => {
+    await expect(fetchReport(failing(404, 'Not Found'), '/orgs/{org}/x'))
+      .rejects.toThrow(/slug is correct/);
+  });
 });

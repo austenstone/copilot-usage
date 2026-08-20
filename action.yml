@@ -10,17 +10,17 @@ inputs:
     description: The GitHub token used to create an authenticated client
     required: true
   enterprise:
-    description: The GitHub enterprise slug
+    description: The GitHub enterprise slug. Mutually exclusive with organization.
     required: false
   organization:
     description: The organization slug
     default: ${{ github.repository_owner }}
     required: false
   team:
-    description: The team slug
+    description: The team slug. Requires organization. Team metrics are derived from the user-level report, which needs a token with permission to read user metrics.
     required: false
   days:
-    description: The number of days to show usage metrics for.
+    description: The number of days to show usage metrics for. Maximum 28.
     required: false
   since:
     description: Show usage metrics since this date. This is a timestamp in the format (YYYY-MM-DD). Maximum value is 28 days ago.
@@ -73,5 +73,5 @@ outputs:
   days:
     description: The number of days for which usage metrics are shown
 runs:
-  using: "node20"
+  using: "node24"
   main: "dist/index.js"

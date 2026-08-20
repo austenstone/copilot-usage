@@ -1,12 +1,12 @@
 {
   "name": "copilot-usage",
-  "version": "5.2.0",
+  "version": "6.0.0",
   "description": "A GitHub Action to get copilot usage",
   "private": false,
   "scripts": {
     "build": "tsc && ncc build src/index.ts -o dist --source-map --license LICENSE",
     "test": "vitest run",
-    "lint": "eslint src/**/*.ts"
+    "lint": "eslint src"
   },
   "keywords": [
     "actions",
@@ -22,27 +22,24 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@actions/artifact": "^2.3.2",
-    "@actions/core": "^1.11.1",
-    "@actions/github": "^6.0.1",
-    "@octokit/action": "^8.0.2",
-    "@octokit/rest": "^22.0.0",
-    "json-2-csv": "^5.5.9",
-    "jstoxml": "^7.0.1",
-    "octokit": "^5.0.3"
+    "@actions/artifact": "^6.2.1",
+    "@actions/core": "^3.0.1",
+    "@actions/github": "^9.1.1",
+    "@octokit/action": "^8.0.4",
+    "@octokit/rest": "^22.0.1",
+    "json-2-csv": "^5.5.11",
+    "jstoxml": "^7.1.1",
+    "octokit": "^5.0.5"
   },
   "devDependencies": {
-    "@eslint/js": "^9.28.0",
-    "@types/jest": "^29.5.14",
-    "@types/node": "^22.15.29",
-    "@vercel/ncc": "^0.38.3",
-    "dotenv": "^16.5.0",
-    "eslint": "^9.28.0",
-    "globals": "^16.2.0",
-    "ts-jest": "^29.3.4",
-    "ts-loader": "^9.5.2",
-    "typescript": "^5.8.3",
-    "typescript-eslint": "^8.33.1",
-    "vitest": "^3.2.0"
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.2.0",
+    "@vercel/ncc": "^0.45.0",
+    "dotenv": "^17.4.2",
+    "eslint": "^10.8.1",
+    "globals": "^17.11.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.67.0",
+    "vitest": "^4.1.10"
   }
 }
