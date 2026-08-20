@@ -1,0 +1,45 @@
+name: Release
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  major-tag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TAG: ${{ github.event.release.tag_name }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Verify dist/ matches src/
+        run: |
+          npm ci
+          npm run build
+          if ! git diff --quiet --exit-code dist/; then
+            echo "::error::dist/ is out of date for $TAG. Refusing to move the major tag."
+            exit 1
+          fi
+
+      - name: Move the major version tag
+        run: |
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::notice::$TAG is not a vX.Y.Z release tag, leaving major tags alone."
+            exit 0
+          fi
+          major="${TAG%%.*}"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git tag -f "$major" "$TAG"
+          git push -f origin "refs/tags/$major"
+          echo "::notice::$major now points at $TAG"
