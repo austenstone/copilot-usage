@@ -108,6 +108,32 @@ test('aggregateUsersToDays returns an empty array for no users', () => {
   expect(aggregateUsersToDays([])).toEqual([]);
 });
 
+test('aggregateUsersToDays counts weekly and monthly actives over trailing windows', () => {
+  const users = [
+    { day: '2026-01-01', user_id: 1 },
+    { day: '2026-01-02', user_id: 2 },
+    { day: '2026-01-20', user_id: 3 }
+  ] as UserReportRecord[];
+  const [first, second, third] = aggregateUsersToDays(users);
+
+  expect(first.weekly_active_users).toBe(1);
+  expect(second.daily_active_users).toBe(1);
+  expect(second.weekly_active_users).toBe(2);
+  expect(second.monthly_active_users).toBe(2);
+
+  expect(third.weekly_active_users).toBe(1);
+  expect(third.monthly_active_users).toBe(3);
+});
+
+test('aggregateUsersToDays drops users outside the trailing monthly window', () => {
+  const users = [
+    { day: '2026-01-01', user_id: 1 },
+    { day: '2026-03-01', user_id: 2 }
+  ] as UserReportRecord[];
+  const [, later] = aggregateUsersToDays(users);
+  expect(later.monthly_active_users).toBe(1);
+});
+
 describe('error messages', () => {
   const failing = (status: number, message: string) => ({
     request: () => Promise.reject(Object.assign(new Error(message), { status }))

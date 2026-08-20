@@ -141492,6 +141492,18 @@ const filterDays = (days, input) => {
     }
     return filtered;
 };
+const DAY_MS = 86_400_000;
+const distinctUsersInWindow = (day, windowDays, activeUsers) => {
+    const end = Date.parse(day);
+    const distinct = new Set();
+    for (const [other, ids] of activeUsers) {
+        const age = (end - Date.parse(other)) / DAY_MS;
+        if (age >= 0 && age < windowDays)
+            for (const id of ids)
+                distinct.add(id);
+    }
+    return distinct.size;
+};
 const aggregateUsersToDays = (users) => {
     const byDay = new Map();
     const activeUsers = new Map();
@@ -141514,7 +141526,13 @@ const aggregateUsersToDays = (users) => {
         day.daily_active_users = seen.size;
         byDay.set(user.day, day);
     }
-    return [...byDay.values()].sort((a, b) => a.day.localeCompare(b.day));
+    return [...byDay.values()]
+        .sort((a, b) => a.day.localeCompare(b.day))
+        .map(day => ({
+        ...day,
+        weekly_active_users: distinctUsersInWindow(day.day, 7, activeUsers),
+        monthly_active_users: distinctUsersInWindow(day.day, 28, activeUsers)
+    }));
 };
 const getTeamMetrics = async (octokit, input) => {
     const organization = input.organization;

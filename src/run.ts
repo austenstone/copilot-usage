@@ -83,8 +83,23 @@ const filterDays = (days: DayTotals[], input: Input): DayTotals[] => {
   return filtered;
 };
 
-export const aggregateUsersToDays = (users: UserReportRecord[]): DayTotals[] => {
-  const byDay = new Map<string, DayTotals>();
+const DAY_MS = 86_400_000;
+
+const distinctUsersInWindow = (
+  day: string,
+  windowDays: number,
+  activeUsers: Map<string, Set<number>>
+): number => {
+  const end = Date.parse(day);
+  const distinct = new Set<number>();
+  for (const [other, ids] of activeUsers) {
+    const age = (end - Date.parse(other)) / DAY_MS;
+    if (age >= 0 && age < windowDays) for (const id of ids) distinct.add(id);
+  }
+  return distinct.size;
+};
+
+export const aggregateUsersToDays = (users: UserReportRecord[]): DayTotals[] => {  const byDay = new Map<string, DayTotals>();
   const activeUsers = new Map<string, Set<number>>();
 
   for (const user of users) {
@@ -109,7 +124,13 @@ export const aggregateUsersToDays = (users: UserReportRecord[]): DayTotals[] => 
     byDay.set(user.day, day);
   }
 
-  return [...byDay.values()].sort((a, b) => a.day.localeCompare(b.day));
+  return [...byDay.values()]
+    .sort((a, b) => a.day.localeCompare(b.day))
+    .map(day => ({
+      ...day,
+      weekly_active_users: distinctUsersInWindow(day.day, 7, activeUsers),
+      monthly_active_users: distinctUsersInWindow(day.day, 28, activeUsers)
+    }));
 };
 
 const getTeamMetrics = async (octokit: Octokit, input: Input): Promise<DayTotals[]> => {
