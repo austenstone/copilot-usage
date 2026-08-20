@@ -1,8 +1,8 @@
-import { test, beforeEach, expect } from 'vitest';
+import { test, describe, it, beforeEach, expect } from 'vitest';
 import dotenv from 'dotenv'
 dotenv.config({ override: true })
 import { createJobSummaryCopilotDetails, createJobSummarySeatAssignments, createJobSummaryUsage, groupTotals, sumActivity } from '../src/job-summary';
-import { parseNdjson } from '../src/report';
+import { parseNdjson, fetchReport } from '../src/report';
 import { aggregateUsersToDays } from '../src/run';
 import { DayTotals, MetricsReport, UserReportRecord } from '../src/types';
 import { summary } from '@actions/core';
@@ -106,4 +106,25 @@ test('aggregateUsersToDays rolls user records into day totals', () => {
 
 test('aggregateUsersToDays returns an empty array for no users', () => {
   expect(aggregateUsersToDays([])).toEqual([]);
+});
+
+describe('error messages', () => {
+  const failing = (status: number, message: string) => ({
+    request: () => Promise.reject(Object.assign(new Error(message), { status }))
+  }) as never;
+
+  it('explains an expired token', async () => {
+    await expect(fetchReport(failing(401, 'Bad credentials'), '/orgs/{org}/x'))
+      .rejects.toThrow(/read:org/);
+  });
+
+  it('explains a disabled metrics policy', async () => {
+    await expect(fetchReport(failing(403, "The 'Copilot usage metrics' policy must be enabled"), '/orgs/{org}/x'))
+      .rejects.toThrow(/policy is disabled/);
+  });
+
+  it('explains a missing slug', async () => {
+    await expect(fetchReport(failing(404, 'Not Found'), '/orgs/{org}/x'))
+      .rejects.toThrow(/slug is correct/);
+  });
 });

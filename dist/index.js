@@ -141386,9 +141386,30 @@ const downloadReport = async (links) => {
     }
     return results;
 };
+const explain = (status, message, route) => {
+    switch (status) {
+        case 401:
+            return "The github-token is invalid or expired. Copilot metrics cannot be read with the default GITHUB_TOKEN, so supply a PAT with read:org (organization) or manage_billing:copilot / read:enterprise (enterprise).";
+        case 403:
+            return message.includes("policy")
+                ? "The 'Copilot usage metrics' policy is disabled. An owner must enable it under Copilot policies before this API returns data."
+                : `The github-token lacks permission for ${route}. Organization reports need read:org, enterprise reports need manage_billing:copilot or read:enterprise.`;
+        case 404:
+            return `${route} was not found. Check the organization or enterprise slug is correct and that the token can see it.`;
+        default:
+            return message;
+    }
+};
 const fetchReport = async (octokit, route, params = {}) => {
     core_debug(`Requesting report ${route} ${JSON.stringify(params)}`);
-    const { data } = await octokit.request(`GET ${route}`, params);
+    let data;
+    try {
+        ({ data } = await octokit.request(`GET ${route}`, params));
+    }
+    catch (error) {
+        const { status, message } = error;
+        throw new Error(status ? explain(status, message, route) : message);
+    }
     if (!data?.download_links?.length)
         return [];
     info(`Downloading ${data.download_links.length} report file(s) for ${route}`);
