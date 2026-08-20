@@ -47,7 +47,7 @@ export const fetchReport = async <T>(
     ({ data } = await octokit.request(`GET ${route}`, params) as { data: ReportResponse });
   } catch (error) {
     const { status, message } = error as { status?: number; message: string };
-    throw new Error(status ? explain(status, message, route) : message);
+    throw new Error(status ? explain(status, message, route) : message, { cause: error });
   }
   if (!data?.download_links?.length) return [];
   info(`Downloading ${data.download_links.length} report file(s) for ${route}`);

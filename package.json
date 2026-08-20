@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsc && ncc build src/index.ts -o dist --source-map --license LICENSE",
     "test": "vitest run",
-    "lint": "eslint src/**/*.ts"
+    "lint": "eslint src"
   },
   "keywords": [
     "actions",

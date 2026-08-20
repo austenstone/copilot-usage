@@ -141408,7 +141408,7 @@ const fetchReport = async (octokit, route, params = {}) => {
     }
     catch (error) {
         const { status, message } = error;
-        throw new Error(status ? explain(status, message, route) : message);
+        throw new Error(status ? explain(status, message, route) : message, { cause: error });
     }
     if (!data?.download_links?.length)
         return [];
