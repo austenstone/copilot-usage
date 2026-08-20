@@ -219,9 +219,14 @@ export const createJobSummaryCopilotDetails = (orgCopilotDetails: Endpoints["GET
     ])
 };
 
+// GitHub rejects job summaries over 1MiB, and a large seat table can single-handedly
+// blow that budget and take the usage report down with it
+const MAX_SEAT_ROWS = 1000;
+
 export const createJobSummarySeatAssignments = (data: Endpoints["GET /orgs/{org}/copilot/billing/seats"]["response"]["data"]["seats"]) => {
   if (!data) data = [];
-  return summary
+  const seats = data.slice(0, MAX_SEAT_ROWS);
+  const report = summary
     .addHeading('Seat Assignments')
     .addTable([
       [
@@ -233,7 +238,7 @@ export const createJobSummarySeatAssignments = (data: Endpoints["GET /orgs/{org}
         { data: 'Pending Cancellation Date', header: true },
         { data: 'Team', header: true },
       ],
-      ...data.map(seat => [
+      ...seats.map(seat => [
         `<img src="${seat.assignee?.avatar_url}" width="33" />`,
         seat.assignee?.login,
         seat.last_activity_at ? dateFormat(seat.last_activity_at, { month: 'numeric', day: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric' }) : 'No Activity',
@@ -242,7 +247,10 @@ export const createJobSummarySeatAssignments = (data: Endpoints["GET /orgs/{org}
         dateFormat(seat.pending_cancellation_date || ''),
         String(seat.assigning_team?.name || ' '),
       ] as string[])
-    ])
+    ]);
+  return data.length > seats.length
+    ? report.addRaw(`Showing the ${seats.length.toLocaleString()} most recently active seats of ${data.length.toLocaleString()}. Enable the <code>json</code> input to export them all.`)
+    : report;
 }
 
 export const setJobSummaryTimeZone = (timeZone: string) => process.env.TZ = timeZone;
