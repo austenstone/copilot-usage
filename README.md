@@ -145,7 +145,7 @@ jobs:
         id: pdf
         with:
           name: copilot-usage
-      - uses: dawidd6/action-send-mail@v5
+      - uses: dawidd6/action-send-mail@v18
         with:
           server_address: smtp.gmail.com
           server_port: 465
